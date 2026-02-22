@@ -208,7 +208,7 @@ function bindAdminEvents() {
 
       const token = adminPassword.value.trim();
       if (!token) {
-        setAdminError("Entrez le mot de passe admin.");
+        setAdminError("Entrez le mot de passe administrateur.");
         return;
       }
 
@@ -224,9 +224,9 @@ function bindAdminEvents() {
           if (check.reason === "not_server_mode") {
             setAdminError("Connexion admin indisponible ici. Ouvrez le site via http://127.0.0.1:8000.");
           } else if (check.reason === "server_unreachable") {
-            setAdminError("Serveur indisponible. Lancez server.py puis reessayez.");
+            setAdminError("Serveur indisponible. Lancez server.py puis réessayez.");
           } else {
-            setAdminError("Acces refuse. Mot de passe invalide.");
+            setAdminError("Accès refusé. Mot de passe invalide.");
           }
           return;
         }
@@ -248,7 +248,7 @@ function bindAdminEvents() {
     adminLogout.addEventListener("click", () => {
       sessionStorage.removeItem(ADMIN_SESSION_KEY);
       adminInterfaceEnabled = false;
-      lockAdmin({ message: "Session fermee." });
+      lockAdmin({ message: "Session fermée." });
     });
   }
 
@@ -341,7 +341,7 @@ function renderTasks() {
 
   if (taskStats) {
     const doneCount = state.tasks.filter((task) => task.done).length;
-    taskStats.textContent = `${filteredTasks.length}/${state.tasks.length} taches affichees - ${doneCount} terminees`;
+    taskStats.textContent = `${filteredTasks.length}/${state.tasks.length} tâches affichées - ${doneCount} terminées`;
   }
 
   if (taskClearDone) {
@@ -352,7 +352,7 @@ function renderTasks() {
   if (filteredTasks.length === 0) {
     const emptyNode = document.createElement("li");
     emptyNode.className = "list-empty";
-    emptyNode.textContent = state.tasks.length ? "Aucune tache pour ce filtre." : "Aucune tache pour le moment.";
+    emptyNode.textContent = state.tasks.length ? "Aucune tâche pour ce filtre." : "Aucune tâche pour le moment.";
     taskList.appendChild(emptyNode);
     return;
   }
@@ -407,13 +407,13 @@ function renderGuests() {
 
   if (guestStats) {
     const pending = state.guests.filter((guest) => guest.status === "pending").length;
-    guestStats.textContent = `${filteredGuests.length}/${state.guests.length} invites affiches - ${pending} en attente`;
+    guestStats.textContent = `${filteredGuests.length}/${state.guests.length} invités affichés - ${pending} en attente`;
   }
 
   if (filteredGuests.length === 0) {
     const emptyNode = document.createElement("li");
     emptyNode.className = "list-empty";
-    emptyNode.textContent = state.guests.length ? "Aucun invite pour ce filtre." : "Aucun invite pour le moment.";
+    emptyNode.textContent = state.guests.length ? "Aucun invité pour ce filtre." : "Aucun invité pour le moment.";
     guestList.appendChild(emptyNode);
     return;
   }
@@ -484,7 +484,7 @@ function clearPrivateUi() {
     taskFilter.value = "all";
   }
   if (taskStats) {
-    taskStats.textContent = "0 tache";
+    taskStats.textContent = "0 tâche";
   }
   if (taskClearDone) {
     taskClearDone.disabled = true;
@@ -496,7 +496,7 @@ function clearPrivateUi() {
     guestFilter.value = "all";
   }
   if (guestStats) {
-    guestStats.textContent = "0 invite";
+    guestStats.textContent = "0 invité";
   }
   if (metricBudgetTotal) {
     metricBudgetTotal.textContent = "0 EUR";
@@ -708,10 +708,10 @@ async function persistState() {
   try {
     await pushStateToServer(payload);
     serverSyncAvailable = true;
-    setSyncStatus("Sauvegarde fichier active: data.json", false);
+    setSyncStatus("Sauvegarde du fichier activée : data.json", false);
   } catch (error) {
     serverSyncAvailable = false;
-    setSyncStatus("Erreur sync fichier. Sauvegarde navigateur active.", true);
+    setSyncStatus("Erreur de synchronisation du fichier. Sauvegarde navigateur activée.", true);
     console.warn("Impossible de sauvegarder dans le fichier serveur.", error);
   }
 }
@@ -751,7 +751,7 @@ function toggleAdminVisibility(isUnlocked) {
 }
 
 function lockAdmin(options = {}) {
-  const message = options.message ?? "Connectez-vous en admin pour acceder a l organisation.";
+  const message = options.message ?? "Connectez-vous en admin pour accéder à l'organisation.";
 
   isAdminUnlocked = false;
   adminToken = "";
@@ -774,16 +774,16 @@ async function unlockAdmin(token) {
   refresh({ persist: false });
 
   if (isServerMode && serverSyncAvailable) {
-    setSyncStatus("Sauvegarde fichier active: data.json", false);
+    setSyncStatus("Sauvegarde du fichier activée : data.json", false);
     return;
   }
 
   if (isServerMode) {
-    setSyncStatus("Mode serveur sans sync fichier. Sauvegarde navigateur active.", true);
+    setSyncStatus("Mode serveur sans synchronisation de fichier. Sauvegarde navigateur activée.", true);
     return;
   }
 
-  setSyncStatus("Sauvegarde navigateur active.", false);
+  setSyncStatus("Sauvegarde navigateur activée.", false);
 }
 
 function openAdminInterface() {
@@ -794,7 +794,7 @@ function openAdminInterface() {
     if (!isServerMode) {
       setAdminError("Connexion admin indisponible ici. Ouvrez le site via http://127.0.0.1:8000.");
     } else {
-      setAdminError("Connectez-vous en admin pour acceder a l organisation.");
+      setAdminError("Connectez-vous en admin pour accéder à l'organisation.");
     }
   }
 
@@ -816,12 +816,12 @@ async function init() {
   setPrivateZoneVisible(true);
 
   if (!isServerMode) {
-    setAdminError("L espace admin est disponible via server.py (http://127.0.0.1:8000).");
+    setAdminError("L'espace admin est disponible via server.py (http://127.0.0.1:8000).");
     return;
   }
 
   if (!savedToken) {
-    setAdminError("Connectez-vous en admin pour acceder a l organisation.");
+    setAdminError("Connectez-vous en admin pour accéder à l'organisation.");
     return;
   }
 
@@ -836,7 +836,7 @@ async function init() {
       return;
     }
 
-    setAdminError("Session admin expiree. Reconnectez-vous.");
+    setAdminError("Session admin expirée. Reconnectez-vous.");
     return;
   }
 

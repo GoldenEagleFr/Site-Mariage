@@ -1,4 +1,4 @@
-:root {
+﻿:root {
   --bg-cream: #fff3f2;
   --bg-pearl: #ffdedd;
   --ink: #4a0b14;
@@ -21,6 +21,7 @@
   --shadow-soft: 0 22px 45px rgba(224, 10, 38, 0.28);
   --shadow-card: 0 16px 28px rgba(224, 10, 38, 0.2);
   --ease-out-back: cubic-bezier(0.2, 0.75, 0.24, 1);
+  --petal-slowdown: 3;
 }
 
 * {
@@ -39,13 +40,14 @@ body {
   font-family: Manrope, "Segoe UI", sans-serif;
   color: var(--ink);
   background:
+    conic-gradient(from 210deg at 50% 50%, rgba(255, 255, 255, 0.2), rgba(255, 183, 182, 0.12), rgba(255, 189, 28, 0.1), rgba(255, 255, 255, 0.2)),
     radial-gradient(1000px 500px at -6% -10%, rgba(255, 183, 182, 0.5), transparent 54%),
     radial-gradient(880px 430px at 105% 4%, rgba(240, 63, 89, 0.32), transparent 56%),
     radial-gradient(760px 340px at 50% 112%, rgba(255, 189, 28, 0.2), transparent 62%),
     radial-gradient(520px 280px at 88% 88%, rgba(246, 93, 8, 0.2), transparent 64%),
     linear-gradient(165deg, var(--bg-cream), var(--bg-pearl));
-  background-size: 120% 120%, 120% 120%, 130% 130%, 120% 120%, auto;
-  animation: bg-shift 7s ease-in-out infinite alternate;
+  background-size: 165% 165%, 128% 128%, 126% 126%, 138% 138%, 126% 126%, auto;
+  animation: bg-shift 4.6s ease-in-out infinite alternate;
 }
 
 body::before {
@@ -54,13 +56,16 @@ body::before {
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  opacity: 0.35;
+  opacity: 0.34;
   background-image:
     linear-gradient(90deg, rgba(255, 255, 255, 0.36) 1px, transparent 1px),
-    linear-gradient(rgba(255, 255, 255, 0.36) 1px, transparent 1px);
-  background-size: 44px 44px;
+    linear-gradient(rgba(255, 255, 255, 0.36) 1px, transparent 1px),
+    radial-gradient(circle at center, rgba(255, 255, 255, 0.52) 1px, transparent 1.7px);
+  background-size: 44px 44px, 44px 44px, 22px 22px;
+  background-position: 0 0, 0 0, 11px 9px;
   mask-image: radial-gradient(circle at center, black 35%, transparent 90%);
-  animation: mesh-drift 16s linear infinite;
+  mix-blend-mode: soft-light;
+  animation: mesh-drift 9s linear infinite, mesh-glint 5.2s ease-in-out infinite;
 }
 
 body::after {
@@ -69,13 +74,15 @@ body::after {
   inset: -18%;
   z-index: 0;
   pointer-events: none;
-  opacity: 0.72;
-  filter: blur(10px);
+  opacity: 0.82;
+  filter: blur(12px);
   background:
     radial-gradient(circle at 20% 22%, rgba(255, 189, 28, 0.24), transparent 34%),
     radial-gradient(circle at 78% 30%, rgba(240, 63, 89, 0.2), transparent 32%),
-    radial-gradient(circle at 46% 76%, rgba(246, 93, 8, 0.18), transparent 36%);
-  animation: bg-float 5.5s ease-in-out infinite;
+    radial-gradient(circle at 46% 76%, rgba(246, 93, 8, 0.2), transparent 36%),
+    radial-gradient(circle at 34% 58%, rgba(255, 255, 255, 0.16), transparent 38%);
+  mix-blend-mode: screen;
+  animation: bg-float 3.3s ease-in-out infinite, aura-pulse 3.8s ease-in-out infinite alternate;
 }
 
 .app-shell {
@@ -112,30 +119,10 @@ body::after {
   isolation: isolate;
   box-shadow: 0 6px 14px rgba(224, 10, 38, 0.18);
   transition: transform 0.24s var(--ease-out-back), background 0.24s ease, box-shadow 0.24s ease;
-  animation: nav-breathe 3.8s ease-in-out infinite;
 }
 
 .top-nav a::after {
-  content: "";
-  position: absolute;
-  top: -30%;
-  left: -130%;
-  width: 65%;
-  height: 160%;
-  pointer-events: none;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0));
-  transform: skewX(-20deg);
-  animation: nav-shine 4.2s ease-in-out infinite;
-}
-
-.top-nav a:nth-child(2)::after,
-.top-nav a:nth-child(4)::after {
-  animation-delay: 0.7s;
-}
-
-.top-nav a:nth-child(3)::after,
-.top-nav a:nth-child(5)::after {
-  animation-delay: 1.3s;
+  content: none;
 }
 
 .top-nav a:hover {
@@ -173,16 +160,7 @@ body::after {
 }
 
 .cta::after {
-  content: "";
-  position: absolute;
-  top: -35%;
-  left: -125%;
-  width: 58%;
-  height: 170%;
-  pointer-events: none;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.52), rgba(255, 255, 255, 0));
-  transform: skewX(-20deg);
-  animation: cta-shine 3.3s ease-in-out infinite;
+  content: none;
 }
 
 .cta-primary {
@@ -190,7 +168,6 @@ body::after {
   border-color: rgba(224, 10, 38, 0.72);
   background: linear-gradient(145deg, var(--sun), var(--gold-dark));
   box-shadow: 0 10px 18px rgba(224, 10, 38, 0.32);
-  animation: cta-breathe 2.4s ease-in-out infinite;
 }
 
 .cta-secondary {
@@ -246,7 +223,8 @@ body::after {
   background: radial-gradient(circle at 30% 35%, rgba(255, 255, 255, 0.92), rgba(255, 183, 182, 0.9) 52%, rgba(240, 63, 89, 0.72) 100%);
   box-shadow: 0 0 12px rgba(255, 183, 182, 0.6);
   opacity: 0.92;
-  animation: sakura-fall var(--fall-duration, 6.8s) linear infinite, sakura-spin var(--spin-duration, 2.6s) ease-in-out infinite alternate;
+  animation: sakura-fall calc(var(--fall-duration, 6.8s) * var(--petal-slowdown)) linear infinite, sakura-spin calc(var(--spin-duration, 2.6s) * var(--petal-slowdown)) ease-in-out infinite alternate;
+  animation-delay: calc(var(--petal-delay, 0s) * var(--petal-slowdown));
 }
 
 .sakura-front .petal {
@@ -254,238 +232,238 @@ body::after {
   height: 13px;
   opacity: 0.72;
   box-shadow: 0 0 14px rgba(255, 183, 182, 0.72);
-  animation: sakura-fall-front var(--fall-duration, 5.6s) linear infinite, sakura-spin var(--spin-duration, 2.2s) ease-in-out infinite alternate;
+  animation: sakura-fall-front calc(var(--fall-duration, 5.6s) * var(--petal-slowdown)) linear infinite, sakura-spin calc(var(--spin-duration, 2.2s) * var(--petal-slowdown)) ease-in-out infinite alternate;
 }
 
 .sakura-layer .petal:nth-child(1) {
   left: 4%;
   --fall-duration: 7.8s;
   --spin-duration: 2.6s;
-  animation-delay: -1.4s;
+  --petal-delay: -1.4s;
 }
 
 .sakura-layer .petal:nth-child(2) {
   left: 11%;
   --fall-duration: 9.2s;
   --spin-duration: 3.4s;
-  animation-delay: -3.1s;
+  --petal-delay: -3.1s;
 }
 
 .sakura-layer .petal:nth-child(3) {
   left: 18%;
   --fall-duration: 8.4s;
   --spin-duration: 2.9s;
-  animation-delay: -2.3s;
+  --petal-delay: -2.3s;
 }
 
 .sakura-layer .petal:nth-child(4) {
   left: 27%;
   --fall-duration: 10.1s;
   --spin-duration: 3.1s;
-  animation-delay: -4.2s;
+  --petal-delay: -4.2s;
 }
 
 .sakura-layer .petal:nth-child(5) {
   left: 36%;
   --fall-duration: 7.6s;
   --spin-duration: 2.4s;
-  animation-delay: -0.8s;
+  --petal-delay: -0.8s;
 }
 
 .sakura-layer .petal:nth-child(6) {
   left: 44%;
   --fall-duration: 9.7s;
   --spin-duration: 3.5s;
-  animation-delay: -5.3s;
+  --petal-delay: -5.3s;
 }
 
 .sakura-layer .petal:nth-child(7) {
   left: 53%;
   --fall-duration: 8.2s;
   --spin-duration: 2.7s;
-  animation-delay: -1.9s;
+  --petal-delay: -1.9s;
 }
 
 .sakura-layer .petal:nth-child(8) {
   left: 62%;
   --fall-duration: 10.6s;
   --spin-duration: 3.6s;
-  animation-delay: -6.1s;
+  --petal-delay: -6.1s;
 }
 
 .sakura-layer .petal:nth-child(9) {
   left: 71%;
   --fall-duration: 7.9s;
   --spin-duration: 2.8s;
-  animation-delay: -3.4s;
+  --petal-delay: -3.4s;
 }
 
 .sakura-layer .petal:nth-child(10) {
   left: 79%;
   --fall-duration: 9.4s;
   --spin-duration: 3.2s;
-  animation-delay: -2.7s;
+  --petal-delay: -2.7s;
 }
 
 .sakura-layer .petal:nth-child(11) {
   left: 87%;
   --fall-duration: 8.6s;
   --spin-duration: 2.5s;
-  animation-delay: -4.9s;
+  --petal-delay: -4.9s;
 }
 
 .sakura-layer .petal:nth-child(12) {
   left: 94%;
   --fall-duration: 9.9s;
   --spin-duration: 3.3s;
-  animation-delay: -1.1s;
+  --petal-delay: -1.1s;
 }
 
 .sakura-layer .petal:nth-child(13) {
   left: 8%;
   --fall-duration: 6.9s;
   --spin-duration: 2.4s;
-  animation-delay: -2.8s;
+  --petal-delay: -2.8s;
 }
 
 .sakura-layer .petal:nth-child(14) {
   left: 15%;
   --fall-duration: 7.4s;
   --spin-duration: 2.2s;
-  animation-delay: -0.9s;
+  --petal-delay: -0.9s;
 }
 
 .sakura-layer .petal:nth-child(15) {
   left: 23%;
   --fall-duration: 6.6s;
   --spin-duration: 2.3s;
-  animation-delay: -4.5s;
+  --petal-delay: -4.5s;
 }
 
 .sakura-layer .petal:nth-child(16) {
   left: 33%;
   --fall-duration: 8.1s;
   --spin-duration: 2.9s;
-  animation-delay: -1.7s;
+  --petal-delay: -1.7s;
 }
 
 .sakura-layer .petal:nth-child(17) {
   left: 41%;
   --fall-duration: 6.4s;
   --spin-duration: 2.1s;
-  animation-delay: -3.3s;
+  --petal-delay: -3.3s;
 }
 
 .sakura-layer .petal:nth-child(18) {
   left: 49%;
   --fall-duration: 7.2s;
   --spin-duration: 2.5s;
-  animation-delay: -5.8s;
+  --petal-delay: -5.8s;
 }
 
 .sakura-layer .petal:nth-child(19) {
   left: 58%;
   --fall-duration: 6.7s;
   --spin-duration: 2.2s;
-  animation-delay: -2.4s;
+  --petal-delay: -2.4s;
 }
 
 .sakura-layer .petal:nth-child(20) {
   left: 68%;
   --fall-duration: 7.8s;
   --spin-duration: 2.8s;
-  animation-delay: -4.1s;
+  --petal-delay: -4.1s;
 }
 
 .sakura-layer .petal:nth-child(21) {
   left: 82%;
   --fall-duration: 6.5s;
   --spin-duration: 2.2s;
-  animation-delay: -3.7s;
+  --petal-delay: -3.7s;
 }
 
 .sakura-layer .petal:nth-child(22) {
   left: 90%;
   --fall-duration: 7.1s;
   --spin-duration: 2.6s;
-  animation-delay: -1.9s;
+  --petal-delay: -1.9s;
 }
 
 .sakura-front .petal:nth-child(1) {
   left: 6%;
   --fall-duration: 5.1s;
   --spin-duration: 1.9s;
-  animation-delay: -0.7s;
+  --petal-delay: -0.7s;
 }
 
 .sakura-front .petal:nth-child(2) {
   left: 14%;
   --fall-duration: 5.6s;
   --spin-duration: 2.1s;
-  animation-delay: -1.5s;
+  --petal-delay: -1.5s;
 }
 
 .sakura-front .petal:nth-child(3) {
   left: 22%;
   --fall-duration: 4.9s;
   --spin-duration: 1.8s;
-  animation-delay: -2.4s;
+  --petal-delay: -2.4s;
 }
 
 .sakura-front .petal:nth-child(4) {
   left: 31%;
   --fall-duration: 5.8s;
   --spin-duration: 2.3s;
-  animation-delay: -0.9s;
+  --petal-delay: -0.9s;
 }
 
 .sakura-front .petal:nth-child(5) {
   left: 40%;
   --fall-duration: 5.2s;
   --spin-duration: 1.9s;
-  animation-delay: -3.1s;
+  --petal-delay: -3.1s;
 }
 
 .sakura-front .petal:nth-child(6) {
   left: 49%;
   --fall-duration: 6s;
   --spin-duration: 2.4s;
-  animation-delay: -1.1s;
+  --petal-delay: -1.1s;
 }
 
 .sakura-front .petal:nth-child(7) {
   left: 58%;
   --fall-duration: 5.4s;
   --spin-duration: 2s;
-  animation-delay: -2.8s;
+  --petal-delay: -2.8s;
 }
 
 .sakura-front .petal:nth-child(8) {
   left: 67%;
   --fall-duration: 4.8s;
   --spin-duration: 1.7s;
-  animation-delay: -1.9s;
+  --petal-delay: -1.9s;
 }
 
 .sakura-front .petal:nth-child(9) {
   left: 76%;
   --fall-duration: 5.7s;
   --spin-duration: 2.2s;
-  animation-delay: -3.6s;
+  --petal-delay: -3.6s;
 }
 
 .sakura-front .petal:nth-child(10) {
   left: 85%;
   --fall-duration: 5.3s;
   --spin-duration: 2s;
-  animation-delay: -2.2s;
+  --petal-delay: -2.2s;
 }
 
 .sakura-front .petal:nth-child(11) {
   left: 93%;
   --fall-duration: 6.1s;
   --spin-duration: 2.5s;
-  animation-delay: -0.6s;
+  --petal-delay: -0.6s;
 }
 
 .story-card {
@@ -496,6 +474,8 @@ body::after {
   background: linear-gradient(150deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.07));
   transition: transform 0.24s var(--ease-out-back), box-shadow 0.24s ease;
   animation: section-pop 0.66s var(--ease-out-back) both;
+  display: grid;
+  gap: 6px;
 }
 
 .story-card:nth-child(2) {
@@ -503,26 +483,28 @@ body::after {
 }
 
 .story-card h2 {
-  margin: 2px 0 7px;
+  margin: 4px 0 10px;
   font-size: 1.3rem;
   font-family: Fraunces, Georgia, serif;
 }
 
 .story-card .panel-kicker {
   color: #ffe9a8;
+  margin: 0 0 4px;
 }
 
 .story-card p {
   margin: 0;
-  line-height: 1.5;
+  line-height: 1.65;
   color: rgba(255, 255, 255, 0.92);
 }
 
 .mini-list {
-  margin: 0;
+  margin: 2px 0 0;
   padding-left: 18px;
   display: grid;
-  gap: 6px;
+  gap: 9px;
+  line-height: 1.5;
   color: rgba(255, 255, 255, 0.95);
 }
 
@@ -1133,29 +1115,29 @@ button:hover {
 
 @keyframes bg-shift {
   0% {
-    background-position: -6% -10%, 105% 4%, 50% 112%, 88% 88%, 0 0;
+    background-position: 46% 56%, -14% -18%, 112% 0%, 56% 118%, 92% 94%, 0 0;
   }
 
   50% {
-    background-position: 10% 2%, 92% 18%, 44% 98%, 79% 97%, 0 0;
+    background-position: 54% 42%, 16% 6%, 88% 24%, 38% 96%, 74% 102%, 0 0;
   }
 
   100% {
-    background-position: 20% 10%, 82% 28%, 58% 90%, 68% 106%, 0 0;
+    background-position: 62% 36%, 26% 14%, 78% 34%, 64% 86%, 64% 112%, 0 0;
   }
 }
 
 @keyframes bg-float {
   0% {
-    transform: translate3d(0, 0, 0) scale(1);
+    transform: translate3d(0, 0, 0) scale(1.02);
   }
 
   50% {
-    transform: translate3d(-5.6%, 3.6%, 0) scale(1.13);
+    transform: translate3d(-10.2%, 6.8%, 0) scale(1.22);
   }
 
   100% {
-    transform: translate3d(4.8%, -4.2%, 0) scale(1.07);
+    transform: translate3d(9.4%, -8.1%, 0) scale(1.14);
   }
 }
 
@@ -1220,11 +1202,34 @@ button:hover {
   }
 
   50% {
-    transform: translate3d(-10px, 8px, 0);
+    transform: translate3d(-22px, 18px, 0);
   }
 
   100% {
-    transform: translate3d(10px, -8px, 0);
+    transform: translate3d(22px, -18px, 0);
+  }
+}
+
+@keyframes mesh-glint {
+  0%,
+  100% {
+    opacity: 0.16;
+  }
+
+  50% {
+    opacity: 0.48;
+  }
+}
+
+@keyframes aura-pulse {
+  0% {
+    opacity: 0.58;
+    filter: blur(10px) saturate(1);
+  }
+
+  100% {
+    opacity: 0.96;
+    filter: blur(16px) saturate(1.24);
   }
 }
 
@@ -1511,3 +1516,4 @@ button:hover {
     transition: none !important;
   }
 }
+
