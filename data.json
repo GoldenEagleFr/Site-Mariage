@@ -1,7 +1,48 @@
 {
   "budgetGoal": 20000,
   "budgetItems": [],
-  "tasks": [],
+  "tasks": [
+    {
+      "id": "x537hnc2",
+      "text": "Trouver domaine",
+      "done": false
+    },
+    {
+      "id": "yxvm115u",
+      "text": "Trouver traiteur",
+      "done": false
+    },
+    {
+      "id": "yix8eob2",
+      "text": "Trouver photographe",
+      "done": false
+    },
+    {
+      "id": "wijwgmur",
+      "text": "Liste invité",
+      "done": false
+    },
+    {
+      "id": "hh5ey7rt",
+      "text": "faire parts",
+      "done": false
+    },
+    {
+      "id": "bomhafyr",
+      "text": "Trouver DJ",
+      "done": false
+    },
+    {
+      "id": "2vuqw4m0",
+      "text": "Trouver fleuriste",
+      "done": false
+    },
+    {
+      "id": "6iyqkqiw",
+      "text": "Trouver thème et couleurs",
+      "done": false
+    }
+  ],
   "guests": [
     {
       "id": "yo5pmeoi",
@@ -22,7 +63,27 @@
       "id": "mrak3xl2",
       "name": "GAMBIER Valentine",
       "status": "yes"
+    },
+    {
+      "id": "dr2jmbyh",
+      "name": "THIEBAUT Stéphane",
+      "status": "yes"
+    },
+    {
+      "id": "7906545y",
+      "name": "THIEBAUT Christiane",
+      "status": "yes"
+    },
+    {
+      "id": "p31u6u3w",
+      "name": "THIEBAUT Thomas",
+      "status": "yes"
+    },
+    {
+      "id": "s0c6s38e",
+      "name": "THIEBAUT Claire",
+      "status": "yes"
     }
   ],
-  "updatedAt": 1771782108770
+  "updatedAt": 1771802629260
 }

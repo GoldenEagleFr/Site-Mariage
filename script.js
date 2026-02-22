@@ -2,6 +2,7 @@
 const SERVER_ENDPOINT = "/api/data";
 const ADMIN_CHECK_ENDPOINT = "/api/admin/check";
 const ADMIN_SESSION_KEY = "plan_mariage_admin_token";
+const WEDDING_DATE_ISO = "2027-05-16T14:30:00+02:00";
 
 const DEFAULT_STATE = {
   budgetGoal: 15000,
@@ -64,9 +65,17 @@ const adminError = document.getElementById("adminError");
 const adminLogout = document.getElementById("adminLogout");
 const adminNavLink = document.getElementById("adminNavLink");
 const privateZone = document.getElementById("organisation");
+const countdownDays = document.getElementById("countdownDays");
+const countdownHours = document.getElementById("countdownHours");
+const countdownMinutes = document.getElementById("countdownMinutes");
+const countdownSeconds = document.getElementById("countdownSeconds");
+const countdownNote = document.getElementById("countdownNote");
+
+let countdownTimerId = 0;
 
 bindPlannerEvents();
 bindAdminEvents();
+initCountdown();
 
 function bindPlannerEvents() {
   if (budgetForm) {
@@ -258,6 +267,54 @@ function bindAdminEvents() {
       openAdminInterface();
     });
   }
+}
+
+function initCountdown() {
+  if (!countdownDays || !countdownHours || !countdownMinutes || !countdownSeconds || !countdownNote) {
+    return;
+  }
+
+  const target = new Date(WEDDING_DATE_ISO);
+  if (Number.isNaN(target.getTime())) {
+    countdownNote.textContent = "Date du mariage indisponible.";
+    return;
+  }
+
+  updateCountdown(target);
+  countdownTimerId = window.setInterval(() => {
+    updateCountdown(target);
+  }, 1000);
+}
+
+function updateCountdown(target) {
+  const now = Date.now();
+  const delta = target.getTime() - now;
+
+  if (delta <= 0) {
+    countdownDays.textContent = "0";
+    countdownHours.textContent = "00";
+    countdownMinutes.textContent = "00";
+    countdownSeconds.textContent = "00";
+    countdownNote.textContent = "C'est le grand jour !";
+
+    if (countdownTimerId) {
+      window.clearInterval(countdownTimerId);
+      countdownTimerId = 0;
+    }
+    return;
+  }
+
+  const totalSeconds = Math.floor(delta / 1000);
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  countdownDays.textContent = String(days);
+  countdownHours.textContent = String(hours).padStart(2, "0");
+  countdownMinutes.textContent = String(minutes).padStart(2, "0");
+  countdownSeconds.textContent = String(seconds).padStart(2, "0");
+  countdownNote.textContent = "Avant de celebrer ensemble.";
 }
 
 function refresh(options = {}) {
