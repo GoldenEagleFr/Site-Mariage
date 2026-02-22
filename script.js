@@ -33,11 +33,18 @@ const budgetList = document.getElementById("budgetList");
 const taskForm = document.getElementById("taskForm");
 const taskText = document.getElementById("taskText");
 const taskList = document.getElementById("taskList");
+const taskSearch = document.getElementById("taskSearch");
+const taskFilter = document.getElementById("taskFilter");
+const taskStats = document.getElementById("taskStats");
+const taskClearDone = document.getElementById("taskClearDone");
 
 const guestForm = document.getElementById("guestForm");
 const guestName = document.getElementById("guestName");
 const guestStatus = document.getElementById("guestStatus");
 const guestList = document.getElementById("guestList");
+const guestSearch = document.getElementById("guestSearch");
+const guestFilter = document.getElementById("guestFilter");
+const guestStats = document.getElementById("guestStats");
 
 const metricBudgetTotal = document.getElementById("metricBudgetTotal");
 const metricBudgetLeft = document.getElementById("metricBudgetLeft");
@@ -126,6 +133,34 @@ function bindPlannerEvents() {
     });
   }
 
+  if (taskSearch) {
+    taskSearch.addEventListener("input", () => {
+      renderTasks();
+    });
+  }
+
+  if (taskFilter) {
+    taskFilter.addEventListener("change", () => {
+      renderTasks();
+    });
+  }
+
+  if (taskClearDone) {
+    taskClearDone.addEventListener("click", () => {
+      if (!isAdminUnlocked) {
+        return;
+      }
+
+      const remaining = state.tasks.filter((task) => !task.done);
+      if (remaining.length === state.tasks.length) {
+        return;
+      }
+
+      state.tasks = remaining;
+      refresh();
+    });
+  }
+
   if (guestForm) {
     guestForm.addEventListener("submit", (event) => {
       event.preventDefault();
@@ -147,6 +182,18 @@ function bindPlannerEvents() {
 
       guestForm.reset();
       refresh();
+    });
+  }
+
+  if (guestSearch) {
+    guestSearch.addEventListener("input", () => {
+      renderGuests();
+    });
+  }
+
+  if (guestFilter) {
+    guestFilter.addEventListener("change", () => {
+      renderGuests();
     });
   }
 }
@@ -257,8 +304,9 @@ function renderBudget() {
   }
 
   budgetList.innerHTML = "";
-  for (const item of state.budgetItems) {
+  for (const [index, item] of state.budgetItems.entries()) {
     const node = budgetTemplate.content.firstElementChild.cloneNode(true);
+    node.style.setProperty("--stagger", String(index));
     node.querySelector(".main-text").textContent = item.label;
     node.querySelector(".money").textContent = formatMoney(item.amount);
     node.querySelector("button").addEventListener("click", () => {
@@ -275,8 +323,43 @@ function renderTasks() {
   }
 
   taskList.innerHTML = "";
-  for (const task of state.tasks) {
+  const search = toSearchKey(taskSearch?.value ?? "");
+  const mode = taskFilter?.value ?? "all";
+  const orderedTasks = [...state.tasks].sort((a, b) => Number(a.done) - Number(b.done));
+  const filteredTasks = orderedTasks.filter((task) => {
+    if (mode === "todo" && task.done) {
+      return false;
+    }
+    if (mode === "done" && !task.done) {
+      return false;
+    }
+    if (search && !toSearchKey(task.text).includes(search)) {
+      return false;
+    }
+    return true;
+  });
+
+  if (taskStats) {
+    const doneCount = state.tasks.filter((task) => task.done).length;
+    taskStats.textContent = `${filteredTasks.length}/${state.tasks.length} taches affichees - ${doneCount} terminees`;
+  }
+
+  if (taskClearDone) {
+    const hasDone = state.tasks.some((task) => task.done);
+    taskClearDone.disabled = !hasDone;
+  }
+
+  if (filteredTasks.length === 0) {
+    const emptyNode = document.createElement("li");
+    emptyNode.className = "list-empty";
+    emptyNode.textContent = state.tasks.length ? "Aucune tache pour ce filtre." : "Aucune tache pour le moment.";
+    taskList.appendChild(emptyNode);
+    return;
+  }
+
+  for (const [index, task] of filteredTasks.entries()) {
     const node = taskTemplate.content.firstElementChild.cloneNode(true);
+    node.style.setProperty("--stagger", String(index));
     node.classList.toggle("done", task.done);
     const check = node.querySelector("input[type='checkbox']");
     check.checked = task.done;
@@ -301,8 +384,43 @@ function renderGuests() {
   }
 
   guestList.innerHTML = "";
-  for (const guest of state.guests) {
+  const search = toSearchKey(guestSearch?.value ?? "");
+  const mode = guestFilter?.value ?? "all";
+  const statusRank = { pending: 0, yes: 1, no: 2 };
+  const orderedGuests = [...state.guests].sort((a, b) => {
+    const rankDiff = (statusRank[a.status] ?? 99) - (statusRank[b.status] ?? 99);
+    if (rankDiff !== 0) {
+      return rankDiff;
+    }
+    return a.name.localeCompare(b.name, "fr", { sensitivity: "base" });
+  });
+
+  const filteredGuests = orderedGuests.filter((guest) => {
+    if (mode !== "all" && guest.status !== mode) {
+      return false;
+    }
+    if (search && !toSearchKey(guest.name).includes(search)) {
+      return false;
+    }
+    return true;
+  });
+
+  if (guestStats) {
+    const pending = state.guests.filter((guest) => guest.status === "pending").length;
+    guestStats.textContent = `${filteredGuests.length}/${state.guests.length} invites affiches - ${pending} en attente`;
+  }
+
+  if (filteredGuests.length === 0) {
+    const emptyNode = document.createElement("li");
+    emptyNode.className = "list-empty";
+    emptyNode.textContent = state.guests.length ? "Aucun invite pour ce filtre." : "Aucun invite pour le moment.";
+    guestList.appendChild(emptyNode);
+    return;
+  }
+
+  for (const [index, guest] of filteredGuests.entries()) {
     const node = guestTemplate.content.firstElementChild.cloneNode(true);
+    node.style.setProperty("--stagger", String(index));
     node.querySelector(".main-text").textContent = guest.name;
 
     const statusSelect = node.querySelector("select");
@@ -359,6 +477,27 @@ function clearPrivateUi() {
   if (guestList) {
     guestList.innerHTML = "";
   }
+  if (taskSearch) {
+    taskSearch.value = "";
+  }
+  if (taskFilter) {
+    taskFilter.value = "all";
+  }
+  if (taskStats) {
+    taskStats.textContent = "0 tache";
+  }
+  if (taskClearDone) {
+    taskClearDone.disabled = true;
+  }
+  if (guestSearch) {
+    guestSearch.value = "";
+  }
+  if (guestFilter) {
+    guestFilter.value = "all";
+  }
+  if (guestStats) {
+    guestStats.textContent = "0 invite";
+  }
   if (metricBudgetTotal) {
     metricBudgetTotal.textContent = "0 EUR";
   }
@@ -379,6 +518,14 @@ function formatMoney(value) {
     currency: "EUR",
     maximumFractionDigits: 0,
   }).format(value);
+}
+
+function toSearchKey(value) {
+  return String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
 }
 
 function createId() {
