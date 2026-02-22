@@ -1114,6 +1114,30 @@ button:hover {
   animation-delay: calc(var(--stagger, 0) * 46ms);
 }
 
+.guest-item {
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+}
+
+.qr-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 10px;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(240, 63, 89, 0.42);
+  background: rgba(255, 183, 182, 0.18);
+  color: var(--gold-dark);
+  text-decoration: none;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.qr-action:hover {
+  filter: brightness(1.03);
+}
+
 .data-item.done {
   background: linear-gradient(160deg, #fff3f2, #ffecea);
   border-color: rgba(240, 63, 89, 0.5);

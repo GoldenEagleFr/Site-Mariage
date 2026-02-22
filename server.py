@@ -3,10 +3,13 @@ from __future__ import annotations
 import json
 import os
 import threading
+import time
+from html import escape
 from functools import partial
 from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from urllib.parse import parse_qs, quote, urlparse
 
 BASE_DIR = Path(__file__).resolve().parent
 DATA_FILE = BASE_DIR / "data.json"
@@ -102,6 +105,7 @@ def normalize_data(candidate: object) -> dict:
                     "id": str(guest.get("id", "")).strip() or "guest",
                     "name": name,
                     "status": status if status in VALID_GUEST_STATUS else "pending",
+                    "rsvpToken": str(guest.get("rsvpToken", "")).strip(),
                 }
             )
         normalized["guests"] = cleaned_guests
@@ -148,20 +152,162 @@ class PlannerHandler(SimpleHTTPRequestHandler):
         provided = self.headers.get("X-Admin-Key", "")
         return bool(provided) and provided == ADMIN_PASSWORD
 
+    def _send_html(self, html_body: str, status: HTTPStatus = HTTPStatus.OK) -> None:
+        body = html_body.encode("utf-8")
+        self.send_response(status)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _render_rsvp_page(self, token: str, guest_name: str, status: str = "") -> str:
+        name = escape(guest_name) if guest_name else "Cher invite"
+        if status == "yes":
+            title = "Reponse enregistree: Oui"
+            message = "Merci, votre presence est bien confirmee."
+        elif status == "no":
+            title = "Reponse enregistree: Non"
+            message = "Merci pour votre reponse, elle a bien ete enregistree."
+        else:
+            title = "Confirmez votre presence"
+            message = "Merci de choisir votre reponse."
+
+        yes_url = f"/rsvp?token={quote(token)}&status=yes"
+        no_url = f"/rsvp?token={quote(token)}&status=no"
+
+        return f"""<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{escape(title)}</title>
+  <style>
+    body {{
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: linear-gradient(165deg, #fff3f2, #ffdedd);
+      color: #4a0b14;
+      padding: 18px;
+    }}
+    .card {{
+      width: min(560px, 96vw);
+      background: #fff;
+      border: 1px solid rgba(224, 10, 38, 0.28);
+      border-radius: 18px;
+      padding: 22px;
+      box-shadow: 0 18px 36px rgba(224, 10, 38, 0.16);
+      text-align: center;
+    }}
+    h1 {{
+      margin: 0 0 10px;
+      font-size: 1.45rem;
+      color: #e00a26;
+    }}
+    p {{
+      margin: 0 0 16px;
+      line-height: 1.45;
+    }}
+    .name {{
+      font-weight: 700;
+    }}
+    .actions {{
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }}
+    a {{
+      display: inline-block;
+      text-decoration: none;
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-weight: 700;
+      border: 1px solid rgba(224, 10, 38, 0.6);
+    }}
+    .yes {{
+      background: linear-gradient(145deg, #ffbd1c, #f65d08);
+      color: #fff;
+    }}
+    .no {{
+      background: #fff3f2;
+      color: #a2182e;
+    }}
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>{escape(title)}</h1>
+    <p class="name">{name}</p>
+    <p>{escape(message)}</p>
+    <div class="actions">
+      <a class="yes" href="{yes_url}">Oui, je serai present(e)</a>
+      <a class="no" href="{no_url}">Non, je ne pourrai pas venir</a>
+    </div>
+  </main>
+</body>
+</html>"""
+
+    def _apply_rsvp_status(self, token: str, status: str) -> tuple[bool, str]:
+        if status not in {"yes", "no"}:
+            return False, ""
+
+        data = load_data_file()
+        for guest in data.get("guests", []):
+            if str(guest.get("rsvpToken", "")).strip() == token:
+                guest["status"] = status
+                data["updatedAt"] = int(time.time() * 1000)
+                save_data_file(data)
+                return True, str(guest.get("name", "")).strip()
+        return False, ""
+
+    def _find_guest_by_token(self, token: str) -> str:
+        data = load_data_file()
+        for guest in data.get("guests", []):
+            if str(guest.get("rsvpToken", "")).strip() == token:
+                return str(guest.get("name", "")).strip()
+        return ""
+
     def do_GET(self) -> None:
-        if self.path == "/api/admin/check":
+        parsed = urlparse(self.path)
+        path = parsed.path
+        query = parse_qs(parsed.query)
+
+        if path == "/api/admin/check":
             if not self._is_admin_authorized():
                 self._send_json({"ok": False, "error": "unauthorized"}, HTTPStatus.UNAUTHORIZED)
                 return
             self._send_json({"ok": True})
             return
 
-        if self.path == "/api/data":
+        if path == "/api/data":
             if not self._is_admin_authorized():
                 self._send_json({"ok": False, "error": "unauthorized"}, HTTPStatus.UNAUTHORIZED)
                 return
             self._send_json(load_data_file())
             return
+
+        if path == "/rsvp":
+            token = str(query.get("token", [""])[0]).strip()
+            status = str(query.get("status", [""])[0]).strip().lower()
+            if not token:
+                self._send_html(self._render_rsvp_page("", "", ""))
+                return
+
+            if status in {"yes", "no"}:
+                ok, guest_name = self._apply_rsvp_status(token, status)
+                if ok:
+                    self._send_html(self._render_rsvp_page(token, guest_name, status))
+                    return
+                self._send_html(self._render_rsvp_page(token, "", ""))
+                return
+
+            guest_name = self._find_guest_by_token(token)
+            self._send_html(self._render_rsvp_page(token, guest_name, ""))
+            return
+
         super().do_GET()
 
     def do_POST(self) -> None:

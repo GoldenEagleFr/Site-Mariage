@@ -3,6 +3,7 @@ const SERVER_ENDPOINT = "/api/data";
 const ADMIN_CHECK_ENDPOINT = "/api/admin/check";
 const ADMIN_SESSION_KEY = "plan_mariage_admin_token";
 const WEDDING_DATE_ISO = "2027-05-16T14:30:00+02:00";
+const QR_API_ENDPOINT = "https://api.qrserver.com/v1/create-qr-code/";
 
 const DEFAULT_STATE = {
   budgetGoal: 15000,
@@ -187,6 +188,7 @@ function bindPlannerEvents() {
         id: createId(),
         name,
         status: VALID_GUEST_STATUS.has(status) ? status : "pending",
+        rsvpToken: createGuestToken(),
       });
 
       guestForm.reset();
@@ -487,6 +489,14 @@ function renderGuests() {
       refresh();
     });
 
+    const qrLink = node.querySelector(".qr-action");
+    if (qrLink) {
+      const rsvpUrl = buildRsvpUrl(guest.rsvpToken);
+      qrLink.href = buildQrImageUrl(rsvpUrl);
+      qrLink.title = `QR RSVP pour ${guest.name}`;
+      qrLink.setAttribute("aria-label", `Ouvrir le QR RSVP pour ${guest.name}`);
+    }
+
     node.querySelector("button").addEventListener("click", () => {
       state.guests = state.guests.filter((entry) => entry.id !== guest.id);
       refresh();
@@ -589,6 +599,25 @@ function createId() {
   return Math.random().toString(36).slice(2, 10);
 }
 
+function createGuestToken() {
+  return `g_${createId()}${createId()}`;
+}
+
+function getPublicBaseUrl() {
+  if (isServerMode && window.location.origin) {
+    return window.location.origin;
+  }
+  return "http://127.0.0.1:8000";
+}
+
+function buildRsvpUrl(token) {
+  return `${getPublicBaseUrl()}/rsvp?token=${encodeURIComponent(token)}`;
+}
+
+function buildQrImageUrl(dataUrl) {
+  return `${QR_API_ENDPOINT}?size=360x360&data=${encodeURIComponent(dataUrl)}`;
+}
+
 function createDefaultState() {
   return {
     budgetGoal: DEFAULT_STATE.budgetGoal,
@@ -637,8 +666,19 @@ function normalizeState(candidate) {
         id: typeof guest.id === "string" && guest.id ? guest.id : createId(),
         name: String(guest.name ?? "").trim(),
         status: VALID_GUEST_STATUS.has(guest.status) ? guest.status : "pending",
+        rsvpToken: typeof guest.rsvpToken === "string" && guest.rsvpToken.trim() ? guest.rsvpToken.trim() : createGuestToken(),
       }))
       .filter((guest) => guest.name);
+
+    const usedTokens = new Set();
+    for (const guest of normalized.guests) {
+      let token = guest.rsvpToken;
+      while (!token || usedTokens.has(token)) {
+        token = createGuestToken();
+      }
+      guest.rsvpToken = token;
+      usedTokens.add(token);
+    }
   }
 
   return normalized;
