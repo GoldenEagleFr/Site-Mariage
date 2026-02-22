@@ -1,0 +1,28 @@
+{
+  "budgetGoal": 20000,
+  "budgetItems": [],
+  "tasks": [],
+  "guests": [
+    {
+      "id": "yo5pmeoi",
+      "name": "DURAND Hervé",
+      "status": "yes"
+    },
+    {
+      "id": "2vwmld87",
+      "name": "DURAND Marlène",
+      "status": "yes"
+    },
+    {
+      "id": "u5cxb7xl",
+      "name": "DURAND Nicolas",
+      "status": "yes"
+    },
+    {
+      "id": "mrak3xl2",
+      "name": "GAMBIER Valentine",
+      "status": "yes"
+    }
+  ],
+  "updatedAt": 1771775289318
+}

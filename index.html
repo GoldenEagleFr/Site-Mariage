@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mariage Florence et Antoine</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <header class="hero" id="accueil">
+      <div class="sakura-layer" aria-hidden="true">
+        <span class="petal"></span>
+        <span class="petal"></span>
+        <span class="petal"></span>
+        <span class="petal"></span>
+        <span class="petal"></span>
+        <span class="petal"></span>
+        <span class="petal"></span>
+        <span class="petal"></span>
+        <span class="petal"></span>
+        <span class="petal"></span>
+        <span class="petal"></span>
+        <span class="petal"></span>
+        <span class="petal"></span>
+        <span class="petal"></span>
+        <span class="petal"></span>
+        <span class="petal"></span>
+        <span class="petal"></span>
+        <span class="petal"></span>
+        <span class="petal"></span>
+        <span class="petal"></span>
+        <span class="petal"></span>
+        <span class="petal"></span>
+      </div>
+      <nav class="top-nav" aria-label="Navigation principale">
+        <a href="#histoire">Notre histoire</a>
+        <a href="#programme">Programme</a>
+        <a href="#infos">Infos pratiques</a>
+        <a href="#rsvp">RSVP</a>
+        <a id="adminNavLink" href="#organisation">Espace des maries</a>
+      </nav>
+      <div class="hero-content">
+        <p class="kicker">16 mai 2026</p>
+        <h1>Florence & Antoine se disent oui</h1>
+        <p class="subtitle">Bienvenue sur le site de notre mariage. Vous trouverez ici le programme du jour, les informations pratiques et le formulaire RSVP.</p>
+        <div class="hero-ribbon" aria-label="Points forts">
+          <span>Chateau de la Roseraie</span>
+          <span>Ceremonie 14h30</span>
+          <span>Reception et diner</span>
+        </div>
+        <div class="hero-actions">
+          <a class="cta cta-primary" href="#rsvp">Confirmer ma presence</a>
+          <a class="cta cta-secondary" href="#programme">Voir le programme</a>
+        </div>
+      </div>
+
+      <section class="story-grid">
+        <article class="story-card" id="histoire">
+          <p class="panel-kicker">Notre histoire</p>
+          <h2>Une evidence, puis un grand oui</h2>
+          <p>Tout a commence autour d un cafe, puis de longues balades et beaucoup de projets partages. Aujourd hui, nous avons la joie de celebrer ce nouveau chapitre avec vous.</p>
+        </article>
+
+        <article class="story-card" id="infos">
+          <p class="panel-kicker">Infos pratiques</p>
+          <h2>Acces, horaires et dress code</h2>
+          <ul class="mini-list">
+            <li><strong>Lieu:</strong> Chateau de la Roseraie, Lyon</li>
+            <li><strong>Accueil:</strong> des 14h00</li>
+            <li><strong>Tenue:</strong> chic et nature</li>
+            <li><strong>Parking:</strong> navettes prevues depuis le centre</li>
+          </ul>
+        </article>
+      </section>
+    </header>
+
+    <section class="section-card" id="programme">
+      <div class="section-head">
+        <p class="panel-kicker">Programme</p>
+        <h2>Le deroule de la journee</h2>
+      </div>
+      <ol class="timeline">
+        <li>
+          <span class="time">14h00</span>
+          <div>
+            <h3>Accueil des invites</h3>
+            <p>Arrivee, boisson de bienvenue et installation dans les jardins.</p>
+          </div>
+        </li>
+        <li>
+          <span class="time">14h30</span>
+          <div>
+            <h3>Ceremonie</h3>
+            <p>Echange des voeux sous la verriere.</p>
+          </div>
+        </li>
+        <li>
+          <span class="time">16h00</span>
+          <div>
+            <h3>Cocktail</h3>
+            <p>Musique live, photos de groupe et animations.</p>
+          </div>
+        </li>
+        <li>
+          <span class="time">19h30</span>
+          <div>
+            <h3>Diner et soiree</h3>
+            <p>Repas assis, ouverture de bal et fete jusqu au bout de la nuit.</p>
+          </div>
+        </li>
+      </ol>
+    </section>
+
+    <section class="section-card rsvp-card" id="rsvp">
+      <div class="section-head">
+        <p class="panel-kicker">RSVP</p>
+        <h2>Merci de confirmer avant le 20 avril 2026</h2>
+      </div>
+      <p>Pour confirmer votre presence, envoyez un message avec vos noms et le nombre de personnes.</p>
+      <div class="rsvp-actions">
+        <a class="cta cta-primary" href="mailto:florence.antoine.mariage@gmail.com">Ecrire par email</a>
+        <a class="cta cta-secondary" href="tel:+33601020304">Appeler</a>
+      </div>
+    </section>
+
+    <section class="private-zone is-hidden" id="organisation">
+      <div class="section-head">
+        <p class="panel-kicker">Espace prive des maries</p>
+        <h2>Outil d organisation interne</h2>
+      </div>
+
+      <section id="adminGate" class="admin-gate">
+        <p>Cette zone est reservee a l administrateur du mariage.</p>
+        <form id="adminLoginForm" class="row-form row-form-2 admin-login">
+          <input id="adminPassword" type="password" placeholder="Mot de passe admin" autocomplete="current-password" required>
+          <button type="submit">Se connecter</button>
+        </form>
+        <p id="adminError" class="admin-error" aria-live="polite"></p>
+      </section>
+
+      <div id="adminContent" class="is-hidden">
+        <div class="private-tools-head">
+          <p id="syncStatus" class="sync-note"></p>
+          <button id="adminLogout" type="button" class="cta cta-secondary">Deconnexion</button>
+        </div>
+
+        <section class="metrics">
+          <article class="metric-card">
+            <h2>Budget engage</h2>
+            <p id="metricBudgetTotal">0 EUR</p>
+          </article>
+          <article class="metric-card">
+            <h2>Reste a depenser</h2>
+            <p id="metricBudgetLeft">0 EUR</p>
+          </article>
+          <article class="metric-card">
+            <h2>Taches completees</h2>
+            <p id="metricTasks">0%</p>
+          </article>
+          <article class="metric-card">
+            <h2>RSVP recus</h2>
+            <p id="metricRsvp">0%</p>
+          </article>
+        </section>
+
+        <section class="grid">
+          <section class="panel">
+            <div class="panel-head">
+              <p class="panel-kicker">Finance</p>
+              <h2>Budget</h2>
+            </div>
+            <form id="budgetGoalForm" class="row-form row-form-2">
+              <input id="budgetGoal" type="number" min="0" step="1" placeholder="Budget cible EUR" required>
+              <button type="submit">Mettre a jour</button>
+            </form>
+            <form id="budgetForm" class="row-form">
+              <input id="budgetLabel" type="text" placeholder="Poste (salle, traiteur...)" required>
+              <input id="budgetAmount" type="number" min="0" step="1" placeholder="Montant EUR" required>
+              <button type="submit">Ajouter</button>
+            </form>
+            <ul id="budgetList" class="data-list"></ul>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <p class="panel-kicker">Organisation</p>
+              <h2>Checklist</h2>
+            </div>
+            <form id="taskForm" class="row-form">
+              <input id="taskText" type="text" placeholder="Nouvelle tache" required>
+              <button type="submit">Ajouter</button>
+            </form>
+            <ul id="taskList" class="data-list"></ul>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <p class="panel-kicker">Invitations</p>
+              <h2>Invites</h2>
+            </div>
+            <form id="guestForm" class="row-form">
+              <input id="guestName" type="text" placeholder="Nom de l invite" required>
+              <select id="guestStatus">
+                <option value="pending">En attente</option>
+                <option value="yes">Oui</option>
+                <option value="no">Non</option>
+              </select>
+              <button type="submit">Ajouter</button>
+            </form>
+            <ul id="guestList" class="data-list"></ul>
+          </section>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <template id="budgetItemTemplate">
+    <li class="data-item">
+      <span class="main-text"></span>
+      <span class="money"></span>
+      <button class="danger" type="button">Supprimer</button>
+    </li>
+  </template>
+
+  <template id="taskItemTemplate">
+    <li class="data-item">
+      <label class="checkbox-line">
+        <input type="checkbox">
+        <span class="main-text"></span>
+      </label>
+      <button class="danger" type="button">Supprimer</button>
+    </li>
+  </template>
+
+  <template id="guestItemTemplate">
+    <li class="data-item">
+      <span class="main-text"></span>
+      <select class="inline-status">
+        <option value="pending">En attente</option>
+        <option value="yes">Oui</option>
+        <option value="no">Non</option>
+      </select>
+      <button class="danger" type="button">Supprimer</button>
+    </li>
+  </template>
+
+  <script src="script.js"></script>
+</body>
+</html>
