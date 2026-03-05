@@ -18,6 +18,8 @@ ADMIN_PASSWORD = os.getenv("MARIAGE_ADMIN_PASSWORD", "Vieg0lito")
 
 DEFAULT_DATA = {
     "budgetGoal": 15000,
+    "budgetGuestCount": 150,
+    "budgetAdultCount": 110,
     "budgetItems": [],
     "tasks": [],
     "guests": [],
@@ -25,11 +27,48 @@ DEFAULT_DATA = {
 }
 
 VALID_GUEST_STATUS = {"pending", "yes", "no"}
+VALID_GUEST_GROUP_TYPE = {"single", "couple", "family"}
+VALID_GUEST_ATTENDANCE_TYPE = {"vin_repas", "vin_only"}
+
+
+def normalize_guest_group_type(value: object) -> str:
+    group_type = str(value or "").strip()
+    if group_type in VALID_GUEST_GROUP_TYPE:
+        return group_type
+    return "single"
+
+
+def normalize_guest_attendance_type(value: object) -> str:
+    attendance_type = str(value or "").strip()
+    if attendance_type in VALID_GUEST_ATTENDANCE_TYPE:
+        return attendance_type
+    return "vin_repas"
+
+
+def normalize_guest_party_size(group_type: str, value: object) -> int:
+    if group_type == "single":
+        return 1
+    if group_type == "couple":
+        return 2
+
+    if isinstance(value, (int, float)):
+        size = int(value)
+    else:
+        try:
+            size = int(str(value).strip())
+        except (TypeError, ValueError):
+            size = 0
+
+    if size < 1:
+        return 3
+    return size
 
 
 def create_default_data() -> dict:
     return {
         "budgetGoal": DEFAULT_DATA["budgetGoal"],
+        "budgetGuestCount": DEFAULT_DATA["budgetGuestCount"],
+        "budgetAdultCount": DEFAULT_DATA["budgetAdultCount"],
         "budgetItems": [],
         "tasks": [],
         "guests": [],
@@ -46,6 +85,16 @@ def normalize_data(candidate: object) -> dict:
     budget_goal = candidate.get("budgetGoal")
     if isinstance(budget_goal, (int, float)) and budget_goal >= 0:
         normalized["budgetGoal"] = int(budget_goal)
+
+    budget_guest_count = candidate.get("budgetGuestCount")
+    if isinstance(budget_guest_count, (int, float)) and int(budget_guest_count) >= 1:
+        normalized["budgetGuestCount"] = int(budget_guest_count)
+
+    budget_adult_count = candidate.get("budgetAdultCount")
+    if isinstance(budget_adult_count, (int, float)) and int(budget_adult_count) >= 1:
+        normalized["budgetAdultCount"] = int(budget_adult_count)
+
+    normalized["budgetAdultCount"] = min(normalized["budgetAdultCount"], normalized["budgetGuestCount"])
 
     updated_at = candidate.get("updatedAt")
     if isinstance(updated_at, (int, float)) and updated_at >= 0:
@@ -98,12 +147,17 @@ def normalize_data(candidate: object) -> dict:
                 continue
             name = str(guest.get("name", "")).strip()
             status = guest.get("status", "pending")
+            group_type = normalize_guest_group_type(guest.get("groupType"))
+            attendance_type = normalize_guest_attendance_type(guest.get("attendanceType"))
             if not name:
                 continue
             cleaned_guests.append(
                 {
                     "id": str(guest.get("id", "")).strip() or "guest",
                     "name": name,
+                    "groupType": group_type,
+                    "attendanceType": attendance_type,
+                    "partySize": normalize_guest_party_size(group_type, guest.get("partySize")),
                     "status": status if status in VALID_GUEST_STATUS else "pending",
                     "rsvpToken": str(guest.get("rsvpToken", "")).strip(),
                 }

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Organisation mariage</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="admin">
+  <main class="app-shell">
+    <header class="hero" id="accueil">
+      <nav class="top-nav" aria-label="Navigation visiteur">
+        <a href="index.html#histoire">Notre histoire</a>
+        <a href="index.html#programme">Programme</a>
+        <a href="index.html#infos">Infos pratiques</a>
+        <a href="index.html#rsvp">RSVP</a>
+      </nav>
+      <div class="hero-content">
+        <p class="kicker">Espace prive</p>
+        <h1>Organisation du mariage</h1>
+        <p class="subtitle">Page reservee a la gestion interne: budget, taches, invitations et confirmations.</p>
+      </div>
+    </header>
+
+    <section class="private-zone" id="organisation">
+      <div class="section-head">
+        <p class="panel-kicker">Espace prive des maries</p>
+        <h2>Outil d'organisation interne</h2>
+      </div>
+
+      <section id="adminGate" class="admin-gate">
+        <p>Cette zone est reservee a l'administrateur du mariage.</p>
+        <form id="adminLoginForm" class="row-form row-form-2 admin-login">
+          <input id="adminPassword" type="password" placeholder="Mot de passe administrateur" autocomplete="current-password" required>
+          <button type="submit">Se connecter</button>
+        </form>
+        <p id="adminError" class="admin-error" aria-live="polite"></p>
+      </section>
+
+      <div id="adminContent" class="is-hidden">
+        <div class="private-tools-head">
+          <p id="syncStatus" class="sync-note"></p>
+          <button id="adminLogout" type="button" class="cta cta-secondary">Deconnexion</button>
+        </div>
+
+        <section class="metrics">
+          <article class="metric-card">
+            <h2>Budget engage</h2>
+            <p id="metricBudgetTotal">0 EUR</p>
+          </article>
+          <article class="metric-card">
+            <h2>Reste a depenser</h2>
+            <p id="metricBudgetLeft">0 EUR</p>
+          </article>
+          <article class="metric-card">
+            <h2>Taches completees</h2>
+            <p id="metricTasks">0%</p>
+          </article>
+          <article class="metric-card">
+            <h2>RSVP recus</h2>
+            <p id="metricRsvp">0%</p>
+          </article>
+        </section>
+
+        <section class="grid">
+          <section class="panel">
+            <div class="panel-head">
+              <p class="panel-kicker">Finance</p>
+              <h2>Budget</h2>
+            </div>
+            <form id="budgetGoalForm" class="row-form row-form-2">
+              <input id="budgetGoal" type="number" min="0" step="1" placeholder="Budget cible EUR" required>
+              <button type="submit">Mettre a jour</button>
+            </form>
+            <form id="budgetPeopleForm" class="row-form budget-people-form">
+              <input id="budgetGuestCount" type="number" min="1" step="1" placeholder="Invites (total)" required>
+              <input id="budgetAdultCount" type="number" min="1" step="1" placeholder="Adultes" required>
+              <button type="submit">Mettre a jour</button>
+            </form>
+            <form id="budgetForm" class="row-form">
+              <input id="budgetLabel" type="text" placeholder="Poste (salle, traiteur...)" required>
+              <input id="budgetAmount" type="number" min="0" step="1" placeholder="Montant EUR" required>
+              <button type="submit">Ajouter</button>
+            </form>
+            <div class="budget-unit-prices" aria-live="polite">
+              <p class="budget-unit-line">
+                <span id="budgetPerGuestLabel">Tarif final par invite (150 pers.)</span>
+                <strong id="budgetPerGuest">0,00 EUR</strong>
+              </p>
+              <p class="budget-unit-line">
+                <span id="budgetPerAdultLabel">Tarif final par adulte (110 adultes)</span>
+                <strong id="budgetPerAdult">0,00 EUR</strong>
+              </p>
+            </div>
+            <ul id="budgetList" class="data-list"></ul>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <p class="panel-kicker">Organisation</p>
+              <h2>Checklist</h2>
+            </div>
+            <form id="taskForm" class="row-form">
+              <input id="taskText" type="text" placeholder="Nouvelle tache" required>
+              <button type="submit">Ajouter</button>
+            </form>
+            <div class="list-tools">
+              <input id="taskSearch" type="text" placeholder="Rechercher une tache">
+              <select id="taskFilter">
+                <option value="all">Toutes</option>
+                <option value="todo">A faire</option>
+                <option value="done">Terminees</option>
+              </select>
+            </div>
+            <div class="list-tools list-tools-actions">
+              <p id="taskStats" class="list-stats">0 tache</p>
+              <button id="taskClearDone" class="ghost-action" type="button">Supprimer les terminees</button>
+            </div>
+            <div class="list-scroll">
+              <ul id="taskList" class="data-list"></ul>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <p class="panel-kicker">Invitations</p>
+              <h2>Invites</h2>
+            </div>
+            <form id="guestForm" class="row-form">
+              <input id="guestName" type="text" placeholder="Nom (invite, couple ou famille)" required>
+              <select id="guestGroupType">
+                <option value="single">Invitation individuelle</option>
+                <option value="couple">Invitation couple</option>
+                <option value="family">Invitation famille</option>
+              </select>
+              <select id="guestAttendanceType">
+                <option value="vin_repas">Vin d'honneur + repas</option>
+                <option value="vin_only">Vin d'honneur uniquement</option>
+              </select>
+              <input id="guestPartySize" type="number" min="1" step="1" value="1" placeholder="Nombre de personnes">
+              <select id="guestStatus">
+                <option value="pending">En attente</option>
+                <option value="yes">Oui</option>
+                <option value="no">Non</option>
+              </select>
+              <button type="submit">Ajouter</button>
+            </form>
+            <div class="list-tools list-tools-3">
+              <input id="guestSearch" type="text" placeholder="Rechercher un invite">
+              <select id="guestFilter">
+                <option value="all">Tous les statuts</option>
+                <option value="pending">En attente</option>
+                <option value="yes">Oui</option>
+                <option value="no">Non</option>
+              </select>
+              <select id="guestAttendanceFilter">
+                <option value="all">Vin + repas et vin seul</option>
+                <option value="vin_repas">Vin + repas</option>
+                <option value="vin_only">Vin seul</option>
+              </select>
+            </div>
+            <p id="guestStats" class="list-stats">0 invitation</p>
+            <div class="guest-split-stats" aria-live="polite">
+              <p id="guestVinStats" class="list-stats">Vin d'honneur: 0 invitation - 0 pers.</p>
+              <p id="guestMealStats" class="list-stats">Repas: 0 invitation - 0 pers.</p>
+            </div>
+            <div class="list-scroll">
+              <ul id="guestList" class="data-list"></ul>
+            </div>
+          </section>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <template id="budgetItemTemplate">
+    <li class="data-item">
+      <span class="main-text"></span>
+      <span class="money"></span>
+      <button class="danger" type="button">Supprimer</button>
+    </li>
+  </template>
+
+  <template id="taskItemTemplate">
+    <li class="data-item">
+      <label class="checkbox-line">
+        <input type="checkbox">
+        <span class="main-text"></span>
+      </label>
+      <button class="danger" type="button">Supprimer</button>
+    </li>
+  </template>
+
+  <template id="guestItemTemplate">
+    <li class="data-item guest-item">
+      <div class="guest-main">
+        <span class="main-text"></span>
+        <span class="guest-meta"></span>
+      </div>
+      <select class="inline-status">
+        <option value="pending">En attente</option>
+        <option value="yes">Oui</option>
+        <option value="no">Non</option>
+      </select>
+      <a class="qr-action" href="#" target="_blank" rel="noopener">QR RSVP</a>
+      <button class="danger" type="button">Supprimer</button>
+    </li>
+  </template>
+
+  <script src="script.js"></script>
+</body>
+</html>

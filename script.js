@@ -7,6 +7,8 @@ const QR_API_ENDPOINT = "https://api.qrserver.com/v1/create-qr-code/";
 
 const DEFAULT_STATE = {
   budgetGoal: 15000,
+  budgetGuestCount: 150,
+  budgetAdultCount: 110,
   budgetItems: [],
   tasks: [],
   guests: [],
@@ -14,8 +16,20 @@ const DEFAULT_STATE = {
 };
 
 const VALID_GUEST_STATUS = new Set(["pending", "yes", "no"]);
+const VALID_GUEST_GROUP_TYPE = new Set(["single", "couple", "family"]);
+const GUEST_GROUP_TYPE_LABEL = {
+  single: "Invitation individuelle",
+  couple: "Invitation couple",
+  family: "Invitation famille",
+};
+const VALID_GUEST_ATTENDANCE_TYPE = new Set(["vin_repas", "vin_only"]);
+const GUEST_ATTENDANCE_TYPE_LABEL = {
+  vin_repas: "Vin d'honneur + repas",
+  vin_only: "Vin d'honneur uniquement",
+};
 
 const isServerMode = window.location.protocol === "http:" || window.location.protocol === "https:";
+const isAdminPage = document.body?.dataset?.page === "admin";
 let serverSyncAvailable = false;
 let adminToken = "";
 let isAdminUnlocked = false;
@@ -27,9 +41,16 @@ const state = createDefaultState();
 
 const budgetForm = document.getElementById("budgetForm");
 const budgetGoalForm = document.getElementById("budgetGoalForm");
+const budgetPeopleForm = document.getElementById("budgetPeopleForm");
 const budgetGoalInput = document.getElementById("budgetGoal");
+const budgetGuestCountInput = document.getElementById("budgetGuestCount");
+const budgetAdultCountInput = document.getElementById("budgetAdultCount");
 const budgetLabel = document.getElementById("budgetLabel");
 const budgetAmount = document.getElementById("budgetAmount");
+const budgetPerGuestLabel = document.getElementById("budgetPerGuestLabel");
+const budgetPerAdultLabel = document.getElementById("budgetPerAdultLabel");
+const budgetPerGuest = document.getElementById("budgetPerGuest");
+const budgetPerAdult = document.getElementById("budgetPerAdult");
 const budgetList = document.getElementById("budgetList");
 
 const taskForm = document.getElementById("taskForm");
@@ -42,11 +63,17 @@ const taskClearDone = document.getElementById("taskClearDone");
 
 const guestForm = document.getElementById("guestForm");
 const guestName = document.getElementById("guestName");
+const guestGroupType = document.getElementById("guestGroupType");
+const guestAttendanceType = document.getElementById("guestAttendanceType");
+const guestPartySize = document.getElementById("guestPartySize");
 const guestStatus = document.getElementById("guestStatus");
 const guestList = document.getElementById("guestList");
 const guestSearch = document.getElementById("guestSearch");
 const guestFilter = document.getElementById("guestFilter");
+const guestAttendanceFilter = document.getElementById("guestAttendanceFilter");
 const guestStats = document.getElementById("guestStats");
+const guestVinStats = document.getElementById("guestVinStats");
+const guestMealStats = document.getElementById("guestMealStats");
 
 const metricBudgetTotal = document.getElementById("metricBudgetTotal");
 const metricBudgetLeft = document.getElementById("metricBudgetLeft");
@@ -120,6 +147,29 @@ function bindPlannerEvents() {
     });
   }
 
+  if (budgetPeopleForm) {
+    budgetPeopleForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (!isAdminUnlocked) {
+        return;
+      }
+
+      const guestCount = Math.floor(Number(budgetGuestCountInput?.value));
+      const adultCount = Math.floor(Number(budgetAdultCountInput?.value));
+      if (!Number.isFinite(guestCount) || !Number.isFinite(adultCount) || guestCount < 1 || adultCount < 1) {
+        return;
+      }
+
+      state.budgetGuestCount = guestCount;
+      state.budgetAdultCount = Math.min(adultCount, guestCount);
+      if (budgetAdultCountInput) {
+        budgetAdultCountInput.value = String(state.budgetAdultCount);
+      }
+
+      refresh();
+    });
+  }
+
   if (taskForm) {
     taskForm.addEventListener("submit", (event) => {
       event.preventDefault();
@@ -179,6 +229,9 @@ function bindPlannerEvents() {
       }
 
       const name = guestName.value.trim();
+      const groupType = normalizeGuestGroupType(guestGroupType?.value ?? "single");
+      const attendanceType = normalizeGuestAttendanceType(guestAttendanceType?.value ?? "vin_repas");
+      const partySize = normalizeGuestPartySize(guestPartySize?.value, groupType);
       const status = guestStatus.value;
       if (!name) {
         return;
@@ -187,13 +240,27 @@ function bindPlannerEvents() {
       state.guests.push({
         id: createId(),
         name,
+        groupType,
+        attendanceType,
+        partySize,
         status: VALID_GUEST_STATUS.has(status) ? status : "pending",
         rsvpToken: createGuestToken(),
       });
 
       guestForm.reset();
+      applyGuestTypePreset("single");
+      if (guestAttendanceType) {
+        guestAttendanceType.value = "vin_repas";
+      }
       refresh();
     });
+  }
+
+  if (guestGroupType) {
+    guestGroupType.addEventListener("change", () => {
+      applyGuestTypePreset(guestGroupType.value);
+    });
+    applyGuestTypePreset(guestGroupType.value);
   }
 
   if (guestSearch) {
@@ -204,6 +271,12 @@ function bindPlannerEvents() {
 
   if (guestFilter) {
     guestFilter.addEventListener("change", () => {
+      renderGuests();
+    });
+  }
+
+  if (guestAttendanceFilter) {
+    guestAttendanceFilter.addEventListener("change", () => {
       renderGuests();
     });
   }
@@ -258,7 +331,7 @@ function bindAdminEvents() {
   if (adminLogout) {
     adminLogout.addEventListener("click", () => {
       sessionStorage.removeItem(ADMIN_SESSION_KEY);
-      adminInterfaceEnabled = false;
+      adminInterfaceEnabled = isAdminPage;
       lockAdmin({ message: "Session fermée." });
     });
   }
@@ -327,6 +400,12 @@ function refresh(options = {}) {
   const persist = options.persist ?? true;
   if (budgetGoalInput) {
     budgetGoalInput.value = String(state.budgetGoal);
+  }
+  if (budgetGuestCountInput) {
+    budgetGuestCountInput.value = String(state.budgetGuestCount);
+  }
+  if (budgetAdultCountInput) {
+    budgetAdultCountInput.value = String(state.budgetAdultCount);
   }
 
   renderBudget();
@@ -445,6 +524,7 @@ function renderGuests() {
   guestList.innerHTML = "";
   const search = toSearchKey(guestSearch?.value ?? "");
   const mode = guestFilter?.value ?? "all";
+  const attendanceMode = guestAttendanceFilter?.value ?? "all";
   const statusRank = { pending: 0, yes: 1, no: 2 };
   const orderedGuests = [...state.guests].sort((a, b) => {
     const rankDiff = (statusRank[a.status] ?? 99) - (statusRank[b.status] ?? 99);
@@ -455,10 +535,18 @@ function renderGuests() {
   });
 
   const filteredGuests = orderedGuests.filter((guest) => {
+    const groupType = normalizeGuestGroupType(guest.groupType);
+    const groupLabel = getGuestGroupTypeLabel(groupType);
+    const attendanceType = normalizeGuestAttendanceType(guest.attendanceType);
+    const attendanceLabel = getGuestAttendanceTypeLabel(attendanceType);
     if (mode !== "all" && guest.status !== mode) {
       return false;
     }
-    if (search && !toSearchKey(guest.name).includes(search)) {
+    if (attendanceMode !== "all" && attendanceType !== attendanceMode) {
+      return false;
+    }
+    const searchValue = `${guest.name} ${groupLabel} ${attendanceLabel}`;
+    if (search && !toSearchKey(searchValue).includes(search)) {
       return false;
     }
     return true;
@@ -466,13 +554,42 @@ function renderGuests() {
 
   if (guestStats) {
     const pending = state.guests.filter((guest) => guest.status === "pending").length;
-    guestStats.textContent = `${filteredGuests.length}/${state.guests.length} invités affichés - ${pending} en attente`;
+    const totalPeople = state.guests.reduce(
+      (sum, guest) => sum + normalizeGuestPartySize(guest.partySize, guest.groupType),
+      0
+    );
+    guestStats.textContent = `${filteredGuests.length}/${state.guests.length} invitations affichées - ${pending} en attente - ${totalPeople} pers.`;
+  }
+  if (guestVinStats) {
+    const vinInvitations = state.guests.length;
+    const vinPeople = state.guests.reduce(
+      (sum, guest) => sum + normalizeGuestPartySize(guest.partySize, guest.groupType),
+      0
+    );
+    const vinConfirmed = state.guests
+      .filter((guest) => guest.status === "yes")
+      .reduce((sum, guest) => sum + normalizeGuestPartySize(guest.partySize, guest.groupType), 0);
+    guestVinStats.textContent = `Vin d'honneur: ${vinInvitations} invitations - ${vinPeople} pers. - ${vinConfirmed} oui`;
+  }
+  if (guestMealStats) {
+    const mealGuests = state.guests.filter(
+      (guest) => normalizeGuestAttendanceType(guest.attendanceType) === "vin_repas"
+    );
+    const mealInvitations = mealGuests.length;
+    const mealPeople = mealGuests.reduce(
+      (sum, guest) => sum + normalizeGuestPartySize(guest.partySize, guest.groupType),
+      0
+    );
+    const mealConfirmed = mealGuests
+      .filter((guest) => guest.status === "yes")
+      .reduce((sum, guest) => sum + normalizeGuestPartySize(guest.partySize, guest.groupType), 0);
+    guestMealStats.textContent = `Repas: ${mealInvitations} invitations - ${mealPeople} pers. - ${mealConfirmed} oui`;
   }
 
   if (filteredGuests.length === 0) {
     const emptyNode = document.createElement("li");
     emptyNode.className = "list-empty";
-    emptyNode.textContent = state.guests.length ? "Aucun invité pour ce filtre." : "Aucun invité pour le moment.";
+    emptyNode.textContent = state.guests.length ? "Aucune invitation pour ce filtre." : "Aucune invitation pour le moment.";
     guestList.appendChild(emptyNode);
     return;
   }
@@ -481,9 +598,16 @@ function renderGuests() {
     const node = guestTemplate.content.firstElementChild.cloneNode(true);
     node.style.setProperty("--stagger", String(index));
     node.querySelector(".main-text").textContent = guest.name;
+    const groupType = normalizeGuestGroupType(guest.groupType);
+    const attendanceType = normalizeGuestAttendanceType(guest.attendanceType);
+    const partySize = normalizeGuestPartySize(guest.partySize, groupType);
+    const groupMeta = node.querySelector(".guest-meta");
+    if (groupMeta) {
+      groupMeta.textContent = `${getGuestGroupTypeLabel(groupType)} - ${getGuestAttendanceTypeLabel(attendanceType)} - ${formatPartySize(partySize)}`;
+    }
 
     const statusSelect = node.querySelector("select");
-    statusSelect.value = guest.status;
+    statusSelect.value = VALID_GUEST_STATUS.has(guest.status) ? guest.status : "pending";
     statusSelect.addEventListener("change", () => {
       guest.status = statusSelect.value;
       refresh();
@@ -493,7 +617,7 @@ function renderGuests() {
     if (qrLink) {
       const rsvpUrl = buildRsvpUrl(guest.rsvpToken);
       qrLink.href = buildQrImageUrl(rsvpUrl);
-      qrLink.title = `QR RSVP pour ${guest.name}`;
+      qrLink.title = `QR RSVP pour ${guest.name} (${getGuestGroupTypeLabel(groupType).toLowerCase()})`;
       qrLink.setAttribute("aria-label", `Ouvrir le QR RSVP pour ${guest.name}`);
     }
 
@@ -509,19 +633,46 @@ function renderGuests() {
 function renderMetrics() {
   const budgetTotal = state.budgetItems.reduce((sum, item) => sum + item.amount, 0);
   const budgetGoal = state.budgetGoal || 0;
+  const guestCount = Number.isFinite(state.budgetGuestCount) && state.budgetGuestCount > 0
+    ? Math.floor(state.budgetGuestCount)
+    : DEFAULT_STATE.budgetGuestCount;
+  const adultCountRaw = Number.isFinite(state.budgetAdultCount) && state.budgetAdultCount > 0
+    ? Math.floor(state.budgetAdultCount)
+    : Math.min(DEFAULT_STATE.budgetAdultCount, guestCount);
+  const adultCount = Math.min(adultCountRaw, guestCount);
   const budgetLeft = Math.max(budgetGoal - budgetTotal, 0);
 
   const taskDone = state.tasks.filter((task) => task.done).length;
   const tasksPercent = state.tasks.length ? Math.round((taskDone / state.tasks.length) * 100) : 0;
 
-  const replied = state.guests.filter((guest) => guest.status !== "pending").length;
-  const rsvpPercent = state.guests.length ? Math.round((replied / state.guests.length) * 100) : 0;
+  const replied = state.guests
+    .filter((guest) => guest.status !== "pending")
+    .reduce((sum, guest) => sum + normalizeGuestPartySize(guest.partySize, guest.groupType), 0);
+  const totalGuests = state.guests.reduce(
+    (sum, guest) => sum + normalizeGuestPartySize(guest.partySize, guest.groupType),
+    0
+  );
+  const rsvpPercent = totalGuests ? Math.round((replied / totalGuests) * 100) : 0;
 
   if (metricBudgetTotal) {
     metricBudgetTotal.textContent = formatMoney(budgetTotal);
   }
   if (metricBudgetLeft) {
     metricBudgetLeft.textContent = formatMoney(budgetLeft);
+  }
+  if (budgetPerGuestLabel) {
+    budgetPerGuestLabel.textContent = `Tarif final par invite (${guestCount} pers.)`;
+  }
+  if (budgetPerAdultLabel) {
+    budgetPerAdultLabel.textContent = `Tarif final par adulte (${adultCount} adultes)`;
+  }
+  if (budgetPerGuest) {
+    const value = guestCount > 0 ? budgetTotal / guestCount : 0;
+    budgetPerGuest.textContent = formatMoney(value, 2);
+  }
+  if (budgetPerAdult) {
+    const value = adultCount > 0 ? budgetTotal / adultCount : 0;
+    budgetPerAdult.textContent = formatMoney(value, 2);
   }
   if (metricTasks) {
     metricTasks.textContent = `${tasksPercent}%`;
@@ -534,6 +685,12 @@ function renderMetrics() {
 function clearPrivateUi() {
   if (budgetGoalInput) {
     budgetGoalInput.value = String(DEFAULT_STATE.budgetGoal);
+  }
+  if (budgetGuestCountInput) {
+    budgetGuestCountInput.value = String(DEFAULT_STATE.budgetGuestCount);
+  }
+  if (budgetAdultCountInput) {
+    budgetAdultCountInput.value = String(DEFAULT_STATE.budgetAdultCount);
   }
   if (budgetList) {
     budgetList.innerHTML = "";
@@ -562,14 +719,45 @@ function clearPrivateUi() {
   if (guestFilter) {
     guestFilter.value = "all";
   }
+  if (guestAttendanceFilter) {
+    guestAttendanceFilter.value = "all";
+  }
+  if (guestGroupType) {
+    guestGroupType.value = "single";
+  }
+  if (guestAttendanceType) {
+    guestAttendanceType.value = "vin_repas";
+  }
+  if (guestPartySize) {
+    guestPartySize.value = "1";
+    guestPartySize.disabled = true;
+  }
   if (guestStats) {
-    guestStats.textContent = "0 invité";
+    guestStats.textContent = "0 invitation";
+  }
+  if (guestVinStats) {
+    guestVinStats.textContent = "Vin d'honneur: 0 invitation - 0 pers.";
+  }
+  if (guestMealStats) {
+    guestMealStats.textContent = "Repas: 0 invitation - 0 pers.";
   }
   if (metricBudgetTotal) {
     metricBudgetTotal.textContent = "0 EUR";
   }
   if (metricBudgetLeft) {
     metricBudgetLeft.textContent = "0 EUR";
+  }
+  if (budgetPerGuest) {
+    budgetPerGuest.textContent = formatMoney(0, 2);
+  }
+  if (budgetPerAdult) {
+    budgetPerAdult.textContent = formatMoney(0, 2);
+  }
+  if (budgetPerGuestLabel) {
+    budgetPerGuestLabel.textContent = `Tarif final par invite (${DEFAULT_STATE.budgetGuestCount} pers.)`;
+  }
+  if (budgetPerAdultLabel) {
+    budgetPerAdultLabel.textContent = `Tarif final par adulte (${DEFAULT_STATE.budgetAdultCount} adultes)`;
   }
   if (metricTasks) {
     metricTasks.textContent = "0%";
@@ -579,11 +767,12 @@ function clearPrivateUi() {
   }
 }
 
-function formatMoney(value) {
+function formatMoney(value, digits = 0) {
   return new Intl.NumberFormat("fr-FR", {
     style: "currency",
     currency: "EUR",
-    maximumFractionDigits: 0,
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
   }).format(value);
 }
 
@@ -601,6 +790,69 @@ function createId() {
 
 function createGuestToken() {
   return `g_${createId()}${createId()}`;
+}
+
+function normalizeGuestGroupType(value) {
+  return VALID_GUEST_GROUP_TYPE.has(value) ? value : "single";
+}
+
+function normalizeGuestAttendanceType(value) {
+  return VALID_GUEST_ATTENDANCE_TYPE.has(value) ? value : "vin_repas";
+}
+
+function normalizeGuestPartySize(value, groupType) {
+  const normalizedGroupType = normalizeGuestGroupType(groupType);
+  if (normalizedGroupType === "single") {
+    return 1;
+  }
+  if (normalizedGroupType === "couple") {
+    return 2;
+  }
+
+  const size = Math.floor(Number(value));
+  if (!Number.isFinite(size) || size < 1) {
+    return 3;
+  }
+  return size;
+}
+
+function getGuestGroupTypeLabel(groupType) {
+  return GUEST_GROUP_TYPE_LABEL[normalizeGuestGroupType(groupType)];
+}
+
+function getGuestAttendanceTypeLabel(attendanceType) {
+  return GUEST_ATTENDANCE_TYPE_LABEL[normalizeGuestAttendanceType(attendanceType)];
+}
+
+function formatPartySize(value) {
+  return value > 1 ? `${value} personnes` : `${value} personne`;
+}
+
+function applyGuestTypePreset(groupType) {
+  if (!guestPartySize || !guestGroupType) {
+    return;
+  }
+
+  const normalizedGroupType = normalizeGuestGroupType(groupType);
+  guestGroupType.value = normalizedGroupType;
+
+  if (normalizedGroupType === "single") {
+    guestPartySize.value = "1";
+    guestPartySize.disabled = true;
+    return;
+  }
+
+  if (normalizedGroupType === "couple") {
+    guestPartySize.value = "2";
+    guestPartySize.disabled = true;
+    return;
+  }
+
+  const currentSize = Math.floor(Number(guestPartySize.value));
+  if (!Number.isFinite(currentSize) || currentSize < 1) {
+    guestPartySize.value = "3";
+  }
+  guestPartySize.disabled = false;
 }
 
 function getPublicBaseUrl() {
@@ -621,6 +873,8 @@ function buildQrImageUrl(dataUrl) {
 function createDefaultState() {
   return {
     budgetGoal: DEFAULT_STATE.budgetGoal,
+    budgetGuestCount: DEFAULT_STATE.budgetGuestCount,
+    budgetAdultCount: DEFAULT_STATE.budgetAdultCount,
     budgetItems: [],
     tasks: [],
     guests: [],
@@ -634,6 +888,15 @@ function normalizeState(candidate) {
   const budgetGoal = Number(input.budgetGoal);
   const normalized = createDefaultState();
   normalized.budgetGoal = Number.isFinite(budgetGoal) && budgetGoal >= 0 ? budgetGoal : DEFAULT_STATE.budgetGoal;
+  const budgetGuestCount = Math.floor(Number(input.budgetGuestCount));
+  normalized.budgetGuestCount = Number.isFinite(budgetGuestCount) && budgetGuestCount >= 1
+    ? budgetGuestCount
+    : DEFAULT_STATE.budgetGuestCount;
+  const budgetAdultCount = Math.floor(Number(input.budgetAdultCount));
+  const fallbackAdults = Math.min(DEFAULT_STATE.budgetAdultCount, normalized.budgetGuestCount);
+  normalized.budgetAdultCount = Number.isFinite(budgetAdultCount) && budgetAdultCount >= 1
+    ? Math.min(budgetAdultCount, normalized.budgetGuestCount)
+    : fallbackAdults;
   const updatedAt = Number(input.updatedAt);
   normalized.updatedAt = Number.isFinite(updatedAt) && updatedAt >= 0 ? updatedAt : DEFAULT_STATE.updatedAt;
 
@@ -662,12 +925,18 @@ function normalizeState(candidate) {
   if (Array.isArray(input.guests)) {
     normalized.guests = input.guests
       .filter((guest) => guest && typeof guest === "object")
-      .map((guest) => ({
-        id: typeof guest.id === "string" && guest.id ? guest.id : createId(),
-        name: String(guest.name ?? "").trim(),
-        status: VALID_GUEST_STATUS.has(guest.status) ? guest.status : "pending",
-        rsvpToken: typeof guest.rsvpToken === "string" && guest.rsvpToken.trim() ? guest.rsvpToken.trim() : createGuestToken(),
-      }))
+      .map((guest) => {
+        const groupType = normalizeGuestGroupType(guest.groupType);
+        return {
+          id: typeof guest.id === "string" && guest.id ? guest.id : createId(),
+          name: String(guest.name ?? "").trim(),
+          groupType,
+          attendanceType: normalizeGuestAttendanceType(guest.attendanceType),
+          partySize: normalizeGuestPartySize(guest.partySize, groupType),
+          status: VALID_GUEST_STATUS.has(guest.status) ? guest.status : "pending",
+          rsvpToken: typeof guest.rsvpToken === "string" && guest.rsvpToken.trim() ? guest.rsvpToken.trim() : createGuestToken(),
+        };
+      })
       .filter((guest) => guest.name);
 
     const usedTokens = new Set();
@@ -903,7 +1172,7 @@ function openAdminInterface() {
 async function init() {
   lockAdmin({ message: "" });
   const savedToken = sessionStorage.getItem(ADMIN_SESSION_KEY);
-  adminInterfaceEnabled = Boolean(savedToken);
+  adminInterfaceEnabled = isAdminPage || Boolean(savedToken);
 
   if (!adminInterfaceEnabled) {
     setPrivateZoneVisible(false);

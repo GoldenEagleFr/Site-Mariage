@@ -1,6 +1,47 @@
 {
-  "budgetGoal": 20000,
-  "budgetItems": [],
+  "budgetGoal": 25000,
+  "budgetItems": [
+    {
+      "id": "iq0x8h5u",
+      "label": "Domaine",
+      "amount": 8000
+    },
+    {
+      "id": "0jx0jne7",
+      "label": "Traiteur",
+      "amount": 8000
+    },
+    {
+      "id": "u8zu2jal",
+      "label": "Photographe",
+      "amount": 1500
+    },
+    {
+      "id": "a927xj24",
+      "label": "Faire-Part",
+      "amount": 400
+    },
+    {
+      "id": "bkb0wgvi",
+      "label": "Fleuriste",
+      "amount": 1000
+    },
+    {
+      "id": "rlq80rfa",
+      "label": "DJ",
+      "amount": 1300
+    },
+    {
+      "id": "4cv2utkc",
+      "label": "Décoration",
+      "amount": 1500
+    },
+    {
+      "id": "z934xia9",
+      "label": "Eglise",
+      "amount": 500
+    }
+  ],
   "tasks": [
     {
       "id": "x537hnc2",
@@ -45,45 +86,13 @@
   ],
   "guests": [
     {
-      "id": "yo5pmeoi",
-      "name": "DURAND Hervé",
-      "status": "yes"
-    },
-    {
-      "id": "2vwmld87",
-      "name": "DURAND Marlène",
-      "status": "yes"
-    },
-    {
-      "id": "u5cxb7xl",
-      "name": "DURAND Nicolas",
-      "status": "yes"
-    },
-    {
-      "id": "mrak3xl2",
-      "name": "GAMBIER Valentine",
-      "status": "yes"
-    },
-    {
-      "id": "dr2jmbyh",
-      "name": "THIEBAUT Stéphane",
-      "status": "yes"
-    },
-    {
-      "id": "7906545y",
-      "name": "THIEBAUT Christiane",
-      "status": "yes"
-    },
-    {
-      "id": "p31u6u3w",
-      "name": "THIEBAUT Thomas",
-      "status": "yes"
-    },
-    {
-      "id": "s0c6s38e",
-      "name": "THIEBAUT Claire",
-      "status": "yes"
+      "id": "v3voia6n",
+      "name": "DURAND Hervé et Marlène",
+      "groupType": "couple",
+      "partySize": 2,
+      "status": "pending",
+      "rsvpToken": "g_vsn8l20wcv0ky15c"
     }
   ],
-  "updatedAt": 1771803556616
+  "updatedAt": 1772724462426
 }
