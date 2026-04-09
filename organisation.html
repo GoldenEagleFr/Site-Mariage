@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
@@ -19,20 +19,20 @@
         <a href="index.html#rsvp">RSVP</a>
       </nav>
       <div class="hero-content">
-        <p class="kicker">Espace prive</p>
+        <p class="kicker">Espace privé</p>
         <h1>Organisation du mariage</h1>
-        <p class="subtitle">Page reservee a la gestion interne: budget, taches, invitations et confirmations.</p>
+        <p class="subtitle">Page réservée à la gestion interne : budget, tâches, invitations et confirmations.</p>
       </div>
     </header>
 
     <section class="private-zone" id="organisation">
       <div class="section-head">
-        <p class="panel-kicker">Espace prive des maries</p>
+        <p class="panel-kicker">Espace privé des mariés</p>
         <h2>Outil d'organisation interne</h2>
       </div>
 
       <section id="adminGate" class="admin-gate">
-        <p>Cette zone est reservee a l'administrateur du mariage.</p>
+        <p>Cette zone est réservée à l'administrateur du mariage.</p>
         <form id="adminLoginForm" class="row-form row-form-2 admin-login">
           <input id="adminPassword" type="password" placeholder="Mot de passe administrateur" autocomplete="current-password" required>
           <button type="submit">Se connecter</button>
@@ -43,29 +43,38 @@
       <div id="adminContent" class="is-hidden">
         <div class="private-tools-head">
           <p id="syncStatus" class="sync-note"></p>
-          <button id="adminLogout" type="button" class="cta cta-secondary">Deconnexion</button>
+          <button id="adminLogout" type="button" class="cta cta-secondary">Déconnexion</button>
         </div>
 
-        <section class="metrics">
-          <article class="metric-card">
-            <h2>Budget engage</h2>
-            <p id="metricBudgetTotal">0 EUR</p>
-          </article>
-          <article class="metric-card">
-            <h2>Reste a depenser</h2>
-            <p id="metricBudgetLeft">0 EUR</p>
-          </article>
-          <article class="metric-card">
-            <h2>Taches completees</h2>
-            <p id="metricTasks">0%</p>
-          </article>
-          <article class="metric-card">
-            <h2>RSVP recus</h2>
-            <p id="metricRsvp">0%</p>
-          </article>
+        <div class="admin-tabs" role="tablist" aria-label="Sections organisation">
+          <button id="adminTabBtnDashboard" class="admin-tab is-active" type="button" data-admin-tab="dashboard" role="tab" aria-selected="true" aria-controls="adminTabDashboard">Tableau de bord</button>
+          <button id="adminTabBtnBudget" class="admin-tab" type="button" data-admin-tab="budget" role="tab" aria-selected="false" aria-controls="adminTabBudget">Budget</button>
+          <button id="adminTabBtnTasks" class="admin-tab" type="button" data-admin-tab="tasks" role="tab" aria-selected="false" aria-controls="adminTabTasks">Tâches</button>
+          <button id="adminTabBtnGuests" class="admin-tab" type="button" data-admin-tab="guests" role="tab" aria-selected="false" aria-controls="adminTabGuests">Invités</button>
+        </div>
+
+        <section id="adminTabDashboard" class="admin-tab-panel is-active" data-admin-tab-panel="dashboard" role="tabpanel" aria-labelledby="adminTabBtnDashboard">
+          <section class="metrics">
+            <article class="metric-card">
+              <h2>Budget engagé</h2>
+              <p id="metricBudgetTotal">0 EUR</p>
+            </article>
+            <article class="metric-card">
+              <h2>Reste à dépenser</h2>
+              <p id="metricBudgetLeft">0 EUR</p>
+            </article>
+            <article class="metric-card">
+              <h2>Tâches complétées</h2>
+              <p id="metricTasks">0%</p>
+            </article>
+            <article class="metric-card">
+              <h2>RSVP reçus</h2>
+              <p id="metricRsvp">0%</p>
+            </article>
+          </section>
         </section>
 
-        <section class="grid">
+        <section id="adminTabBudget" class="admin-tab-panel is-hidden" data-admin-tab-panel="budget" role="tabpanel" aria-labelledby="adminTabBtnBudget">
           <section class="panel">
             <div class="panel-head">
               <p class="panel-kicker">Finance</p>
@@ -73,12 +82,12 @@
             </div>
             <form id="budgetGoalForm" class="row-form row-form-2">
               <input id="budgetGoal" type="number" min="0" step="1" placeholder="Budget cible EUR" required>
-              <button type="submit">Mettre a jour</button>
+              <button type="submit">Mettre à jour</button>
             </form>
             <form id="budgetPeopleForm" class="row-form budget-people-form">
-              <input id="budgetGuestCount" type="number" min="1" step="1" placeholder="Invites (total)" required>
+              <input id="budgetGuestCount" type="number" min="1" step="1" placeholder="Invités (total)" required>
               <input id="budgetAdultCount" type="number" min="1" step="1" placeholder="Adultes" required>
-              <button type="submit">Mettre a jour</button>
+              <button type="submit">Mettre à jour</button>
             </form>
             <form id="budgetForm" class="row-form">
               <input id="budgetLabel" type="text" placeholder="Poste (salle, traiteur...)" required>
@@ -87,7 +96,7 @@
             </form>
             <div class="budget-unit-prices" aria-live="polite">
               <p class="budget-unit-line">
-                <span id="budgetPerGuestLabel">Tarif final par invite (150 pers.)</span>
+                <span id="budgetPerGuestLabel">Tarif final par invité (150 pers.)</span>
                 <strong id="budgetPerGuest">0,00 EUR</strong>
               </p>
               <p class="budget-unit-line">
@@ -97,40 +106,44 @@
             </div>
             <ul id="budgetList" class="data-list"></ul>
           </section>
+        </section>
 
+        <section id="adminTabTasks" class="admin-tab-panel is-hidden" data-admin-tab-panel="tasks" role="tabpanel" aria-labelledby="adminTabBtnTasks">
           <section class="panel">
             <div class="panel-head">
               <p class="panel-kicker">Organisation</p>
               <h2>Checklist</h2>
             </div>
             <form id="taskForm" class="row-form">
-              <input id="taskText" type="text" placeholder="Nouvelle tache" required>
+              <input id="taskText" type="text" placeholder="Nouvelle tâche" required>
               <button type="submit">Ajouter</button>
             </form>
             <div class="list-tools">
-              <input id="taskSearch" type="text" placeholder="Rechercher une tache">
+              <input id="taskSearch" type="text" placeholder="Rechercher une tâche">
               <select id="taskFilter">
                 <option value="all">Toutes</option>
-                <option value="todo">A faire</option>
-                <option value="done">Terminees</option>
+                <option value="todo">À faire</option>
+                <option value="done">Terminées</option>
               </select>
             </div>
             <div class="list-tools list-tools-actions">
-              <p id="taskStats" class="list-stats">0 tache</p>
-              <button id="taskClearDone" class="ghost-action" type="button">Supprimer les terminees</button>
+              <p id="taskStats" class="list-stats">0 tâche</p>
+              <button id="taskClearDone" class="ghost-action" type="button">Supprimer les terminées</button>
             </div>
             <div class="list-scroll">
               <ul id="taskList" class="data-list"></ul>
             </div>
           </section>
+        </section>
 
+        <section id="adminTabGuests" class="admin-tab-panel is-hidden" data-admin-tab-panel="guests" role="tabpanel" aria-labelledby="adminTabBtnGuests">
           <section class="panel">
             <div class="panel-head">
               <p class="panel-kicker">Invitations</p>
-              <h2>Invites</h2>
+              <h2>Invités</h2>
             </div>
             <form id="guestForm" class="row-form">
-              <input id="guestName" type="text" placeholder="Nom (invite, couple ou famille)" required>
+              <input id="guestName" type="text" placeholder="Nom (invité, couple ou famille)" required>
               <select id="guestGroupType">
                 <option value="single">Invitation individuelle</option>
                 <option value="couple">Invitation couple</option>
@@ -149,7 +162,7 @@
               <button type="submit">Ajouter</button>
             </form>
             <div class="list-tools list-tools-3">
-              <input id="guestSearch" type="text" placeholder="Rechercher un invite">
+              <input id="guestSearch" type="text" placeholder="Rechercher un invité">
               <select id="guestFilter">
                 <option value="all">Tous les statuts</option>
                 <option value="pending">En attente</option>
@@ -171,6 +184,27 @@
               <ul id="guestList" class="data-list"></ul>
             </div>
           </section>
+        </section>
+
+        <section id="budgetChartPanel" class="panel budget-chart-panel" aria-live="polite">
+          <div class="panel-head">
+            <p class="panel-kicker">Budget</p>
+            <h2>Camembert des dépenses</h2>
+          </div>
+          <div class="budget-chart-layout">
+            <canvas
+              id="budgetChartCanvas"
+              class="budget-chart-canvas"
+              width="360"
+              height="360"
+              role="img"
+              aria-label="Répartition des dépenses"
+            ></canvas>
+            <p id="budgetChartEmpty" class="list-empty budget-chart-empty is-hidden">
+              Ajoutez des dépenses dans l'onglet Budget pour afficher le camembert.
+            </p>
+            <ul id="budgetChartLegend" class="budget-chart-legend"></ul>
+          </div>
         </section>
       </div>
     </section>
@@ -213,3 +247,4 @@
   <script src="script.js"></script>
 </body>
 </html>
+

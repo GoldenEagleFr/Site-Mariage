@@ -80,6 +80,9 @@ const metricBudgetLeft = document.getElementById("metricBudgetLeft");
 const metricTasks = document.getElementById("metricTasks");
 const metricRsvp = document.getElementById("metricRsvp");
 const syncStatus = document.getElementById("syncStatus");
+const budgetChartCanvas = document.getElementById("budgetChartCanvas");
+const budgetChartLegend = document.getElementById("budgetChartLegend");
+const budgetChartEmpty = document.getElementById("budgetChartEmpty");
 
 const budgetTemplate = document.getElementById("budgetItemTemplate");
 const taskTemplate = document.getElementById("taskItemTemplate");
@@ -92,6 +95,8 @@ const adminPassword = document.getElementById("adminPassword");
 const adminError = document.getElementById("adminError");
 const adminLogout = document.getElementById("adminLogout");
 const adminNavLink = document.getElementById("adminNavLink");
+const adminTabButtons = Array.from(document.querySelectorAll("[data-admin-tab]"));
+const adminTabPanels = Array.from(document.querySelectorAll("[data-admin-tab-panel]"));
 const privateZone = document.getElementById("organisation");
 const countdownDays = document.getElementById("countdownDays");
 const countdownHours = document.getElementById("countdownHours");
@@ -100,9 +105,24 @@ const countdownSeconds = document.getElementById("countdownSeconds");
 const countdownNote = document.getElementById("countdownNote");
 
 let countdownTimerId = 0;
+let activeAdminTab = "dashboard";
+let budgetChartResizeTimerId = 0;
+const BUDGET_CHART_COLORS = [
+  "#e00a26",
+  "#f65d08",
+  "#ffbd1c",
+  "#8a2c4f",
+  "#5f4b8b",
+  "#00a6a6",
+  "#2f855a",
+  "#c05621",
+  "#4a5568",
+  "#d53f8c",
+];
 
 bindPlannerEvents();
 bindAdminEvents();
+bindBudgetChartResize();
 initCountdown();
 
 function bindPlannerEvents() {
@@ -307,6 +327,8 @@ function bindAdminEvents() {
         if (!check.ok) {
           if (check.reason === "not_server_mode") {
             setAdminError("Connexion admin indisponible ici. Ouvrez le site via http://127.0.0.1:8000.");
+          } else if (check.reason === "endpoint_not_found") {
+            setAdminError("Serveur incompatible. Lancez python server.py (pas python -m http.server).");
           } else if (check.reason === "server_unreachable") {
             setAdminError("Serveur indisponible. Lancez server.py puis réessayez.");
           } else {
@@ -341,6 +363,74 @@ function bindAdminEvents() {
       event.preventDefault();
       openAdminInterface();
     });
+  }
+
+  bindAdminTabs();
+}
+
+function bindBudgetChartResize() {
+  if (!budgetChartCanvas) {
+    return;
+  }
+
+  window.addEventListener("resize", () => {
+    if (!isAdminUnlocked) {
+      return;
+    }
+
+    if (budgetChartResizeTimerId) {
+      window.clearTimeout(budgetChartResizeTimerId);
+    }
+    budgetChartResizeTimerId = window.setTimeout(() => {
+      renderBudgetChart();
+    }, 120);
+  });
+}
+
+function bindAdminTabs() {
+  if (!adminTabButtons.length || !adminTabPanels.length) {
+    return;
+  }
+
+  for (const button of adminTabButtons) {
+    button.addEventListener("click", () => {
+      const tabId = button.dataset.adminTab;
+      if (!tabId) {
+        return;
+      }
+      setActiveAdminTab(tabId);
+    });
+  }
+
+  setActiveAdminTab(activeAdminTab);
+}
+
+function setActiveAdminTab(tabId) {
+  if (!adminTabButtons.length || !adminTabPanels.length) {
+    return;
+  }
+
+  const hasPanel = adminTabPanels.some((panel) => panel.dataset.adminTabPanel === tabId);
+  if (!hasPanel) {
+    tabId = "dashboard";
+  }
+
+  activeAdminTab = tabId;
+  for (const button of adminTabButtons) {
+    const isActive = button.dataset.adminTab === tabId;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-selected", String(isActive));
+    button.tabIndex = isActive ? 0 : -1;
+  }
+
+  for (const panel of adminTabPanels) {
+    const panelId = panel.dataset.adminTabPanel;
+    const shouldStayVisible = panelId === "dashboard";
+    const isActive = panelId === tabId;
+    const shouldShow = shouldStayVisible || isActive;
+    panel.classList.toggle("is-active", shouldShow);
+    panel.classList.toggle("is-hidden", !shouldShow);
+    panel.setAttribute("aria-hidden", String(!shouldShow));
   }
 }
 
@@ -412,6 +502,7 @@ function refresh(options = {}) {
   renderTasks();
   renderGuests();
   renderMetrics();
+  renderBudgetChart();
 
   if (persist) {
     schedulePersist();
@@ -453,6 +544,103 @@ function renderBudget() {
     });
     budgetList.appendChild(node);
   }
+}
+
+function renderBudgetChart() {
+  if (!budgetChartCanvas || !budgetChartLegend || !budgetChartEmpty) {
+    return;
+  }
+
+  const amountsByLabel = new Map();
+  for (const item of state.budgetItems) {
+    const label = String(item?.label ?? "").trim();
+    const amount = Number(item?.amount);
+    if (!label || !Number.isFinite(amount) || amount <= 0) {
+      continue;
+    }
+    amountsByLabel.set(label, (amountsByLabel.get(label) ?? 0) + amount);
+  }
+
+  const entries = Array.from(amountsByLabel.entries())
+    .map(([label, amount]) => ({ label, amount }))
+    .sort((a, b) => b.amount - a.amount);
+  const total = entries.reduce((sum, entry) => sum + entry.amount, 0);
+
+  const context = budgetChartCanvas.getContext("2d");
+  if (!context) {
+    return;
+  }
+
+  const cssSize = Math.max(220, Math.min(360, budgetChartCanvas.clientWidth || 320));
+  const pixelRatio = window.devicePixelRatio || 1;
+  budgetChartCanvas.width = Math.round(cssSize * pixelRatio);
+  budgetChartCanvas.height = Math.round(cssSize * pixelRatio);
+  budgetChartCanvas.style.width = `${cssSize}px`;
+  budgetChartCanvas.style.height = `${cssSize}px`;
+  context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+  context.clearRect(0, 0, cssSize, cssSize);
+
+  budgetChartLegend.innerHTML = "";
+  const hasData = entries.length > 0 && total > 0;
+  budgetChartEmpty.classList.toggle("is-hidden", hasData);
+
+  if (!hasData) {
+    context.fillStyle = "rgba(240, 63, 89, 0.18)";
+    context.beginPath();
+    context.arc(cssSize / 2, cssSize / 2, cssSize * 0.42, 0, Math.PI * 2);
+    context.fill();
+    budgetChartCanvas.setAttribute("aria-label", "Camembert des dépenses indisponible: aucune dépense enregistrée.");
+    return;
+  }
+
+  const centerX = cssSize / 2;
+  const centerY = cssSize / 2;
+  const radius = cssSize * 0.42;
+  let startAngle = -Math.PI / 2;
+
+  entries.forEach((entry, index) => {
+    const angle = (entry.amount / total) * Math.PI * 2;
+    const color = BUDGET_CHART_COLORS[index % BUDGET_CHART_COLORS.length];
+    context.beginPath();
+    context.moveTo(centerX, centerY);
+    context.arc(centerX, centerY, radius, startAngle, startAngle + angle);
+    context.closePath();
+    context.fillStyle = color;
+    context.fill();
+    context.lineWidth = 1;
+    context.strokeStyle = "rgba(255, 255, 255, 0.86)";
+    context.stroke();
+    startAngle += angle;
+  });
+
+  entries.forEach((entry, index) => {
+    const color = BUDGET_CHART_COLORS[index % BUDGET_CHART_COLORS.length];
+    const share = (entry.amount / total) * 100;
+    const row = document.createElement("li");
+    row.className = "budget-chart-legend-item";
+
+    const dot = document.createElement("span");
+    dot.className = "budget-chart-dot";
+    dot.style.backgroundColor = color;
+
+    const label = document.createElement("span");
+    label.className = "budget-chart-label";
+    label.textContent = entry.label;
+
+    const value = document.createElement("span");
+    value.className = "budget-chart-value";
+    value.textContent = `${formatMoney(entry.amount)} (${share.toFixed(1)}%)`;
+
+    row.appendChild(dot);
+    row.appendChild(label);
+    row.appendChild(value);
+    budgetChartLegend.appendChild(row);
+  });
+
+  budgetChartCanvas.setAttribute(
+    "aria-label",
+    `Camembert des dépenses: ${entries.length} poste(s), total ${formatMoney(total)}.`
+  );
 }
 
 function renderTasks() {
@@ -661,7 +849,7 @@ function renderMetrics() {
     metricBudgetLeft.textContent = formatMoney(budgetLeft);
   }
   if (budgetPerGuestLabel) {
-    budgetPerGuestLabel.textContent = `Tarif final par invite (${guestCount} pers.)`;
+    budgetPerGuestLabel.textContent = `Tarif final par invité (${guestCount} pers.)`;
   }
   if (budgetPerAdultLabel) {
     budgetPerAdultLabel.textContent = `Tarif final par adulte (${adultCount} adultes)`;
@@ -754,7 +942,7 @@ function clearPrivateUi() {
     budgetPerAdult.textContent = formatMoney(0, 2);
   }
   if (budgetPerGuestLabel) {
-    budgetPerGuestLabel.textContent = `Tarif final par invite (${DEFAULT_STATE.budgetGuestCount} pers.)`;
+    budgetPerGuestLabel.textContent = `Tarif final par invité (${DEFAULT_STATE.budgetGuestCount} pers.)`;
   }
   if (budgetPerAdultLabel) {
     budgetPerAdultLabel.textContent = `Tarif final par adulte (${DEFAULT_STATE.budgetAdultCount} adultes)`;
@@ -765,6 +953,7 @@ function clearPrivateUi() {
   if (metricRsvp) {
     metricRsvp.textContent = "0%";
   }
+  renderBudgetChart();
 }
 
 function formatMoney(value, digits = 0) {
@@ -996,6 +1185,9 @@ async function verifyAdminToken(token) {
     if (response.status === 401) {
       return { ok: false, reason: "unauthorized" };
     }
+    if (response.status === 404) {
+      return { ok: false, reason: "endpoint_not_found" };
+    }
 
     return { ok: false, reason: "server_error" };
   } catch {
@@ -1074,10 +1266,10 @@ async function persistState() {
   try {
     await pushStateToServer(payload);
     serverSyncAvailable = true;
-    setSyncStatus("Sauvegarde du fichier activée : data.json", false);
+    setSyncStatus("Sauvegarde activée : data.json + budget_mariage.xlsx", false);
   } catch (error) {
     serverSyncAvailable = false;
-    setSyncStatus("Erreur de synchronisation du fichier. Sauvegarde navigateur activée.", true);
+    setSyncStatus("Erreur de synchronisation serveur. Sauvegarde navigateur activée.", true);
     console.warn("Impossible de sauvegarder dans le fichier serveur.", error);
   }
 }
@@ -1140,7 +1332,7 @@ async function unlockAdmin(token) {
   refresh({ persist: false });
 
   if (isServerMode && serverSyncAvailable) {
-    setSyncStatus("Sauvegarde du fichier activée : data.json", false);
+    setSyncStatus("Sauvegarde activée : data.json + budget_mariage.xlsx", false);
     return;
   }
 
@@ -1199,6 +1391,10 @@ async function init() {
 
     if (check.reason === "server_unreachable") {
       setAdminError("Serveur indisponible. Lancez server.py puis reconnectez-vous.");
+      return;
+    }
+    if (check.reason === "endpoint_not_found") {
+      setAdminError("Serveur incompatible. Lancez python server.py (pas python -m http.server).");
       return;
     }
 

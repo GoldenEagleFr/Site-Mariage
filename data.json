@@ -1,62 +1,49 @@
 {
-  "budgetGoal": 25000,
+  "budgetGoal": 30000,
+  "budgetGuestCount": 150,
+  "budgetAdultCount": 110,
   "budgetItems": [
     {
-      "id": "iq0x8h5u",
-      "label": "Domaine",
-      "amount": 8000
+      "id": "4w5mqlju",
+      "label": "Traiteur Dimanche Repas",
+      "amount": 1120
     },
     {
-      "id": "0jx0jne7",
-      "label": "Traiteur",
-      "amount": 8000
-    },
-    {
-      "id": "u8zu2jal",
-      "label": "Photographe",
-      "amount": 1500
-    },
-    {
-      "id": "a927xj24",
-      "label": "Faire-Part",
+      "id": "b4s2zifo",
+      "label": "Traiteur Dimanche Dessert",
       "amount": 400
     },
     {
-      "id": "bkb0wgvi",
-      "label": "Fleuriste",
-      "amount": 1000
-    },
-    {
-      "id": "rlq80rfa",
-      "label": "DJ",
-      "amount": 1300
-    },
-    {
-      "id": "4cv2utkc",
-      "label": "Décoration",
-      "amount": 1500
-    },
-    {
-      "id": "z934xia9",
-      "label": "Eglise",
-      "amount": 500
+      "id": "47jt0d40",
+      "label": "Domaine",
+      "amount": 7200
     }
   ],
   "tasks": [
     {
       "id": "x537hnc2",
-      "text": "Trouver domaine",
+      "text": "Domaine choisi: Les Domaines de Gaston (Les Andelys)",
+      "done": true
+    },
+    {
+      "id": "mrgisors1",
+      "text": "Définir l'horaire de la mairie de Gisors",
+      "done": false
+    },
+    {
+      "id": "eglgisors",
+      "text": "Définir l'horaire de l'église de Gisors",
       "done": false
     },
     {
       "id": "yxvm115u",
       "text": "Trouver traiteur",
-      "done": false
+      "done": true
     },
     {
       "id": "yix8eob2",
       "text": "Trouver photographe",
-      "done": false
+      "done": true
     },
     {
       "id": "wijwgmur",
@@ -81,7 +68,7 @@
     {
       "id": "6iyqkqiw",
       "text": "Trouver thème et couleurs",
-      "done": false
+      "done": true
     }
   ],
   "guests": [
@@ -89,10 +76,20 @@
       "id": "v3voia6n",
       "name": "DURAND Hervé et Marlène",
       "groupType": "couple",
+      "attendanceType": "vin_repas",
       "partySize": 2,
-      "status": "pending",
+      "status": "yes",
       "rsvpToken": "g_vsn8l20wcv0ky15c"
+    },
+    {
+      "id": "mh6j2z4h",
+      "name": "DURAND Nicolas",
+      "groupType": "couple",
+      "attendanceType": "vin_repas",
+      "partySize": 2,
+      "status": "yes",
+      "rsvpToken": "g_xpf62papwyt00mtm"
     }
   ],
-  "updatedAt": 1772724462426
+  "updatedAt": 1775748152009
 }
