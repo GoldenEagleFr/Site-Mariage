@@ -161,7 +161,7 @@ function bindPlannerEvents() {
         categoryId,
         amountTotal,
         amountPaid,
-        solde: false,
+        solde: amountTotal > 0 && amountPaid >= amountTotal,
       });
 
       budgetForm.reset();
@@ -650,6 +650,9 @@ function renderBudget() {
       node.classList.toggle("budget-solde", Boolean(item.solde));
       soldeCheck.addEventListener("change", () => {
         item.solde = soldeCheck.checked;
+        if (item.solde && item.amountTotal > 0) {
+          item.amountPaid = item.amountTotal;
+        }
         refresh();
       });
     }
@@ -676,10 +679,21 @@ function renderBudget() {
         editBtn.textContent = isOpen ? "Modifier" : "Annuler";
       });
 
+      const editTotal = editPanel.querySelector(".edit-amount-total");
+      const editPaid = editPanel.querySelector(".edit-amount-paid");
+      const syncSoldeCheckbox = () => {
+        const t = Math.max(0, Number(editTotal.value) || 0);
+        const p = Math.max(0, Number(editPaid.value) || 0);
+        if (soldeCheck) soldeCheck.checked = t > 0 && p >= t;
+      };
+      editTotal.addEventListener("input", syncSoldeCheckbox);
+      editPaid.addEventListener("input", syncSoldeCheckbox);
+
       editPanel.querySelector(".save-btn").addEventListener("click", () => {
         item.categoryId = editPanel.querySelector(".edit-category").value || null;
         item.amountTotal = Math.max(0, Number(editPanel.querySelector(".edit-amount-total").value) || 0);
         item.amountPaid = Math.max(0, Number(editPanel.querySelector(".edit-amount-paid").value) || 0);
+        item.solde = item.amountTotal > 0 && item.amountPaid >= item.amountTotal;
         refresh();
       });
     }
