@@ -2,14 +2,23 @@
 const SERVER_ENDPOINT = "/api/data";
 const ADMIN_CHECK_ENDPOINT = "/api/admin/check";
 const ADMIN_SESSION_KEY = "plan_mariage_admin_token";
-const WEDDING_DATE_ISO = "2027-05-16T14:30:00+02:00";
+const WEDDING_DATE_ISO = "2027-04-24T14:30:00+02:00";
 const QR_API_ENDPOINT = "https://api.qrserver.com/v1/create-qr-code/";
+
+const DEFAULT_BUDGET_CATEGORIES = [
+  { id: "cat_traiteurs", name: "Traiteurs" },
+  { id: "cat_lieux", name: "Lieux" },
+  { id: "cat_photo", name: "Photo/Vidéo" },
+  { id: "cat_deco", name: "Décoration" },
+  { id: "cat_animations", name: "Animations" },
+];
 
 const DEFAULT_STATE = {
   budgetGoal: 15000,
   budgetGuestCount: 150,
   budgetAdultCount: 110,
   budgetItems: [],
+  budgetCategories: DEFAULT_BUDGET_CATEGORIES,
   tasks: [],
   guests: [],
   updatedAt: 0,
@@ -46,7 +55,12 @@ const budgetGoalInput = document.getElementById("budgetGoal");
 const budgetGuestCountInput = document.getElementById("budgetGuestCount");
 const budgetAdultCountInput = document.getElementById("budgetAdultCount");
 const budgetLabel = document.getElementById("budgetLabel");
-const budgetAmount = document.getElementById("budgetAmount");
+const budgetAmountTotal = document.getElementById("budgetAmountTotal");
+const budgetAmountPaid = document.getElementById("budgetAmountPaid");
+const budgetCategorySelect = document.getElementById("budgetCategory");
+const categoryForm = document.getElementById("categoryForm");
+const categoryNameInput = document.getElementById("categoryName");
+const budgetCategoryList = document.getElementById("budgetCategoryList");
 const budgetPerGuestLabel = document.getElementById("budgetPerGuestLabel");
 const budgetPerAdultLabel = document.getElementById("budgetPerAdultLabel");
 const budgetPerGuest = document.getElementById("budgetPerGuest");
@@ -134,15 +148,20 @@ function bindPlannerEvents() {
       }
 
       const label = budgetLabel.value.trim();
-      const amount = Number(budgetAmount.value);
-      if (!label || Number.isNaN(amount) || amount < 0) {
+      if (!label) {
         return;
       }
+      const amountTotal = Math.max(0, Number(budgetAmountTotal?.value) || 0);
+      const amountPaid = Math.max(0, Number(budgetAmountPaid?.value) || 0);
+      const categoryId = budgetCategorySelect?.value || null;
 
       state.budgetItems.push({
         id: createId(),
         label,
-        amount,
+        categoryId,
+        amountTotal,
+        amountPaid,
+        solde: false,
       });
 
       budgetForm.reset();
@@ -186,6 +205,25 @@ function bindPlannerEvents() {
         budgetAdultCountInput.value = String(state.budgetAdultCount);
       }
 
+      refresh();
+    });
+  }
+
+  if (categoryForm) {
+    categoryForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (!isAdminUnlocked) {
+        return;
+      }
+      const name = categoryNameInput?.value.trim();
+      if (!name) {
+        return;
+      }
+      if (!Array.isArray(state.budgetCategories)) {
+        state.budgetCategories = [];
+      }
+      state.budgetCategories.push({ id: createId(), name });
+      categoryForm.reset();
       refresh();
     });
   }
@@ -337,7 +375,7 @@ function bindAdminEvents() {
           return;
         }
 
-        sessionStorage.setItem(ADMIN_SESSION_KEY, token);
+        localStorage.setItem(ADMIN_SESSION_KEY, token);
         if (adminPassword) {
           adminPassword.value = "";
         }
@@ -352,7 +390,7 @@ function bindAdminEvents() {
 
   if (adminLogout) {
     adminLogout.addEventListener("click", () => {
-      sessionStorage.removeItem(ADMIN_SESSION_KEY);
+      localStorage.removeItem(ADMIN_SESSION_KEY);
       adminInterfaceEnabled = isAdminPage;
       lockAdmin({ message: "Session fermée." });
     });
@@ -532,16 +570,125 @@ function renderBudget() {
     return;
   }
 
+  const categories = Array.isArray(state.budgetCategories) ? state.budgetCategories : [];
+
+  if (budgetCategorySelect) {
+    const prev = budgetCategorySelect.value;
+    budgetCategorySelect.innerHTML = '<option value="">— Sans catégorie —</option>';
+    for (const cat of categories) {
+      const opt = document.createElement("option");
+      opt.value = cat.id;
+      opt.textContent = cat.name;
+      budgetCategorySelect.appendChild(opt);
+    }
+    if (prev && categories.some((c) => c.id === prev)) {
+      budgetCategorySelect.value = prev;
+    }
+  }
+
+  if (budgetCategoryList) {
+    budgetCategoryList.innerHTML = "";
+    if (categories.length === 0) {
+      const empty = document.createElement("span");
+      empty.className = "category-chip-empty";
+      empty.textContent = "Aucune catégorie.";
+      budgetCategoryList.appendChild(empty);
+    } else {
+      for (const cat of categories) {
+        const chip = document.createElement("span");
+        chip.className = "category-chip";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = cat.name;
+        chip.appendChild(nameSpan);
+        const del = document.createElement("button");
+        del.type = "button";
+        del.className = "category-chip-delete";
+        del.textContent = "×";
+        del.setAttribute("aria-label", `Supprimer la catégorie ${cat.name}`);
+        del.addEventListener("click", () => {
+          state.budgetCategories = state.budgetCategories.filter((c) => c.id !== cat.id);
+          for (const item of state.budgetItems) {
+            if (item.categoryId === cat.id) {
+              item.categoryId = null;
+            }
+          }
+          refresh();
+        });
+        chip.appendChild(del);
+        budgetCategoryList.appendChild(chip);
+      }
+    }
+  }
+
   budgetList.innerHTML = "";
   for (const [index, item] of state.budgetItems.entries()) {
     const node = budgetTemplate.content.firstElementChild.cloneNode(true);
     node.style.setProperty("--stagger", String(index));
+
+    const category = categories.find((c) => c.id === item.categoryId);
+    const catBadge = node.querySelector(".budget-item-category");
+    if (catBadge) {
+      catBadge.textContent = category?.name ?? "";
+      catBadge.hidden = !category;
+    }
     node.querySelector(".main-text").textContent = item.label;
-    node.querySelector(".money").textContent = formatMoney(item.amount);
-    node.querySelector("button").addEventListener("click", () => {
+
+    const amountTotal = Number(item.amountTotal ?? item.amount ?? 0);
+    const amountPaid = Number(item.amountPaid ?? 0);
+    const rest = Math.max(amountTotal - amountPaid, 0);
+
+    const totalEl = node.querySelector(".budget-amount-total");
+    const paidEl = node.querySelector(".budget-amount-paid");
+    const restEl = node.querySelector(".budget-amount-rest");
+    if (totalEl) totalEl.textContent = `Prévu : ${formatMoney(amountTotal)}`;
+    if (paidEl) paidEl.textContent = `Payé : ${formatMoney(amountPaid)}`;
+    if (restEl) restEl.textContent = `Reste : ${formatMoney(rest)}`;
+
+    const soldeCheck = node.querySelector(".solde-check");
+    if (soldeCheck) {
+      soldeCheck.checked = Boolean(item.solde);
+      node.classList.toggle("budget-solde", Boolean(item.solde));
+      soldeCheck.addEventListener("change", () => {
+        item.solde = soldeCheck.checked;
+        refresh();
+      });
+    }
+
+    const editBtn = node.querySelector(".budget-edit-btn");
+    const editPanel = node.querySelector(".budget-item-edit");
+    if (editBtn && editPanel) {
+      editBtn.addEventListener("click", () => {
+        const isOpen = !editPanel.classList.contains("is-hidden");
+        if (!isOpen) {
+          const editCat = editPanel.querySelector(".edit-category");
+          editCat.innerHTML = '<option value="">— Sans catégorie —</option>';
+          for (const cat of categories) {
+            const opt = document.createElement("option");
+            opt.value = cat.id;
+            opt.textContent = cat.name;
+            editCat.appendChild(opt);
+          }
+          editCat.value = item.categoryId || "";
+          editPanel.querySelector(".edit-amount-total").value = String(amountTotal);
+          editPanel.querySelector(".edit-amount-paid").value = String(amountPaid);
+        }
+        editPanel.classList.toggle("is-hidden");
+        editBtn.textContent = isOpen ? "Modifier" : "Annuler";
+      });
+
+      editPanel.querySelector(".save-btn").addEventListener("click", () => {
+        item.categoryId = editPanel.querySelector(".edit-category").value || null;
+        item.amountTotal = Math.max(0, Number(editPanel.querySelector(".edit-amount-total").value) || 0);
+        item.amountPaid = Math.max(0, Number(editPanel.querySelector(".edit-amount-paid").value) || 0);
+        refresh();
+      });
+    }
+
+    node.querySelector(".budget-delete-btn").addEventListener("click", () => {
       state.budgetItems = state.budgetItems.filter((entry) => entry.id !== item.id);
       refresh();
     });
+
     budgetList.appendChild(node);
   }
 }
@@ -551,11 +698,21 @@ function renderBudgetChart() {
     return;
   }
 
+  const categories = Array.isArray(state.budgetCategories) ? state.budgetCategories : [];
   const amountsByLabel = new Map();
   for (const item of state.budgetItems) {
-    const label = String(item?.label ?? "").trim();
-    const amount = Number(item?.amount);
-    if (!label || !Number.isFinite(amount) || amount <= 0) {
+    const amount = Number(item?.amountTotal ?? item?.amount ?? 0);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      continue;
+    }
+    let label;
+    if (item.categoryId) {
+      const cat = categories.find((c) => c.id === item.categoryId);
+      label = cat ? cat.name : String(item?.label ?? "").trim();
+    } else {
+      label = String(item?.label ?? "").trim();
+    }
+    if (!label) {
       continue;
     }
     amountsByLabel.set(label, (amountsByLabel.get(label) ?? 0) + amount);
@@ -819,7 +976,7 @@ function renderGuests() {
 }
 
 function renderMetrics() {
-  const budgetTotal = state.budgetItems.reduce((sum, item) => sum + item.amount, 0);
+  const budgetTotal = state.budgetItems.reduce((sum, item) => sum + Number(item.amountTotal ?? item.amount ?? 0), 0);
   const budgetGoal = state.budgetGoal || 0;
   const guestCount = Number.isFinite(state.budgetGuestCount) && state.budgetGuestCount > 0
     ? Math.floor(state.budgetGuestCount)
@@ -1065,6 +1222,7 @@ function createDefaultState() {
     budgetGuestCount: DEFAULT_STATE.budgetGuestCount,
     budgetAdultCount: DEFAULT_STATE.budgetAdultCount,
     budgetItems: [],
+    budgetCategories: DEFAULT_BUDGET_CATEGORIES.map((c) => ({ ...c })),
     tasks: [],
     guests: [],
     updatedAt: DEFAULT_STATE.updatedAt,
@@ -1092,12 +1250,31 @@ function normalizeState(candidate) {
   if (Array.isArray(input.budgetItems)) {
     normalized.budgetItems = input.budgetItems
       .filter((item) => item && typeof item === "object")
-      .map((item) => ({
-        id: typeof item.id === "string" && item.id ? item.id : createId(),
-        label: String(item.label ?? "").trim(),
-        amount: Number(item.amount),
+      .map((item) => {
+        const amountTotal = Number(item.amountTotal ?? item.amount ?? 0);
+        const amountPaid = Number(item.amountPaid ?? 0);
+        return {
+          id: typeof item.id === "string" && item.id ? item.id : createId(),
+          label: String(item.label ?? "").trim(),
+          categoryId: typeof item.categoryId === "string" && item.categoryId ? item.categoryId : null,
+          amountTotal: Number.isFinite(amountTotal) && amountTotal >= 0 ? amountTotal : 0,
+          amountPaid: Number.isFinite(amountPaid) && amountPaid >= 0 ? amountPaid : 0,
+          solde: Boolean(item.solde),
+        };
+      })
+      .filter((item) => item.label);
+  }
+
+  if (Array.isArray(input.budgetCategories)) {
+    normalized.budgetCategories = input.budgetCategories
+      .filter((cat) => cat && typeof cat === "object")
+      .map((cat) => ({
+        id: typeof cat.id === "string" && cat.id ? cat.id : createId(),
+        name: String(cat.name ?? "").trim(),
       }))
-      .filter((item) => item.label && Number.isFinite(item.amount) && item.amount >= 0);
+      .filter((cat) => cat.name);
+  } else {
+    normalized.budgetCategories = DEFAULT_BUDGET_CATEGORIES.map((c) => ({ ...c }));
   }
 
   if (Array.isArray(input.tasks)) {
@@ -1245,7 +1422,12 @@ async function pushStateToServer(payload) {
   });
 
   if (!response.ok) {
-    throw new Error(`HTTP ${response.status}`);
+    let detail = `HTTP ${response.status}`;
+    try {
+      const json = await response.json();
+      if (json?.error) detail += ` — ${json.error}`;
+    } catch { /* ignore */ }
+    throw new Error(detail);
   }
 }
 
@@ -1255,7 +1437,7 @@ async function persistState() {
   }
 
   const payload = normalizeState(state);
-  payload.updatedAt = Date.now();
+  payload.updatedAt = Math.max(Date.now(), (state.updatedAt || 0) + 1);
   state.updatedAt = payload.updatedAt;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
 
@@ -1269,7 +1451,7 @@ async function persistState() {
     setSyncStatus("Sauvegarde activée : data.json + budget_mariage.xlsx", false);
   } catch (error) {
     serverSyncAvailable = false;
-    setSyncStatus("Erreur de synchronisation serveur. Sauvegarde navigateur activée.", true);
+    setSyncStatus(`Erreur serveur : ${error.message}`, true);
     console.warn("Impossible de sauvegarder dans le fichier serveur.", error);
   }
 }
@@ -1363,7 +1545,7 @@ function openAdminInterface() {
 
 async function init() {
   lockAdmin({ message: "" });
-  const savedToken = sessionStorage.getItem(ADMIN_SESSION_KEY);
+  const savedToken = localStorage.getItem(ADMIN_SESSION_KEY);
   adminInterfaceEnabled = isAdminPage || Boolean(savedToken);
 
   if (!adminInterfaceEnabled) {
@@ -1385,7 +1567,7 @@ async function init() {
 
   const check = await verifyAdminToken(savedToken);
   if (!check.ok) {
-    sessionStorage.removeItem(ADMIN_SESSION_KEY);
+    localStorage.removeItem(ADMIN_SESSION_KEY);
     adminInterfaceEnabled = false;
     lockAdmin({ message: "" });
 

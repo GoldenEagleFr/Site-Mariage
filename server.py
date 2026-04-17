@@ -27,6 +27,7 @@ DEFAULT_DATA = {
     "budgetGuestCount": 150,
     "budgetAdultCount": 110,
     "budgetItems": [],
+    "budgetCategories": [],
     "tasks": [],
     "guests": [],
     "updatedAt": 0,
@@ -76,6 +77,7 @@ def create_default_data() -> dict:
         "budgetGuestCount": DEFAULT_DATA["budgetGuestCount"],
         "budgetAdultCount": DEFAULT_DATA["budgetAdultCount"],
         "budgetItems": [],
+        "budgetCategories": [],
         "tasks": [],
         "guests": [],
         "updatedAt": DEFAULT_DATA["updatedAt"],
@@ -113,18 +115,38 @@ def normalize_data(candidate: object) -> dict:
             if not isinstance(item, dict):
                 continue
             label = str(item.get("label", "")).strip()
-            amount = item.get("amount")
-            if not label or not isinstance(amount, (int, float)) or amount < 0:
+            if not label:
                 continue
+            amount_total_raw = item.get("amountTotal", item.get("amount", 0))
+            amount_paid_raw = item.get("amountPaid", 0)
+            amount_total = float(amount_total_raw) if isinstance(amount_total_raw, (int, float)) else 0.0
+            amount_paid = float(amount_paid_raw) if isinstance(amount_paid_raw, (int, float)) else 0.0
+            category_id = str(item.get("categoryId", "")).strip() or None
             identifier = str(item.get("id", "")).strip() or "item"
             cleaned_budget.append(
                 {
                     "id": identifier,
                     "label": label,
-                    "amount": amount,
+                    "categoryId": category_id,
+                    "amountTotal": max(0.0, amount_total),
+                    "amountPaid": max(0.0, amount_paid),
+                    "solde": bool(item.get("solde", False)),
                 }
             )
         normalized["budgetItems"] = cleaned_budget
+
+    budget_categories = candidate.get("budgetCategories")
+    if isinstance(budget_categories, list):
+        cleaned_categories = []
+        for cat in budget_categories:
+            if not isinstance(cat, dict):
+                continue
+            name = str(cat.get("name", "")).strip()
+            if not name:
+                continue
+            cat_id = str(cat.get("id", "")).strip() or "cat"
+            cleaned_categories.append({"id": cat_id, "name": name})
+        normalized["budgetCategories"] = cleaned_categories
 
     tasks = candidate.get("tasks")
     if isinstance(tasks, list):
@@ -186,7 +208,7 @@ def write_budget_excel(data: dict) -> None:
     adult_count = int(data.get("budgetAdultCount", 0) or 0)
     updated_at = int(data.get("updatedAt", 0) or 0)
 
-    budget_total = sum(float(item.get("amount", 0) or 0) for item in budget_items)
+    budget_total = sum(float(item.get("amountTotal", item.get("amount", 0)) or 0) for item in budget_items)
     budget_remaining = max(budget_goal - budget_total, 0)
     budget_usage = (budget_total / budget_goal) if budget_goal > 0 else 0
     cost_per_guest = (budget_total / guest_count) if guest_count > 0 else 0
@@ -250,8 +272,10 @@ def write_budget_excel(data: dict) -> None:
         elif label == "Mise à jour" and isinstance(value, datetime):
             value_cell.number_format = "DD/MM/YYYY HH:mm"
 
+    categories_by_id = {cat.get("id"): cat.get("name", "") for cat in data.get("budgetCategories", [])}
+
     table_header_row = start_row + len(summary_rows) + 2
-    headers = ["Poste de dépense", "Montant", "Part du budget"]
+    headers = ["Catégorie", "Poste de dépense", "Montant total prévu", "Déjà payé", "Reste à payer", "Part du budget"]
     for col, header in enumerate(headers, start=1):
         cell = sheet.cell(row=table_header_row, column=col, value=header)
         cell.font = header_font
@@ -263,38 +287,49 @@ def write_budget_excel(data: dict) -> None:
     for index, item in enumerate(budget_items):
         row = table_start_row + index
         label = str(item.get("label", "")).strip()
-        amount = float(item.get("amount", 0) or 0)
-        ratio = (amount / budget_goal) if budget_goal > 0 else 0
+        amount_total = float(item.get("amountTotal", item.get("amount", 0)) or 0)
+        amount_paid = float(item.get("amountPaid", 0) or 0)
+        amount_rest = max(amount_total - amount_paid, 0)
+        ratio = (amount_total / budget_goal) if budget_goal > 0 else 0
+        category_name = categories_by_id.get(item.get("categoryId"), "")
 
-        label_cell = sheet.cell(row=row, column=1, value=label)
-        amount_cell = sheet.cell(row=row, column=2, value=amount)
-        ratio_cell = sheet.cell(row=row, column=3, value=ratio)
+        cat_cell = sheet.cell(row=row, column=1, value=category_name)
+        label_cell = sheet.cell(row=row, column=2, value=label)
+        total_cell = sheet.cell(row=row, column=3, value=amount_total)
+        paid_cell = sheet.cell(row=row, column=4, value=amount_paid)
+        rest_cell = sheet.cell(row=row, column=5, value=amount_rest)
+        ratio_cell = sheet.cell(row=row, column=6, value=ratio)
 
-        for cell in (label_cell, amount_cell, ratio_cell):
+        for cell in (cat_cell, label_cell, total_cell, paid_cell, rest_cell, ratio_cell):
             cell.font = value_font
             cell.border = soft_border
-            cell.alignment = left_aligned if cell.column == 1 else right_aligned
+            cell.alignment = left_aligned if cell.column <= 2 else right_aligned
 
-        amount_cell.number_format = currency_format
+        total_cell.number_format = currency_format
+        paid_cell.number_format = currency_format
+        rest_cell.number_format = currency_format
         ratio_cell.number_format = percent_format
 
     total_row = max(table_start_row, table_start_row + len(budget_items))
-    total_label = sheet.cell(row=total_row, column=1, value="TOTAL")
-    total_amount = sheet.cell(row=total_row, column=2, value=budget_total)
-    total_ratio = sheet.cell(row=total_row, column=3, value=budget_usage)
+    total_label = sheet.cell(row=total_row, column=2, value="TOTAL")
+    total_amount = sheet.cell(row=total_row, column=3, value=budget_total)
+    total_ratio = sheet.cell(row=total_row, column=6, value=budget_usage)
     for cell in (total_label, total_amount, total_ratio):
         cell.font = Font(name="Calibri", size=11, bold=True, color="6B1433")
         cell.fill = total_fill
         cell.border = soft_border
-        cell.alignment = right_aligned if cell.column > 1 else left_aligned
+        cell.alignment = right_aligned if cell.column > 2 else left_aligned
     total_amount.number_format = currency_format
     total_ratio.number_format = percent_format
 
-    sheet.column_dimensions["A"].width = 42
-    sheet.column_dimensions["B"].width = 17
-    sheet.column_dimensions["C"].width = 17
+    sheet.column_dimensions["A"].width = 20
+    sheet.column_dimensions["B"].width = 38
+    sheet.column_dimensions["C"].width = 20
+    sheet.column_dimensions["D"].width = 17
+    sheet.column_dimensions["E"].width = 17
+    sheet.column_dimensions["F"].width = 17
     sheet.freeze_panes = f"A{table_start_row}"
-    sheet.auto_filter.ref = f"A{table_header_row}:C{total_row}"
+    sheet.auto_filter.ref = f"A{table_header_row}:F{total_row}"
 
     guests_sheet = workbook.create_sheet("Invités RSVP")
     guests_sheet.merge_cells("A1:F1")
@@ -458,7 +493,10 @@ def save_data_file(data: dict) -> None:
     normalized = normalize_data(data)
     with DATA_LOCK:
         write_data_file(normalized)
+    try:
         write_budget_excel(normalized)
+    except Exception as exc:
+        print(f"Avertissement Excel : {exc}", flush=True)
 
 
 def load_admin_password() -> str:
@@ -666,7 +704,13 @@ class PlannerHandler(SimpleHTTPRequestHandler):
             self.send_error(HTTPStatus.BAD_REQUEST, "Invalid JSON")
             return
 
-        save_data_file(payload)
+        try:
+            save_data_file(payload)
+        except Exception as exc:
+            print(f"Erreur sauvegarde data.json : {exc}", flush=True)
+            self._send_json({"ok": False, "error": str(exc)}, HTTPStatus.INTERNAL_SERVER_ERROR)
+            return
+
         self._send_json({"ok": True})
 
 
