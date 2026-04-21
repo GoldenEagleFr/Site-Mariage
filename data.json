@@ -1,22 +1,173 @@
 {
-  "budgetGoal": 30000,
+  "budgetGoal": 25000,
   "budgetGuestCount": 150,
   "budgetAdultCount": 110,
   "budgetItems": [
     {
-      "id": "4w5mqlju",
-      "label": "Traiteur Dimanche Repas",
-      "amount": 1120
+      "id": "zgv3ecbf",
+      "label": "Les domaines de Gaston",
+      "categoryId": "77l90ycd",
+      "amountTotal": 7300.0,
+      "amountPaid": 2100.0,
+      "solde": false,
+      "supplier": {
+        "contact": "",
+        "phone": "06 08 15 46 36",
+        "email": "gaston@lesdomainesdegaston.com",
+        "address": "",
+        "website": "https://lesdomainesdegaston.com/",
+        "notes": ""
+      }
     },
     {
-      "id": "b4s2zifo",
-      "label": "Traiteur Dimanche Dessert",
-      "amount": 400
+      "id": "twzo7iic",
+      "label": "Photographe",
+      "categoryId": "cat_photo",
+      "amountTotal": 2400.0,
+      "amountPaid": 720.0,
+      "solde": false,
+      "supplier": {
+        "contact": "",
+        "phone": "",
+        "email": "",
+        "address": "",
+        "website": "",
+        "notes": ""
+      }
     },
     {
-      "id": "47jt0d40",
-      "label": "Domaine",
-      "amount": 7200
+      "id": "lcul5f76",
+      "label": "Gastron'Home",
+      "categoryId": "cat_traiteurs",
+      "amountTotal": 5529.0,
+      "amountPaid": 1658.0,
+      "solde": false,
+      "supplier": {
+        "contact": "Cindy Fatôme",
+        "phone": "06 27 32 25 81",
+        "email": "cindy.fatome@gmail.com",
+        "address": "3 rue de Paris 27510 TILLY",
+        "website": "https://gastronhome.eatbu.com/",
+        "notes": ""
+      }
+    },
+    {
+      "id": "c4jle56b",
+      "label": "Food-truck pizza",
+      "categoryId": "cat_traiteurs",
+      "amountTotal": 1120.0,
+      "amountPaid": 336.0,
+      "solde": false,
+      "supplier": {
+        "contact": "Chez Thais",
+        "phone": "06 38 16 36 95",
+        "email": "chezthais27@gmail.com",
+        "address": "",
+        "website": "",
+        "notes": ""
+      }
+    },
+    {
+      "id": "rl0xqaaz",
+      "label": "Food-truck sucré",
+      "categoryId": "cat_traiteurs",
+      "amountTotal": 400.0,
+      "amountPaid": 120.0,
+      "solde": false,
+      "supplier": {
+        "contact": "",
+        "phone": "",
+        "email": "",
+        "address": "",
+        "website": "",
+        "notes": "Voir food-truck pizza"
+      }
+    },
+    {
+      "id": "o79q7mmb",
+      "label": "Lettres géantes",
+      "categoryId": "cat_deco",
+      "amountTotal": 100.0,
+      "amountPaid": 100.0,
+      "solde": true,
+      "supplier": {
+        "contact": "",
+        "phone": "",
+        "email": "",
+        "address": "",
+        "website": "",
+        "notes": ""
+      }
+    },
+    {
+      "id": "ypzabifq",
+      "label": "Serveurs",
+      "categoryId": "cat_traiteurs",
+      "amountTotal": 1000.0,
+      "amountPaid": 0.0,
+      "solde": false,
+      "supplier": {
+        "contact": "",
+        "phone": "",
+        "email": "",
+        "address": "",
+        "website": "",
+        "notes": "Voir Gastron'home"
+      }
+    },
+    {
+      "id": "kzb8b8et",
+      "label": "Alliances",
+      "categoryId": "None",
+      "amountTotal": 1850.0,
+      "amountPaid": 0.0,
+      "solde": false,
+      "supplier": {
+        "contact": "",
+        "phone": "",
+        "email": "",
+        "address": "",
+        "website": "",
+        "notes": ""
+      }
+    },
+    {
+      "id": "4ybyr5u3",
+      "label": "DJ Animateur",
+      "categoryId": "cat_animations",
+      "amountTotal": 1500.0,
+      "amountPaid": 0.0,
+      "solde": false,
+      "supplier": {
+        "contact": "",
+        "phone": "",
+        "email": "",
+        "address": "",
+        "website": "",
+        "notes": ""
+      }
+    }
+  ],
+  "budgetCategories": [
+    {
+      "id": "cat_traiteurs",
+      "name": "Traiteurs"
+    },
+    {
+      "id": "cat_photo",
+      "name": "Photo/Vidéo"
+    },
+    {
+      "id": "cat_deco",
+      "name": "Décoration"
+    },
+    {
+      "id": "cat_animations",
+      "name": "Animations"
+    },
+    {
+      "id": "77l90ycd",
+      "name": "Domaine"
     }
   ],
   "tasks": [
@@ -33,7 +184,7 @@
     {
       "id": "eglgisors",
       "text": "Définir l'horaire de l'église de Gisors",
-      "done": false
+      "done": true
     },
     {
       "id": "yxvm115u",
@@ -69,6 +220,16 @@
       "id": "6iyqkqiw",
       "text": "Trouver thème et couleurs",
       "done": true
+    },
+    {
+      "id": "dxasjx2k",
+      "text": "Décoration",
+      "done": false
+    },
+    {
+      "id": "q3xe0ot7",
+      "text": "Alliances",
+      "done": false
     }
   ],
   "guests": [
@@ -82,14 +243,14 @@
       "rsvpToken": "g_vsn8l20wcv0ky15c"
     },
     {
-      "id": "mh6j2z4h",
-      "name": "DURAND Nicolas",
+      "id": "xefpi4w6",
+      "name": "DURAND Nicolas et GAMBIER Valentine",
       "groupType": "couple",
       "attendanceType": "vin_repas",
       "partySize": 2,
-      "status": "yes",
-      "rsvpToken": "g_xpf62papwyt00mtm"
+      "status": "pending",
+      "rsvpToken": "g_3bojl7rc5qaeqm00"
     }
   ],
-  "updatedAt": 1775748152009
+  "updatedAt": 1776768124372
 }

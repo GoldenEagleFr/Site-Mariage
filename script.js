@@ -88,6 +88,7 @@ const guestAttendanceFilter = document.getElementById("guestAttendanceFilter");
 const guestStats = document.getElementById("guestStats");
 const guestVinStats = document.getElementById("guestVinStats");
 const guestMealStats = document.getElementById("guestMealStats");
+const guestHebergStats = document.getElementById("guestHebergStats");
 
 const metricBudgetTotal = document.getElementById("metricBudgetTotal");
 const metricBudgetLeft = document.getElementById("metricBudgetLeft");
@@ -304,6 +305,8 @@ function bindPlannerEvents() {
         partySize,
         status: VALID_GUEST_STATUS.has(status) ? status : "pending",
         rsvpToken: createGuestToken(),
+        hebergement: false,
+        rsvpSubmittedAt: 0,
       });
 
       guestForm.reset();
@@ -1095,6 +1098,12 @@ function renderGuests() {
       .reduce((sum, guest) => sum + normalizeGuestPartySize(guest.partySize, guest.groupType), 0);
     guestMealStats.textContent = `Repas: ${mealInvitations} invitations - ${mealPeople} pers. - ${mealConfirmed} oui`;
   }
+  if (guestHebergStats) {
+    const hebergGuests = state.guests.filter((g) => g.hebergement && g.status === "yes");
+    const hebergPeople = hebergGuests.reduce((sum, g) => sum + normalizeGuestPartySize(g.partySize, g.groupType), 0);
+    const hebergRevenue = hebergGuests.length * 75;
+    guestHebergStats.textContent = `Hébergement: ${hebergGuests.length} foyer(s) - ${hebergPeople} pers. — ${formatMoney(hebergRevenue)}`;
+  }
 
   if (filteredGuests.length === 0) {
     const emptyNode = document.createElement("li");
@@ -1113,10 +1122,22 @@ function renderGuests() {
     const partySize = normalizeGuestPartySize(guest.partySize, groupType);
     const groupMeta = node.querySelector(".guest-meta");
     if (groupMeta) {
-      groupMeta.textContent = `${getGuestGroupTypeLabel(groupType)} - ${getGuestAttendanceTypeLabel(attendanceType)} - ${formatPartySize(partySize)}`;
+      const submittedPart = guest.rsvpSubmittedAt > 0
+        ? ` — RSVP le ${new Date(guest.rsvpSubmittedAt).toLocaleDateString("fr-FR")}`
+        : "";
+      groupMeta.textContent = `${getGuestGroupTypeLabel(groupType)} - ${getGuestAttendanceTypeLabel(attendanceType)} - ${formatPartySize(partySize)}${submittedPart}`;
     }
 
-    const statusSelect = node.querySelector("select");
+    const hebergCheck = node.querySelector(".hebergement-check");
+    if (hebergCheck) {
+      hebergCheck.checked = Boolean(guest.hebergement);
+      hebergCheck.addEventListener("change", () => {
+        guest.hebergement = hebergCheck.checked;
+        refresh();
+      });
+    }
+
+    const statusSelect = node.querySelector("select.inline-status");
     statusSelect.value = VALID_GUEST_STATUS.has(guest.status) ? guest.status : "pending";
     statusSelect.addEventListener("change", () => {
       guest.status = statusSelect.value;
@@ -1250,6 +1271,9 @@ function clearPrivateUi() {
   }
   if (guestMealStats) {
     guestMealStats.textContent = "Repas: 0 invitation - 0 pers.";
+  }
+  if (guestHebergStats) {
+    guestHebergStats.textContent = "Hébergement: 0 foyer(s) - 0 pers. — 0 €";
   }
   if (metricBudgetTotal) {
     metricBudgetTotal.textContent = "0 EUR";
@@ -1479,6 +1503,8 @@ function normalizeState(candidate) {
           partySize: normalizeGuestPartySize(guest.partySize, groupType),
           status: VALID_GUEST_STATUS.has(guest.status) ? guest.status : "pending",
           rsvpToken: typeof guest.rsvpToken === "string" && guest.rsvpToken.trim() ? guest.rsvpToken.trim() : createGuestToken(),
+          hebergement: Boolean(guest.hebergement),
+          rsvpSubmittedAt: Number(guest.rsvpSubmittedAt) || 0,
         };
       })
       .filter((guest) => guest.name);

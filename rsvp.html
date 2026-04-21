@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RSVP — Florence &amp; Antoine</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="rsvp-page">
+  <main class="rsvp-shell">
+    <header class="rsvp-header">
+      <p class="kicker">24 avril 2027</p>
+      <h1>Florence &amp; Antoine</h1>
+      <p class="rsvp-header-sub">Confirmez votre présence avant le 1er mars 2027</p>
+    </header>
+
+    <!-- ÉTAPE 1 : Recherche -->
+    <section id="rsvpStepSearch" class="rsvp-card">
+      <p class="rsvp-step-label">Étape 1 sur 2</p>
+      <h2>Trouvez votre invitation</h2>
+      <p class="rsvp-hint">Tapez votre nom ou le nom de votre famille tel qu'il figure sur votre invitation.</p>
+      <form id="rsvpSearchForm" class="rsvp-search-form" autocomplete="off">
+        <input id="rsvpSearchInput" type="text" placeholder="Votre nom…" autocomplete="off" spellcheck="false">
+        <button type="submit" class="cta cta-primary">Rechercher</button>
+      </form>
+      <ul id="rsvpSearchResults" class="rsvp-results" aria-live="polite"></ul>
+      <p id="rsvpSearchEmpty" class="rsvp-empty is-hidden">Aucun résultat. Vérifiez l'orthographe ou <a href="mailto:florence.antoine.mariage@gmail.com">contactez-nous</a>.</p>
+    </section>
+
+    <!-- ÉTAPE 2 : Formulaire RSVP -->
+    <section id="rsvpStepForm" class="rsvp-card is-hidden">
+      <p class="rsvp-step-label">Étape 2 sur 2</p>
+      <h2 id="rsvpFormTitle">Votre réponse</h2>
+      <p id="rsvpFormParty" class="rsvp-party-info"></p>
+
+      <form id="rsvpForm" novalidate>
+        <input type="hidden" id="rsvpGuestId">
+
+        <fieldset class="rsvp-fieldset">
+          <legend>Serez-vous présent(e) ?</legend>
+          <div class="rsvp-choice-row">
+            <label class="rsvp-choice rsvp-choice-yes">
+              <input type="radio" name="rsvpStatus" value="yes" required>
+              <span class="rsvp-choice-icon">✓</span>
+              <span>Oui, je serai là !</span>
+            </label>
+            <label class="rsvp-choice rsvp-choice-no">
+              <input type="radio" name="rsvpStatus" value="no" required>
+              <span class="rsvp-choice-icon">✕</span>
+              <span>Non, je ne pourrai pas venir</span>
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset id="rsvpHebergementSection" class="rsvp-fieldset is-hidden">
+          <legend>Hébergement sur place</legend>
+          <p class="rsvp-hebergement-info">
+            Un hébergement est disponible sur le domaine pour les deux nuits.
+            <strong>Tarif : 75 € pour les deux nuits.</strong>
+          </p>
+          <div class="rsvp-choice-row">
+            <label class="rsvp-choice">
+              <input type="radio" name="rsvpHebergement" value="yes">
+              <span class="rsvp-choice-icon">🏨</span>
+              <span>Oui, je souhaite l'hébergement</span>
+            </label>
+            <label class="rsvp-choice">
+              <input type="radio" name="rsvpHebergement" value="no" checked>
+              <span class="rsvp-choice-icon">🚗</span>
+              <span>Non, je rentre le soir</span>
+            </label>
+          </div>
+        </fieldset>
+
+        <p id="rsvpFormError" class="rsvp-form-error is-hidden"></p>
+
+        <div class="rsvp-form-actions">
+          <button type="button" id="rsvpBackBtn" class="cta cta-secondary">← Retour</button>
+          <button type="submit" class="cta cta-primary">Confirmer ma réponse</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- ÉTAPE 3 : Confirmation -->
+    <section id="rsvpStepDone" class="rsvp-card rsvp-confirm is-hidden">
+      <div id="rsvpConfirmYes" class="is-hidden">
+        <div class="rsvp-confirm-icon rsvp-confirm-icon-yes">✓</div>
+        <h2>À très bientôt !</h2>
+        <p id="rsvpConfirmYesText"></p>
+      </div>
+      <div id="rsvpConfirmNo" class="is-hidden">
+        <div class="rsvp-confirm-icon rsvp-confirm-icon-no">♡</div>
+        <h2>Merci pour votre réponse</h2>
+        <p>Nous sommes désolés que vous ne puissiez pas être là, mais nous vous remercions de nous avoir prévenus.</p>
+      </div>
+      <div class="rsvp-confirm-actions">
+        <button type="button" id="rsvpModifyBtn" class="cta cta-secondary">Modifier ma réponse</button>
+        <a href="index.html" class="cta cta-primary">Retour au site</a>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+  (() => {
+    const stepSearch = document.getElementById("rsvpStepSearch");
+    const stepForm   = document.getElementById("rsvpStepForm");
+    const stepDone   = document.getElementById("rsvpStepDone");
+
+    const searchInput   = document.getElementById("rsvpSearchInput");
+    const searchResults = document.getElementById("rsvpSearchResults");
+    const searchEmpty   = document.getElementById("rsvpSearchEmpty");
+
+    const formTitle     = document.getElementById("rsvpFormTitle");
+    const formParty     = document.getElementById("rsvpFormParty");
+    const guestIdField  = document.getElementById("rsvpGuestId");
+    const hebergSection = document.getElementById("rsvpHebergementSection");
+    const formError     = document.getElementById("rsvpFormError");
+
+    const confirmYes     = document.getElementById("rsvpConfirmYes");
+    const confirmNo      = document.getElementById("rsvpConfirmNo");
+    const confirmYesTxt  = document.getElementById("rsvpConfirmYesText");
+
+    let currentGuest = null;
+
+    function show(el) { el.classList.remove("is-hidden"); }
+    function hide(el) { el.classList.add("is-hidden"); }
+
+    function goToStep(step) {
+      hide(stepSearch); hide(stepForm); hide(stepDone);
+      show(step);
+      step.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    // ── Recherche ────────────────────────────────────────────────
+    document.getElementById("rsvpSearchForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const q = searchInput.value.trim();
+      if (q.length < 2) return;
+
+      searchResults.innerHTML = "";
+      hide(searchEmpty);
+
+      try {
+        const res = await fetch(`/api/rsvp/search?q=${encodeURIComponent(q)}`);
+        const data = await res.json();
+        if (!data.ok || data.results.length === 0) {
+          show(searchEmpty);
+          return;
+        }
+        data.results.forEach(guest => {
+          const li = document.createElement("li");
+          li.className = "rsvp-result-item";
+          const groupLabels = { single: "invitation individuelle", couple: "invitation couple", family: "invitation famille" };
+          const gl = groupLabels[guest.groupType] || "";
+          const alreadyAnswered = guest.rsvpSubmittedAt > 0;
+          const statusLabel = guest.status === "yes" ? "Confirmé" : guest.status === "no" ? "Décliné" : "";
+          li.innerHTML = `
+            <span class="rsvp-result-name">${guest.name}</span>
+            <span class="rsvp-result-meta">${gl}${alreadyAnswered ? ` — <em>${statusLabel}</em>` : ""}</span>
+            <button class="cta cta-primary rsvp-result-btn" type="button">
+              ${alreadyAnswered ? "Modifier ma réponse" : "Répondre"}
+            </button>`;
+          li.querySelector("button").addEventListener("click", () => openForm(guest));
+          searchResults.appendChild(li);
+        });
+      } catch {
+        show(searchEmpty);
+      }
+    });
+
+    // ── Formulaire ───────────────────────────────────────────────
+    function openForm(guest) {
+      currentGuest = guest;
+      guestIdField.value = guest.id;
+      formTitle.textContent = guest.name;
+
+      const groupLabels = { single: "1 personne", couple: "2 personnes", family: `${guest.partySize} personnes` };
+      formParty.textContent = groupLabels[guest.groupType] || `${guest.partySize} personnes`;
+
+      // Pré-remplir statut
+      const radios = document.querySelectorAll("input[name='rsvpStatus']");
+      radios.forEach(r => { r.checked = r.value === guest.status; });
+
+      // Pré-remplir hébergement
+      const hRadios = document.querySelectorAll("input[name='rsvpHebergement']");
+      hRadios.forEach(r => { r.checked = r.value === (guest.hebergement ? "yes" : "no"); });
+
+      // Afficher section hébergement si présent
+      if (guest.status === "yes") show(hebergSection); else hide(hebergSection);
+
+      hide(formError);
+      goToStep(stepForm);
+    }
+
+    // Afficher/masquer hébergement selon présence
+    document.querySelectorAll("input[name='rsvpStatus']").forEach(r => {
+      r.addEventListener("change", () => {
+        if (r.value === "yes" && r.checked) show(hebergSection);
+        else if (r.value === "no" && r.checked) hide(hebergSection);
+      });
+    });
+
+    document.getElementById("rsvpBackBtn").addEventListener("click", () => goToStep(stepSearch));
+
+    document.getElementById("rsvpModifyBtn").addEventListener("click", () => {
+      if (currentGuest) openForm(currentGuest);
+      else goToStep(stepSearch);
+    });
+
+    // ── Soumission ───────────────────────────────────────────────
+    document.getElementById("rsvpForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      hide(formError);
+
+      const statusRadio = document.querySelector("input[name='rsvpStatus']:checked");
+      if (!statusRadio) {
+        formError.textContent = "Merci de choisir votre réponse (oui ou non).";
+        show(formError);
+        return;
+      }
+
+      const status = statusRadio.value;
+      const hRadio = document.querySelector("input[name='rsvpHebergement']:checked");
+      const hebergement = status === "yes" && hRadio?.value === "yes";
+
+      try {
+        const res = await fetch("/api/rsvp/submit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: guestIdField.value, status, hebergement }),
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || "Erreur serveur");
+
+        currentGuest = { ...currentGuest, status, hebergement };
+        showConfirmation(status, hebergement);
+      } catch (err) {
+        formError.textContent = `Une erreur est survenue : ${err.message}. Réessayez ou contactez-nous.`;
+        show(formError);
+      }
+    });
+
+    // ── Confirmation ─────────────────────────────────────────────
+    function showConfirmation(status, hebergement) {
+      hide(confirmYes); hide(confirmNo);
+      if (status === "yes") {
+        show(confirmYes);
+        confirmYesTxt.textContent = hebergement
+          ? "Votre présence est confirmée avec hébergement sur place (75 € pour les deux nuits). Nous avons hâte de vous retrouver !"
+          : "Votre présence est confirmée. Nous avons hâte de vous retrouver !";
+      } else {
+        show(confirmNo);
+      }
+      goToStep(stepDone);
+    }
+  })();
+  </script>
+</body>
+</html>

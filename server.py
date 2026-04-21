@@ -199,6 +199,8 @@ def normalize_data(candidate: object) -> dict:
                     "partySize": normalize_guest_party_size(group_type, guest.get("partySize")),
                     "status": status if status in VALID_GUEST_STATUS else "pending",
                     "rsvpToken": str(guest.get("rsvpToken", "")).strip(),
+                    "hebergement": bool(guest.get("hebergement", False)),
+                    "rsvpSubmittedAt": int(guest.get("rsvpSubmittedAt", 0) or 0),
                 }
             )
         normalized["guests"] = cleaned_guests
@@ -555,6 +557,19 @@ def write_budget_excel(data: dict) -> None:  # noqa: PLR0912, PLR0915
         ("Taux de confirmation", confirmation_rate),
     ]
 
+    hebergement_count = sum(1 for g in guests if g.get("hebergement") and g.get("status") == "yes")
+    hebergement_people = sum(
+        normalize_guest_party_size(normalize_guest_group_type(g.get("groupType")), g.get("partySize"))
+        for g in guests if g.get("hebergement") and g.get("status") == "yes"
+    )
+    hebergement_revenue = hebergement_count * 75
+
+    guest_summary_rows.extend([
+        ("Foyers hébergés (confirmés)", hebergement_count),
+        ("Personnes hébergées", hebergement_people),
+        ("Revenus hébergement (75 €/foyer)", hebergement_revenue),
+    ])
+
     guests_start_row = 3
     for offset, (label, value) in enumerate(guest_summary_rows):
         row = guests_start_row + offset
@@ -567,11 +582,13 @@ def write_budget_excel(data: dict) -> None:  # noqa: PLR0912, PLR0915
         value_cell.alignment = right_aligned
         label_cell.border = soft_border
         value_cell.border = soft_border
-        if label == "Taux de confirmation":
+        if label in ("Taux de confirmation",):
             value_cell.number_format = percent_format
+        if label == "Revenus hébergement (75 €/foyer)":
+            value_cell.number_format = '#,##0.00 "€"'
 
     guests_table_header_row = guests_start_row + len(guest_summary_rows) + 2
-    guest_headers = ["Invite", "Groupe", "Nb pers.", "Presence", "Type invitation", "Lien RSVP"]
+    guest_headers = ["Invité", "Groupe", "Nb pers.", "Présence", "Type invitation", "Hébergement", "Lien RSVP"]
     for col, header in enumerate(guest_headers, start=1):
         cell = guests_sheet.cell(row=guests_table_header_row, column=col, value=header)
         cell.font = header_font
@@ -580,8 +597,8 @@ def write_budget_excel(data: dict) -> None:  # noqa: PLR0912, PLR0915
         cell.border = soft_border
 
     status_label_map = {
-        "yes": "Confirme",
-        "no": "Decline",
+        "yes": "Confirmé",
+        "no": "Décliné",
         "pending": "En attente",
     }
     group_label_map = {
@@ -598,6 +615,7 @@ def write_budget_excel(data: dict) -> None:  # noqa: PLR0912, PLR0915
         "no": PatternFill(fill_type="solid", fgColor="FDECEE"),
         "pending": PatternFill(fill_type="solid", fgColor="FFF9E6"),
     }
+    hebergement_fill = PatternFill(fill_type="solid", fgColor="D6EAF8")
 
     guests_table_start_row = guests_table_header_row + 1
     for index, guest in enumerate(guests):
@@ -609,6 +627,7 @@ def write_budget_excel(data: dict) -> None:  # noqa: PLR0912, PLR0915
         if status_key not in status_label_map:
             status_key = "pending"
         attendance_type = normalize_guest_attendance_type(guest.get("attendanceType"))
+        hebergement = bool(guest.get("hebergement", False))
         token = str(guest.get("rsvpToken", "")).strip()
         rsvp_url = f"http://127.0.0.1:8000/rsvp?token={quote(token)}" if token else ""
 
@@ -618,6 +637,7 @@ def write_budget_excel(data: dict) -> None:  # noqa: PLR0912, PLR0915
             party_size,
             status_label_map[status_key],
             attendance_label_map.get(attendance_type, "Vin d'honneur + repas"),
+            "Oui — 75 €" if hebergement else "Non",
             rsvp_url,
         ]
 
@@ -625,15 +645,17 @@ def write_budget_excel(data: dict) -> None:  # noqa: PLR0912, PLR0915
             cell = guests_sheet.cell(row=row, column=col, value=value)
             cell.font = value_font
             cell.border = soft_border
-            if col == 1 or col == 5 or col == 6:
+            if col in (1, 5, 7):
                 cell.alignment = left_aligned
             else:
                 cell.alignment = centered
 
-        status_cell = guests_sheet.cell(row=row, column=4)
-        status_cell.fill = status_fill_map[status_key]
+        guests_sheet.cell(row=row, column=4).fill = status_fill_map[status_key]
+        if hebergement:
+            guests_sheet.cell(row=row, column=6).fill = hebergement_fill
+            guests_sheet.cell(row=row, column=6).font = Font(name="Calibri", size=11, bold=True, color="1F618D")
         if rsvp_url:
-            link_cell = guests_sheet.cell(row=row, column=6)
+            link_cell = guests_sheet.cell(row=row, column=7)
             link_cell.hyperlink = rsvp_url
             link_cell.style = "Hyperlink"
 
@@ -656,9 +678,10 @@ def write_budget_excel(data: dict) -> None:  # noqa: PLR0912, PLR0915
     guests_sheet.column_dimensions["C"].width = 10
     guests_sheet.column_dimensions["D"].width = 13
     guests_sheet.column_dimensions["E"].width = 24
-    guests_sheet.column_dimensions["F"].width = 48
+    guests_sheet.column_dimensions["F"].width = 16
+    guests_sheet.column_dimensions["G"].width = 48
     guests_sheet.freeze_panes = f"A{guests_table_start_row}"
-    guests_sheet.auto_filter.ref = f"A{guests_table_header_row}:F{guests_total_row}"
+    guests_sheet.auto_filter.ref = f"A{guests_table_header_row}:G{guests_total_row}"
 
     wb.save(BUDGET_EXCEL_FILE)
 
@@ -853,28 +876,61 @@ class PlannerHandler(SimpleHTTPRequestHandler):
             self._send_json(load_data_file())
             return
 
-        if path == "/rsvp":
-            token = str(query.get("token", [""])[0]).strip()
-            status = str(query.get("status", [""])[0]).strip().lower()
-            if not token:
-                self._send_html(self._render_rsvp_page("", "", ""))
+        if path == "/api/rsvp/search":
+            q = str(query.get("q", [""])[0]).strip().lower()
+            if not q or len(q) < 2:
+                self._send_json({"ok": True, "results": []})
                 return
-
-            if status in {"yes", "no"}:
-                ok, guest_name = self._apply_rsvp_status(token, status)
-                if ok:
-                    self._send_html(self._render_rsvp_page(token, guest_name, status))
-                    return
-                self._send_html(self._render_rsvp_page(token, "", ""))
-                return
-
-            guest_name = self._find_guest_by_token(token)
-            self._send_html(self._render_rsvp_page(token, guest_name, ""))
+            data = load_data_file()
+            results = []
+            for g in data.get("guests", []):
+                if q in str(g.get("name", "")).lower():
+                    results.append({
+                        "id": g["id"],
+                        "name": g["name"],
+                        "groupType": g.get("groupType", "single"),
+                        "partySize": g.get("partySize", 1),
+                        "status": g.get("status", "pending"),
+                        "hebergement": g.get("hebergement", False),
+                        "rsvpSubmittedAt": g.get("rsvpSubmittedAt", 0),
+                    })
+            self._send_json({"ok": True, "results": results})
             return
 
         super().do_GET()
 
     def do_POST(self) -> None:
+        if self.path == "/api/rsvp/submit":
+            content_length = int(self.headers.get("Content-Length", "0"))
+            raw_body = self.rfile.read(content_length)
+            try:
+                payload = json.loads(raw_body.decode("utf-8"))
+            except json.JSONDecodeError:
+                self.send_error(HTTPStatus.BAD_REQUEST, "Invalid JSON")
+                return
+            guest_id = str(payload.get("id", "")).strip()
+            status = str(payload.get("status", "")).strip()
+            hebergement = bool(payload.get("hebergement", False))
+            if not guest_id or status not in VALID_GUEST_STATUS:
+                self._send_json({"ok": False, "error": "invalid"}, HTTPStatus.BAD_REQUEST)
+                return
+            data = load_data_file()
+            found = False
+            for g in data.get("guests", []):
+                if g["id"] == guest_id:
+                    g["status"] = status
+                    g["hebergement"] = hebergement
+                    g["rsvpSubmittedAt"] = int(time.time() * 1000)
+                    found = True
+                    break
+            if not found:
+                self._send_json({"ok": False, "error": "not found"}, HTTPStatus.NOT_FOUND)
+                return
+            data["updatedAt"] = int(time.time() * 1000)
+            save_data_file(data)
+            self._send_json({"ok": True})
+            return
+
         if self.path != "/api/data":
             self.send_error(HTTPStatus.NOT_FOUND, "Endpoint not found")
             return
