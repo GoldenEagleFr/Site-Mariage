@@ -1654,20 +1654,31 @@ button:hover {
 }
 
 .guest-item {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto auto;
+  gap: 6px;
   align-items: center;
-  gap: 8px;
+  padding: 7px 10px;
 }
 
 .guest-item .guest-main {
-  flex: 1 1 100%;
+  min-width: 0;
 }
 
-.guest-item select,
-.guest-item .guest-hebergement-label,
-.guest-item button {
-  flex: 0 0 auto;
+.guest-item .inline-category,
+.guest-item .inline-status {
+  font-size: 0.78rem;
+  padding: 3px 6px;
+  min-width: 0;
+}
+
+.guest-item .guest-hebergement-label {
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.guest-meta {
+  font-size: 0.72rem;
 }
 
 .guest-main {
