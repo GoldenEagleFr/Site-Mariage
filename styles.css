@@ -2476,3 +2476,9 @@ body.rsvp-page .cta-secondary {
   border-color: rgba(224, 10, 38, 0.4);
   background: rgba(255, 183, 182, 0.2);
 }
+
+.rsvp-back-home {
+  display: inline-flex;
+  margin-bottom: 1.25rem;
+  font-size: 0.88rem;
+}
