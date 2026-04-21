@@ -65,6 +65,9 @@ const budgetPerGuestLabel = document.getElementById("budgetPerGuestLabel");
 const budgetPerAdultLabel = document.getElementById("budgetPerAdultLabel");
 const budgetPerGuest = document.getElementById("budgetPerGuest");
 const budgetPerAdult = document.getElementById("budgetPerAdult");
+const budgetCategoryFilter = document.getElementById("budgetCategoryFilter");
+const budgetSoldeFilter = document.getElementById("budgetSoldeFilter");
+const budgetFilterStats = document.getElementById("budgetFilterStats");
 const budgetList = document.getElementById("budgetList");
 
 const taskForm = document.getElementById("taskForm");
@@ -252,6 +255,14 @@ function bindPlannerEvents() {
       taskForm.reset();
       refresh();
     });
+  }
+
+  if (budgetCategoryFilter) {
+    budgetCategoryFilter.addEventListener("change", () => renderBudget());
+  }
+
+  if (budgetSoldeFilter) {
+    budgetSoldeFilter.addEventListener("change", () => renderBudget());
   }
 
   if (taskSearch) {
@@ -757,8 +768,39 @@ function renderBudget() {
     }
   }
 
+  // Mettre à jour le filtre catégorie
+  if (budgetCategoryFilter) {
+    const prev = budgetCategoryFilter.value;
+    budgetCategoryFilter.innerHTML = '<option value="all">Toutes les catégories</option><option value="__none__">Sans catégorie</option>';
+    for (const cat of categories) {
+      const opt = document.createElement("option");
+      opt.value = cat.id;
+      opt.textContent = cat.name;
+      budgetCategoryFilter.appendChild(opt);
+    }
+    budgetCategoryFilter.value = prev && (prev === "all" || prev === "__none__" || categories.some((c) => c.id === prev)) ? prev : "all";
+  }
+
+  // Filtrer les items
+  const catMode = budgetCategoryFilter?.value ?? "all";
+  const soldeMode = budgetSoldeFilter?.value ?? "all";
+  const filteredItems = state.budgetItems.filter((item) => {
+    if (catMode === "__none__" && item.categoryId) return false;
+    if (catMode !== "all" && catMode !== "__none__" && item.categoryId !== catMode) return false;
+    if (soldeMode === "settled" && !item.solde) return false;
+    if (soldeMode === "unsettled" && item.solde) return false;
+    return true;
+  });
+
+  if (budgetFilterStats) {
+    const totalShown = filteredItems.reduce((s, i) => s + Number(i.amountTotal ?? 0), 0);
+    budgetFilterStats.textContent = filteredItems.length === state.budgetItems.length
+      ? `${state.budgetItems.length} poste${state.budgetItems.length > 1 ? "s" : ""}`
+      : `${filteredItems.length} / ${state.budgetItems.length} postes — ${formatMoney(totalShown)}`;
+  }
+
   budgetList.innerHTML = "";
-  for (const [index, item] of state.budgetItems.entries()) {
+  for (const [index, item] of filteredItems.entries()) {
     const node = budgetTemplate.content.firstElementChild.cloneNode(true);
     node.style.setProperty("--stagger", String(index));
 

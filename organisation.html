@@ -132,6 +132,18 @@
                 </div>
               </div>
               <div class="panel-list">
+                <div class="list-tools">
+                  <select id="budgetCategoryFilter">
+                    <option value="all">Toutes les catégories</option>
+                    <option value="__none__">Sans catégorie</option>
+                  </select>
+                  <select id="budgetSoldeFilter">
+                    <option value="all">Soldé et non soldé</option>
+                    <option value="unsettled">Non soldé</option>
+                    <option value="settled">Soldé</option>
+                  </select>
+                </div>
+                <p id="budgetFilterStats" class="list-stats"></p>
                 <ul id="budgetList" class="data-list"></ul>
               </div>
             </div>
