@@ -2486,3 +2486,8 @@ body.rsvp-page .cta-secondary {
 body.rsvp-page .kicker {
   color: #c8860a;
 }
+
+/* Colonne gauche plus étroite pour l'onglet invités */
+#adminTabGuests .panel-two-col {
+  grid-template-columns: minmax(200px, 0.45fr) minmax(0, 1fr);
+}
