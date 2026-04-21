@@ -2,7 +2,7 @@
 const SERVER_ENDPOINT = "/api/data";
 const ADMIN_CHECK_ENDPOINT = "/api/admin/check";
 const ADMIN_SESSION_KEY = "plan_mariage_admin_token";
-const WEDDING_DATE_ISO = "2027-04-24T14:30:00+02:00";
+const WEDDING_DATE_ISO = "2027-04-17T14:30:00+02:00";
 const QR_API_ENDPOINT = "https://api.qrserver.com/v1/create-qr-code/";
 
 const DEFAULT_BUDGET_CATEGORIES = [
