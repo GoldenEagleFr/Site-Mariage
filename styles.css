@@ -2459,3 +2459,10 @@ body.rsvp-page {
   flex-wrap: wrap;
   margin-top: 1rem;
 }
+
+/* cta-secondary lisible sur fond clair (page RSVP) */
+body.rsvp-page .cta-secondary {
+  color: #8a2c4f;
+  border-color: rgba(224, 10, 38, 0.4);
+  background: rgba(255, 183, 182, 0.2);
+}
