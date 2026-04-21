@@ -162,6 +162,7 @@ function bindPlannerEvents() {
         amountTotal,
         amountPaid,
         solde: amountTotal > 0 && amountPaid >= amountTotal,
+        supplier: normalizeSupplier(null),
       });
 
       budgetForm.reset();
@@ -443,6 +444,151 @@ function bindAdminTabs() {
   setActiveAdminTab(activeAdminTab);
 }
 
+// ── Supplier modal ──────────────────────────────────────────────
+const supplierModal = document.getElementById("supplierModal");
+const supplierModalTitle = document.getElementById("supplierModalTitle");
+const supplierView = document.getElementById("supplierView");
+const supplierForm = document.getElementById("supplierForm");
+const supplierEditToggle = document.getElementById("supplierEditToggle");
+const supplierModalClose = document.getElementById("supplierModalClose");
+const supplierCancel = document.getElementById("supplierCancel");
+
+let supplierCurrentItem = null;
+
+const SUPPLIER_LABELS = {
+  contact: "Contact",
+  phone: "Téléphone",
+  email: "Email",
+  address: "Adresse",
+  website: "Site web",
+  notes: "Notes",
+};
+
+function renderSupplierView(supplier) {
+  if (!supplierView) return;
+  supplierView.innerHTML = "";
+  const fields = Object.entries(SUPPLIER_LABELS);
+  const filled = fields.filter(([key]) => supplier[key]);
+  if (!filled.length) {
+    const empty = document.createElement("p");
+    empty.className = "supplier-empty";
+    empty.textContent = "Aucune information renseignée.";
+    supplierView.appendChild(empty);
+    return;
+  }
+  for (const [key, label] of filled) {
+    const row = document.createElement("div");
+    row.className = "supplier-row";
+    const lbl = document.createElement("span");
+    lbl.className = "supplier-label";
+    lbl.textContent = label;
+    const val = document.createElement("span");
+    val.className = "supplier-value";
+    if (key === "website") {
+      const a = document.createElement("a");
+      a.href = supplier[key];
+      a.target = "_blank";
+      a.rel = "noopener";
+      a.textContent = supplier[key];
+      val.appendChild(a);
+    } else if (key === "email") {
+      const a = document.createElement("a");
+      a.href = `mailto:${supplier[key]}`;
+      a.textContent = supplier[key];
+      val.appendChild(a);
+    } else if (key === "phone") {
+      const a = document.createElement("a");
+      a.href = `tel:${supplier[key]}`;
+      a.textContent = supplier[key];
+      val.appendChild(a);
+    } else {
+      val.textContent = supplier[key];
+    }
+    row.appendChild(lbl);
+    row.appendChild(val);
+    supplierView.appendChild(row);
+  }
+}
+
+function openSupplierModal(item) {
+  if (!supplierModal) return;
+  supplierCurrentItem = item;
+  supplierModalTitle.textContent = item.label;
+  renderSupplierView(item.supplier);
+  supplierView.classList.remove("is-hidden");
+  supplierForm.classList.add("is-hidden");
+  supplierModal.classList.remove("is-hidden");
+  document.body.style.overflow = "hidden";
+}
+
+function closeSupplierModal() {
+  if (!supplierModal) return;
+  supplierModal.classList.add("is-hidden");
+  supplierCurrentItem = null;
+  document.body.style.overflow = "";
+}
+
+function fillSupplierForm(supplier) {
+  document.getElementById("supplierContact").value = supplier.contact;
+  document.getElementById("supplierPhone").value = supplier.phone;
+  document.getElementById("supplierEmail").value = supplier.email;
+  document.getElementById("supplierAddress").value = supplier.address;
+  document.getElementById("supplierWebsite").value = supplier.website;
+  document.getElementById("supplierNotes").value = supplier.notes;
+}
+
+if (supplierEditToggle) {
+  supplierEditToggle.addEventListener("click", () => {
+    const isEditing = !supplierForm.classList.contains("is-hidden");
+    if (isEditing) {
+      supplierView.classList.remove("is-hidden");
+      supplierForm.classList.add("is-hidden");
+    } else {
+      fillSupplierForm(supplierCurrentItem.supplier);
+      supplierView.classList.add("is-hidden");
+      supplierForm.classList.remove("is-hidden");
+    }
+  });
+}
+
+if (supplierForm) {
+  supplierForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    if (!supplierCurrentItem) return;
+    supplierCurrentItem.supplier = {
+      contact: document.getElementById("supplierContact").value.trim(),
+      phone: document.getElementById("supplierPhone").value.trim(),
+      email: document.getElementById("supplierEmail").value.trim(),
+      address: document.getElementById("supplierAddress").value.trim(),
+      website: document.getElementById("supplierWebsite").value.trim(),
+      notes: document.getElementById("supplierNotes").value.trim(),
+    };
+    renderSupplierView(supplierCurrentItem.supplier);
+    supplierView.classList.remove("is-hidden");
+    supplierForm.classList.add("is-hidden");
+    refresh();
+  });
+}
+
+if (supplierCancel) {
+  supplierCancel.addEventListener("click", () => {
+    supplierView.classList.remove("is-hidden");
+    supplierForm.classList.add("is-hidden");
+  });
+}
+
+if (supplierModalClose) {
+  supplierModalClose.addEventListener("click", closeSupplierModal);
+}
+
+if (supplierModal) {
+  supplierModal.querySelector(".supplier-modal-backdrop")?.addEventListener("click", closeSupplierModal);
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !supplierModal.classList.contains("is-hidden")) closeSupplierModal();
+  });
+}
+// ────────────────────────────────────────────────────────────────
+
 function setActiveAdminTab(tabId) {
   if (!adminTabButtons.length || !adminTabPanels.length) {
     return;
@@ -697,6 +843,11 @@ function renderBudget() {
         refresh();
       });
     }
+
+    node.querySelector(".supplier-info-btn")?.addEventListener("click", () => {
+      if (!item.supplier) item.supplier = normalizeSupplier(null);
+      openSupplierModal(item);
+    });
 
     node.querySelector(".budget-delete-btn").addEventListener("click", () => {
       state.budgetItems = state.budgetItems.filter((entry) => entry.id !== item.id);
@@ -1243,6 +1394,18 @@ function createDefaultState() {
   };
 }
 
+function normalizeSupplier(raw) {
+  const s = raw && typeof raw === "object" ? raw : {};
+  return {
+    contact: String(s.contact ?? "").trim(),
+    phone: String(s.phone ?? "").trim(),
+    email: String(s.email ?? "").trim(),
+    address: String(s.address ?? "").trim(),
+    website: String(s.website ?? "").trim(),
+    notes: String(s.notes ?? "").trim(),
+  };
+}
+
 function normalizeState(candidate) {
   const input = candidate && typeof candidate === "object" ? candidate : {};
 
@@ -1274,6 +1437,7 @@ function normalizeState(candidate) {
           amountTotal: Number.isFinite(amountTotal) && amountTotal >= 0 ? amountTotal : 0,
           amountPaid: Number.isFinite(amountPaid) && amountPaid >= 0 ? amountPaid : 0,
           solde: Boolean(item.solde),
+          supplier: normalizeSupplier(item.supplier),
         };
       })
       .filter((item) => item.label);

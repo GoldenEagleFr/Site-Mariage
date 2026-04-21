@@ -123,6 +123,8 @@ def normalize_data(candidate: object) -> dict:
             amount_paid = float(amount_paid_raw) if isinstance(amount_paid_raw, (int, float)) else 0.0
             category_id = str(item.get("categoryId", "")).strip() or None
             identifier = str(item.get("id", "")).strip() or "item"
+            sup = item.get("supplier", {})
+            sup = sup if isinstance(sup, dict) else {}
             cleaned_budget.append(
                 {
                     "id": identifier,
@@ -131,6 +133,14 @@ def normalize_data(candidate: object) -> dict:
                     "amountTotal": max(0.0, amount_total),
                     "amountPaid": max(0.0, amount_paid),
                     "solde": bool(item.get("solde", False)),
+                    "supplier": {
+                        "contact": str(sup.get("contact", "")).strip(),
+                        "phone": str(sup.get("phone", "")).strip(),
+                        "email": str(sup.get("email", "")).strip(),
+                        "address": str(sup.get("address", "")).strip(),
+                        "website": str(sup.get("website", "")).strip(),
+                        "notes": str(sup.get("notes", "")).strip(),
+                    },
                 }
             )
         normalized["budgetItems"] = cleaned_budget

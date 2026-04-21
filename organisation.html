@@ -240,6 +240,50 @@
     </section>
   </main>
 
+  <div id="supplierModal" class="supplier-modal is-hidden" role="dialog" aria-modal="true" aria-labelledby="supplierModalTitle">
+    <div class="supplier-modal-backdrop"></div>
+    <div class="supplier-modal-card">
+      <div class="supplier-modal-head">
+        <h3 id="supplierModalTitle" class="supplier-modal-title"></h3>
+        <div class="supplier-modal-toolbar">
+          <button id="supplierEditToggle" class="ghost-action" type="button" aria-label="Modifier les informations">✏️</button>
+          <button id="supplierModalClose" class="ghost-action" type="button" aria-label="Fermer">✕</button>
+        </div>
+      </div>
+      <div id="supplierView" class="supplier-view"></div>
+      <form id="supplierForm" class="supplier-form is-hidden" novalidate>
+        <div class="supplier-field">
+          <label for="supplierContact">Contact</label>
+          <input id="supplierContact" type="text" placeholder="Nom du contact">
+        </div>
+        <div class="supplier-field">
+          <label for="supplierPhone">Téléphone</label>
+          <input id="supplierPhone" type="tel" placeholder="Numéro de téléphone">
+        </div>
+        <div class="supplier-field">
+          <label for="supplierEmail">Email</label>
+          <input id="supplierEmail" type="email" placeholder="Adresse email">
+        </div>
+        <div class="supplier-field">
+          <label for="supplierAddress">Adresse</label>
+          <input id="supplierAddress" type="text" placeholder="Adresse du prestataire">
+        </div>
+        <div class="supplier-field">
+          <label for="supplierWebsite">Site web</label>
+          <input id="supplierWebsite" type="url" placeholder="https://…">
+        </div>
+        <div class="supplier-field">
+          <label for="supplierNotes">Notes</label>
+          <textarea id="supplierNotes" rows="3" placeholder="Conditions de paiement, remarques…"></textarea>
+        </div>
+        <div class="supplier-form-actions">
+          <button id="supplierSave" type="submit" class="cta cta-primary">Enregistrer</button>
+          <button id="supplierCancel" type="button" class="cta cta-secondary">Annuler</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <template id="budgetItemTemplate">
     <li class="data-item budget-data-item">
       <div class="budget-item-header">
@@ -256,6 +300,7 @@
           <input type="checkbox" class="solde-check">
           Soldé
         </label>
+        <button class="supplier-info-btn ghost-action" type="button" aria-label="Informations prestataire">ℹ</button>
         <button class="budget-edit-btn ghost-action" type="button">Modifier</button>
         <button class="budget-delete-btn danger" type="button">Supprimer</button>
       </div>
