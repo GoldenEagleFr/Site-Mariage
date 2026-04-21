@@ -58,7 +58,6 @@
 
         <fieldset id="rsvpHebergementSection" class="rsvp-fieldset is-hidden">
           <legend>Hébergement sur place</legend>
-
           <div class="rsvp-choice-row">
             <label class="rsvp-choice">
               <input type="radio" name="rsvpHebergement" value="yes">
@@ -71,7 +70,26 @@
               <span>Non, je rentre le soir</span>
             </label>
           </div>
+          <label class="rsvp-checkbox-label">
+            <input type="checkbox" id="rsvpHebergementInfo">
+            <span>Je souhaite plus d'information concernant l'hébergement</span>
+          </label>
         </fieldset>
+
+        <div class="rsvp-extra-fields">
+          <div class="rsvp-field">
+            <label for="rsvpMusic">Je propose une musique <span class="rsvp-field-hint">(titre et artiste)</span></label>
+            <input type="text" id="rsvpMusic" placeholder="Ex : Bohemian Rhapsody — Queen">
+          </div>
+          <div class="rsvp-field">
+            <label for="rsvpAllergies">Mes allergies / régimes alimentaires</label>
+            <input type="text" id="rsvpAllergies" placeholder="Ex : sans gluten, végétarien…">
+          </div>
+          <div class="rsvp-field">
+            <label for="rsvpQuestion">Une autre question ?</label>
+            <textarea id="rsvpQuestion" rows="3" placeholder="Votre message…"></textarea>
+          </div>
+        </div>
 
         <p id="rsvpFormError" class="rsvp-form-error is-hidden"></p>
 
@@ -98,6 +116,9 @@
         <button type="button" id="rsvpModifyBtn" class="cta cta-secondary">Modifier ma réponse</button>
         <a href="index.html" class="cta cta-primary">Retour au site</a>
       </div>
+      <div class="rsvp-another-person">
+        <button type="button" id="rsvpAnotherPersonBtn" class="cta cta-secondary">Je confirme la présence d'une autre personne (enfants ou parents)</button>
+      </div>
     </section>
 
   </main>
@@ -112,11 +133,15 @@
     const searchResults = document.getElementById("rsvpSearchResults");
     const searchEmpty   = document.getElementById("rsvpSearchEmpty");
 
-    const formTitle     = document.getElementById("rsvpFormTitle");
-    const formParty     = document.getElementById("rsvpFormParty");
-    const guestIdField  = document.getElementById("rsvpGuestId");
-    const hebergSection = document.getElementById("rsvpHebergementSection");
-    const formError     = document.getElementById("rsvpFormError");
+    const formTitle        = document.getElementById("rsvpFormTitle");
+    const formParty        = document.getElementById("rsvpFormParty");
+    const guestIdField     = document.getElementById("rsvpGuestId");
+    const hebergSection    = document.getElementById("rsvpHebergementSection");
+    const hebergInfoCheck  = document.getElementById("rsvpHebergementInfo");
+    const musicInput       = document.getElementById("rsvpMusic");
+    const allergiesInput   = document.getElementById("rsvpAllergies");
+    const questionInput    = document.getElementById("rsvpQuestion");
+    const formError        = document.getElementById("rsvpFormError");
 
     const confirmYes     = document.getElementById("rsvpConfirmYes");
     const confirmNo      = document.getElementById("rsvpConfirmNo");
@@ -187,6 +212,14 @@
       const hRadios = document.querySelectorAll("input[name='rsvpHebergement']");
       hRadios.forEach(r => { r.checked = r.value === (guest.hebergement ? "yes" : "no"); });
 
+      // Pré-remplir hébergement info
+      if (hebergInfoCheck) hebergInfoCheck.checked = Boolean(guest.hebergementInfo);
+
+      // Pré-remplir autres champs
+      if (musicInput) musicInput.value = guest.musicSuggestion || "";
+      if (allergiesInput) allergiesInput.value = guest.allergies || "";
+      if (questionInput) questionInput.value = guest.otherQuestion || "";
+
       // Afficher section hébergement si présent
       if (guest.status === "yes") show(hebergSection); else hide(hebergSection);
 
@@ -209,6 +242,14 @@
       else goToStep(stepSearch);
     });
 
+    document.getElementById("rsvpAnotherPersonBtn").addEventListener("click", () => {
+      currentGuest = null;
+      searchInput.value = "";
+      searchResults.innerHTML = "";
+      hide(searchEmpty);
+      goToStep(stepSearch);
+    });
+
     // ── Soumission ───────────────────────────────────────────────
     document.getElementById("rsvpForm").addEventListener("submit", async (e) => {
       e.preventDefault();
@@ -224,17 +265,21 @@
       const status = statusRadio.value;
       const hRadio = document.querySelector("input[name='rsvpHebergement']:checked");
       const hebergement = status === "yes" && hRadio?.value === "yes";
+      const hebergementInfo = status === "yes" && Boolean(hebergInfoCheck?.checked);
+      const musicSuggestion = (musicInput?.value ?? "").trim();
+      const allergies = (allergiesInput?.value ?? "").trim();
+      const otherQuestion = (questionInput?.value ?? "").trim();
 
       try {
         const res = await fetch("/api/rsvp/submit", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id: guestIdField.value, status, hebergement }),
+          body: JSON.stringify({ id: guestIdField.value, status, hebergement, hebergementInfo, musicSuggestion, allergies, otherQuestion }),
         });
         const data = await res.json();
         if (!data.ok) throw new Error(data.error || "Erreur serveur");
 
-        currentGuest = { ...currentGuest, status, hebergement };
+        currentGuest = { ...currentGuest, status, hebergement, hebergementInfo, musicSuggestion, allergies, otherQuestion };
         showConfirmation(status, hebergement);
       } catch (err) {
         formError.textContent = `Une erreur est survenue : ${err.message}. Réessayez ou contactez-nous.`;
@@ -248,7 +293,7 @@
       if (status === "yes") {
         show(confirmYes);
         confirmYesTxt.textContent = hebergement
-          ? "Votre présence est confirmée avec hébergement sur place (75 € pour les deux nuits). Nous avons hâte de vous retrouver !"
+          ? "Votre présence est confirmée avec hébergement sur place. Nous avons hâte de vous retrouver !"
           : "Votre présence est confirmée. Nous avons hâte de vous retrouver !";
       } else {
         show(confirmNo);

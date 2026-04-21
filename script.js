@@ -320,7 +320,11 @@ function bindPlannerEvents() {
         status: VALID_GUEST_STATUS.has(status) ? status : "pending",
         rsvpToken: createGuestToken(),
         hebergement: false,
+        hebergementInfo: false,
         rsvpSubmittedAt: 0,
+        musicSuggestion: "",
+        allergies: "",
+        otherQuestion: "",
       });
 
       guestForm.reset();
@@ -1177,6 +1181,19 @@ function renderGuests() {
       refresh();
     });
 
+    const rsvpDetails = node.querySelector(".guest-rsvp-details");
+    if (rsvpDetails) {
+      const lines = [];
+      if (guest.hebergementInfo) lines.push("📋 Souhaite des infos hébergement");
+      if (guest.musicSuggestion) lines.push(`🎵 ${guest.musicSuggestion}`);
+      if (guest.allergies) lines.push(`🥗 ${guest.allergies}`);
+      if (guest.otherQuestion) lines.push(`❓ ${guest.otherQuestion}`);
+      if (lines.length > 0) {
+        rsvpDetails.innerHTML = lines.map(l => `<span class="guest-rsvp-detail">${l}</span>`).join("");
+        rsvpDetails.classList.remove("is-hidden");
+      }
+    }
+
     guestList.appendChild(node);
   }
 }
@@ -1538,8 +1555,12 @@ function normalizeState(candidate) {
           status: VALID_GUEST_STATUS.has(guest.status) ? guest.status : "pending",
           rsvpToken: typeof guest.rsvpToken === "string" && guest.rsvpToken.trim() ? guest.rsvpToken.trim() : createGuestToken(),
           hebergement: Boolean(guest.hebergement),
+          hebergementInfo: Boolean(guest.hebergementInfo),
           rsvpSubmittedAt: Number(guest.rsvpSubmittedAt) || 0,
           guestCategory: guest.guestCategory === "child" ? "child" : "adult",
+          musicSuggestion: String(guest.musicSuggestion ?? "").trim(),
+          allergies: String(guest.allergies ?? "").trim(),
+          otherQuestion: String(guest.otherQuestion ?? "").trim(),
         };
       })
       .filter((guest) => guest.name);

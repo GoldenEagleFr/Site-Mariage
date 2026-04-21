@@ -200,8 +200,12 @@ def normalize_data(candidate: object) -> dict:
                     "status": status if status in VALID_GUEST_STATUS else "pending",
                     "rsvpToken": str(guest.get("rsvpToken", "")).strip(),
                     "hebergement": bool(guest.get("hebergement", False)),
+                    "hebergementInfo": bool(guest.get("hebergementInfo", False)),
                     "rsvpSubmittedAt": int(guest.get("rsvpSubmittedAt", 0) or 0),
                     "guestCategory": "child" if str(guest.get("guestCategory", "")).strip() == "child" else "adult",
+                    "musicSuggestion": str(guest.get("musicSuggestion", "")).strip(),
+                    "allergies": str(guest.get("allergies", "")).strip(),
+                    "otherQuestion": str(guest.get("otherQuestion", "")).strip(),
                 }
             )
         normalized["guests"] = cleaned_guests
@@ -547,7 +551,7 @@ def write_budget_excel(data: dict) -> None:  # noqa: PLR0912, PLR0915
     guests_sheet = wb.create_sheet("Invités RSVP")
     guests_sheet.sheet_view.showGridLines = False
 
-    guests_sheet.merge_cells("A1:E1")
+    guests_sheet.merge_cells("A1:J1")
     t = guests_sheet["A1"]
     t.value = "Liste des invités — Mariage Florence & Antoine"
     t.font = title_font; t.fill = title_fill; t.alignment = centered
@@ -565,7 +569,7 @@ def write_budget_excel(data: dict) -> None:  # noqa: PLR0912, PLR0915
             vc.number_format = fmt
 
     guests_table_header_row = guests_start_row + len(guest_summary_rows) + 2
-    guest_headers = ["Invité", "Catégorie", "Présence", "Type invitation", "Hébergement", "Date RSVP"]
+    guest_headers = ["Invité", "Catégorie", "Présence", "Type invitation", "Hébergement", "Info hébergement", "Musique proposée", "Allergies", "Question", "Date RSVP"]
     for col, header in enumerate(guest_headers, start=1):
         cell = guests_sheet.cell(row=guests_table_header_row, column=col, value=header)
         cell.font = header_font; cell.fill = header_fill
@@ -596,19 +600,27 @@ def write_budget_excel(data: dict) -> None:  # noqa: PLR0912, PLR0915
         cat_label     = "Enfant" if cat == "child" else "Adulte"
         status_key    = guest.get("status", "pending") if guest.get("status") in status_label_map else "pending"
         attendance    = normalize_guest_attendance_type(guest.get("attendanceType"))
-        hebergement   = bool(guest.get("hebergement", False))
-        submitted_at  = int(guest.get("rsvpSubmittedAt", 0) or 0)
-        rsvp_date     = datetime.fromtimestamp(submitted_at / 1000).strftime("%d/%m/%Y") if submitted_at > 0 else ""
+        hebergement      = bool(guest.get("hebergement", False))
+        hebergement_info = bool(guest.get("hebergementInfo", False))
+        music            = str(guest.get("musicSuggestion", "")).strip()
+        allergies_val    = str(guest.get("allergies", "")).strip()
+        question_val     = str(guest.get("otherQuestion", "")).strip()
+        submitted_at     = int(guest.get("rsvpSubmittedAt", 0) or 0)
+        rsvp_date        = datetime.fromtimestamp(submitted_at / 1000).strftime("%d/%m/%Y") if submitted_at > 0 else ""
 
         row_values = [
             name,
             cat_label,
             status_label_map[status_key],
             attendance_label_map.get(attendance, "Vin d'honneur + repas"),
-            "Oui — 75 €" if hebergement else "Non",
+            "Oui" if hebergement else "Non",
+            "Oui" if hebergement_info else "",
+            music,
+            allergies_val,
+            question_val,
             rsvp_date,
         ]
-        aligns = [left_aligned, centered, centered, left_aligned, centered, centered]
+        aligns = [left_aligned, centered, centered, left_aligned, centered, centered, left_aligned, left_aligned, left_aligned, centered]
         for col, (value, aln) in enumerate(zip(row_values, aligns), start=1):
             cell = guests_sheet.cell(row=r, column=col, value=value)
             cell.font = value_font; cell.border = soft_border; cell.alignment = aln
@@ -621,6 +633,10 @@ def write_budget_excel(data: dict) -> None:  # noqa: PLR0912, PLR0915
             hc = guests_sheet.cell(row=r, column=5)
             hc.fill = hebergement_fill
             hc.font = Font(name="Calibri", size=11, bold=True, color="1F618D")
+        if hebergement_info:
+            hi = guests_sheet.cell(row=r, column=6)
+            hi.fill = PatternFill(fill_type="solid", fgColor="EAF6FF")
+            hi.font = Font(name="Calibri", size=11, bold=True, color="1F618D")
         guests_sheet.row_dimensions[r].height = 18
 
     total_row = guests_table_start_row + len(sorted_guests)
@@ -631,14 +647,18 @@ def write_budget_excel(data: dict) -> None:  # noqa: PLR0912, PLR0915
         cell.fill = total_fill; cell.border = soft_border
         cell.alignment = left_aligned if cell.column == 1 else centered
 
-    guests_sheet.column_dimensions["A"].width = 34
+    guests_sheet.column_dimensions["A"].width = 30
     guests_sheet.column_dimensions["B"].width = 11
     guests_sheet.column_dimensions["C"].width = 13
-    guests_sheet.column_dimensions["D"].width = 24
-    guests_sheet.column_dimensions["E"].width = 16
-    guests_sheet.column_dimensions["F"].width = 14
+    guests_sheet.column_dimensions["D"].width = 22
+    guests_sheet.column_dimensions["E"].width = 13
+    guests_sheet.column_dimensions["F"].width = 18
+    guests_sheet.column_dimensions["G"].width = 28
+    guests_sheet.column_dimensions["H"].width = 24
+    guests_sheet.column_dimensions["I"].width = 32
+    guests_sheet.column_dimensions["J"].width = 14
     guests_sheet.freeze_panes = f"A{guests_table_start_row}"
-    guests_sheet.auto_filter.ref = f"A{guests_table_header_row}:F{total_row}"
+    guests_sheet.auto_filter.ref = f"A{guests_table_header_row}:J{total_row}"
 
     wb.save(BUDGET_EXCEL_FILE)
 
@@ -849,6 +869,10 @@ class PlannerHandler(SimpleHTTPRequestHandler):
                         "partySize": g.get("partySize", 1),
                         "status": g.get("status", "pending"),
                         "hebergement": g.get("hebergement", False),
+                        "hebergementInfo": g.get("hebergementInfo", False),
+                        "musicSuggestion": g.get("musicSuggestion", ""),
+                        "allergies": g.get("allergies", ""),
+                        "otherQuestion": g.get("otherQuestion", ""),
                         "rsvpSubmittedAt": g.get("rsvpSubmittedAt", 0),
                     })
             self._send_json({"ok": True, "results": results})
@@ -877,6 +901,10 @@ class PlannerHandler(SimpleHTTPRequestHandler):
                 if g["id"] == guest_id:
                     g["status"] = status
                     g["hebergement"] = hebergement
+                    g["hebergementInfo"] = bool(payload.get("hebergementInfo", False))
+                    g["musicSuggestion"] = str(payload.get("musicSuggestion", "")).strip()
+                    g["allergies"] = str(payload.get("allergies", "")).strip()
+                    g["otherQuestion"] = str(payload.get("otherQuestion", "")).strip()
                     g["rsvpSubmittedAt"] = int(time.time() * 1000)
                     found = True
                     break

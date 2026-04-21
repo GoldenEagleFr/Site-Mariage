@@ -2515,3 +2515,105 @@ body.rsvp-page .kicker {
 #adminTabGuests .panel-two-col {
   grid-template-columns: minmax(240px, 0.55fr) minmax(0, 1fr);
 }
+
+/* ── RSVP extra fields ─────────────────────────────────────── */
+.rsvp-extra-fields {
+  display: grid;
+  gap: 1.1rem;
+  margin-bottom: 1.5rem;
+}
+
+.rsvp-field {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.rsvp-field label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #4a0b14;
+}
+
+.rsvp-field-hint {
+  font-weight: 400;
+  color: #9a5060;
+  font-size: 0.84rem;
+}
+
+.rsvp-field input,
+.rsvp-field textarea {
+  width: 100%;
+  padding: 0.7rem 1rem;
+  border: 1.5px solid rgba(224, 10, 38, 0.2);
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  color: #4a0b14;
+  background: #fff8f9;
+  outline: none;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+  resize: vertical;
+}
+
+.rsvp-field input:focus,
+.rsvp-field textarea:focus {
+  border-color: var(--c-accent, #e00a26);
+}
+
+.rsvp-checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin-top: 0.9rem;
+  font-size: 0.9rem;
+  color: #4a0b14;
+  cursor: pointer;
+  line-height: 1.4;
+}
+
+.rsvp-checkbox-label input[type="checkbox"] {
+  margin-top: 2px;
+  accent-color: #e00a26;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+}
+
+.rsvp-another-person {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(224, 10, 38, 0.12);
+  display: flex;
+  justify-content: center;
+}
+
+.rsvp-another-person .cta {
+  font-size: 0.85rem;
+}
+
+/* ── RSVP details in admin guest list ─────────────────────── */
+.guest-rsvp-details {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding-top: 5px;
+  border-top: 1px solid rgba(240, 63, 89, 0.15);
+  margin-top: 2px;
+}
+
+.guest-rsvp-detail {
+  display: inline-block;
+  font-size: 0.75rem;
+  color: #4a0b14;
+  background: rgba(255, 236, 232, 0.85);
+  border: 1px solid rgba(224, 10, 38, 0.18);
+  border-radius: 8px;
+  padding: 2px 8px;
+  line-height: 1.5;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
