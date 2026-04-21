@@ -2482,3 +2482,7 @@ body.rsvp-page .cta-secondary {
   margin-bottom: 1.25rem;
   font-size: 0.88rem;
 }
+
+body.rsvp-page .kicker {
+  color: #c8860a;
+}
