@@ -179,17 +179,11 @@
             <div class="panel-two-col">
               <div class="panel-controls">
                 <form id="guestForm" class="row-form">
-                  <input id="guestName" type="text" placeholder="Nom (invité, couple ou famille)" required>
-                  <select id="guestGroupType">
-                    <option value="single">Invitation individuelle</option>
-                    <option value="couple">Invitation couple</option>
-                    <option value="family">Invitation famille</option>
-                  </select>
+                  <input id="guestName" type="text" placeholder="Prénom Nom" required>
                   <select id="guestAttendanceType">
                     <option value="vin_repas">Vin d'honneur + repas</option>
                     <option value="vin_only">Vin d'honneur uniquement</option>
                   </select>
-                  <input id="guestPartySize" type="number" min="1" step="1" value="1" placeholder="Nombre de personnes">
                   <select id="guestStatus">
                     <option value="pending">En attente</option>
                     <option value="yes">Oui</option>
@@ -347,7 +341,6 @@
         <option value="yes">Oui</option>
         <option value="no">Non</option>
       </select>
-      <a class="qr-action" href="#" target="_blank" rel="noopener">QR RSVP</a>
       <button class="danger" type="button">Supprimer</button>
     </li>
   </template>

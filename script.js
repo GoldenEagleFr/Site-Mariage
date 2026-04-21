@@ -77,9 +77,7 @@ const taskClearDone = document.getElementById("taskClearDone");
 
 const guestForm = document.getElementById("guestForm");
 const guestName = document.getElementById("guestName");
-const guestGroupType = document.getElementById("guestGroupType");
 const guestAttendanceType = document.getElementById("guestAttendanceType");
-const guestPartySize = document.getElementById("guestPartySize");
 const guestStatus = document.getElementById("guestStatus");
 const guestList = document.getElementById("guestList");
 const guestSearch = document.getElementById("guestSearch");
@@ -292,9 +290,7 @@ function bindPlannerEvents() {
       }
 
       const name = guestName.value.trim();
-      const groupType = normalizeGuestGroupType(guestGroupType?.value ?? "single");
       const attendanceType = normalizeGuestAttendanceType(guestAttendanceType?.value ?? "vin_repas");
-      const partySize = normalizeGuestPartySize(guestPartySize?.value, groupType);
       const status = guestStatus.value;
       if (!name) {
         return;
@@ -303,9 +299,9 @@ function bindPlannerEvents() {
       state.guests.push({
         id: createId(),
         name,
-        groupType,
+        groupType: "single",
         attendanceType,
-        partySize,
+        partySize: 1,
         status: VALID_GUEST_STATUS.has(status) ? status : "pending",
         rsvpToken: createGuestToken(),
         hebergement: false,
@@ -313,19 +309,8 @@ function bindPlannerEvents() {
       });
 
       guestForm.reset();
-      applyGuestTypePreset("single");
-      if (guestAttendanceType) {
-        guestAttendanceType.value = "vin_repas";
-      }
       refresh();
     });
-  }
-
-  if (guestGroupType) {
-    guestGroupType.addEventListener("change", () => {
-      applyGuestTypePreset(guestGroupType.value);
-    });
-    applyGuestTypePreset(guestGroupType.value);
   }
 
   if (guestSearch) {
@@ -1069,37 +1054,19 @@ function renderGuests() {
   });
 
   if (guestStats) {
-    const pending = state.guests.filter((guest) => guest.status === "pending").length;
-    const totalPeople = state.guests.reduce(
-      (sum, guest) => sum + normalizeGuestPartySize(guest.partySize, guest.groupType),
-      0
-    );
-    guestStats.textContent = `${filteredGuests.length}/${state.guests.length} invitations affichées - ${pending} en attente - ${totalPeople} pers.`;
+    const pending = state.guests.filter((g) => g.status === "pending").length;
+    const confirmed = state.guests.filter((g) => g.status === "yes").length;
+    guestStats.textContent = `${filteredGuests.length}/${state.guests.length} invités affichés — ${confirmed} oui — ${pending} en attente`;
   }
   if (guestVinStats) {
-    const vinInvitations = state.guests.length;
-    const vinPeople = state.guests.reduce(
-      (sum, guest) => sum + normalizeGuestPartySize(guest.partySize, guest.groupType),
-      0
-    );
-    const vinConfirmed = state.guests
-      .filter((guest) => guest.status === "yes")
-      .reduce((sum, guest) => sum + normalizeGuestPartySize(guest.partySize, guest.groupType), 0);
-    guestVinStats.textContent = `Vin d'honneur: ${vinInvitations} invitations - ${vinPeople} pers. - ${vinConfirmed} oui`;
+    const total = state.guests.length;
+    const confirmed = state.guests.filter((g) => g.status === "yes").length;
+    guestVinStats.textContent = `Vin d'honneur: ${total} invités — ${confirmed} confirmés`;
   }
   if (guestMealStats) {
-    const mealGuests = state.guests.filter(
-      (guest) => normalizeGuestAttendanceType(guest.attendanceType) === "vin_repas"
-    );
-    const mealInvitations = mealGuests.length;
-    const mealPeople = mealGuests.reduce(
-      (sum, guest) => sum + normalizeGuestPartySize(guest.partySize, guest.groupType),
-      0
-    );
-    const mealConfirmed = mealGuests
-      .filter((guest) => guest.status === "yes")
-      .reduce((sum, guest) => sum + normalizeGuestPartySize(guest.partySize, guest.groupType), 0);
-    guestMealStats.textContent = `Repas: ${mealInvitations} invitations - ${mealPeople} pers. - ${mealConfirmed} oui`;
+    const meal = state.guests.filter((g) => normalizeGuestAttendanceType(g.attendanceType) === "vin_repas");
+    const mealConfirmed = meal.filter((g) => g.status === "yes").length;
+    guestMealStats.textContent = `Repas: ${meal.length} invités — ${mealConfirmed} confirmés`;
   }
   if (guestHebergStats) {
     const hebergGuests = state.guests.filter((g) => g.hebergement && g.status === "yes");
@@ -1120,15 +1087,13 @@ function renderGuests() {
     const node = guestTemplate.content.firstElementChild.cloneNode(true);
     node.style.setProperty("--stagger", String(index));
     node.querySelector(".main-text").textContent = guest.name;
-    const groupType = normalizeGuestGroupType(guest.groupType);
     const attendanceType = normalizeGuestAttendanceType(guest.attendanceType);
-    const partySize = normalizeGuestPartySize(guest.partySize, groupType);
     const groupMeta = node.querySelector(".guest-meta");
     if (groupMeta) {
       const submittedPart = guest.rsvpSubmittedAt > 0
         ? ` — RSVP le ${new Date(guest.rsvpSubmittedAt).toLocaleDateString("fr-FR")}`
         : "";
-      groupMeta.textContent = `${getGuestGroupTypeLabel(groupType)} - ${getGuestAttendanceTypeLabel(attendanceType)} - ${formatPartySize(partySize)}${submittedPart}`;
+      groupMeta.textContent = `${getGuestAttendanceTypeLabel(attendanceType)}${submittedPart}`;
     }
 
     const hebergCheck = node.querySelector(".hebergement-check");
@@ -1146,14 +1111,6 @@ function renderGuests() {
       guest.status = statusSelect.value;
       refresh();
     });
-
-    const qrLink = node.querySelector(".qr-action");
-    if (qrLink) {
-      const rsvpUrl = buildRsvpUrl(guest.rsvpToken);
-      qrLink.href = buildQrImageUrl(rsvpUrl);
-      qrLink.title = `QR RSVP pour ${guest.name} (${getGuestGroupTypeLabel(groupType).toLowerCase()})`;
-      qrLink.setAttribute("aria-label", `Ouvrir le QR RSVP pour ${guest.name}`);
-    }
 
     node.querySelector("button").addEventListener("click", () => {
       state.guests = state.guests.filter((entry) => entry.id !== guest.id);
