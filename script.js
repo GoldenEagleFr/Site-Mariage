@@ -80,13 +80,16 @@ const taskClearDone = document.getElementById("taskClearDone");
 
 const guestForm = document.getElementById("guestForm");
 const guestName = document.getElementById("guestName");
+const guestCategory = document.getElementById("guestCategory");
 const guestAttendanceType = document.getElementById("guestAttendanceType");
 const guestStatus = document.getElementById("guestStatus");
 const guestList = document.getElementById("guestList");
 const guestSearch = document.getElementById("guestSearch");
 const guestFilter = document.getElementById("guestFilter");
 const guestAttendanceFilter = document.getElementById("guestAttendanceFilter");
+const guestCategoryFilter = document.getElementById("guestCategoryFilter");
 const guestStats = document.getElementById("guestStats");
+const guestCategoryStats = document.getElementById("guestCategoryStats");
 const guestVinStats = document.getElementById("guestVinStats");
 const guestMealStats = document.getElementById("guestMealStats");
 const guestHebergStats = document.getElementById("guestHebergStats");
@@ -311,6 +314,7 @@ function bindPlannerEvents() {
         id: createId(),
         name,
         groupType: "single",
+        guestCategory: guestCategory?.value === "child" ? "child" : "adult",
         attendanceType,
         partySize: 1,
         status: VALID_GUEST_STATUS.has(status) ? status : "pending",
@@ -338,6 +342,12 @@ function bindPlannerEvents() {
 
   if (guestAttendanceFilter) {
     guestAttendanceFilter.addEventListener("change", () => {
+      renderGuests();
+    });
+  }
+
+  if (guestCategoryFilter) {
+    guestCategoryFilter.addEventListener("change", () => {
       renderGuests();
     });
   }
@@ -1077,21 +1087,14 @@ function renderGuests() {
     return a.name.localeCompare(b.name, "fr", { sensitivity: "base" });
   });
 
+  const categoryMode = guestCategoryFilter?.value ?? "all";
   const filteredGuests = orderedGuests.filter((guest) => {
-    const groupType = normalizeGuestGroupType(guest.groupType);
-    const groupLabel = getGuestGroupTypeLabel(groupType);
     const attendanceType = normalizeGuestAttendanceType(guest.attendanceType);
     const attendanceLabel = getGuestAttendanceTypeLabel(attendanceType);
-    if (mode !== "all" && guest.status !== mode) {
-      return false;
-    }
-    if (attendanceMode !== "all" && attendanceType !== attendanceMode) {
-      return false;
-    }
-    const searchValue = `${guest.name} ${groupLabel} ${attendanceLabel}`;
-    if (search && !toSearchKey(searchValue).includes(search)) {
-      return false;
-    }
+    if (mode !== "all" && guest.status !== mode) return false;
+    if (attendanceMode !== "all" && attendanceType !== attendanceMode) return false;
+    if (categoryMode !== "all" && (guest.guestCategory === "child" ? "child" : "adult") !== categoryMode) return false;
+    if (search && !toSearchKey(`${guest.name} ${attendanceLabel}`).includes(search)) return false;
     return true;
   });
 
@@ -1099,6 +1102,11 @@ function renderGuests() {
     const pending = state.guests.filter((g) => g.status === "pending").length;
     const confirmed = state.guests.filter((g) => g.status === "yes").length;
     guestStats.textContent = `${filteredGuests.length}/${state.guests.length} invités affichés — ${confirmed} oui — ${pending} en attente`;
+  }
+  if (guestCategoryStats) {
+    const adults = state.guests.filter((g) => g.guestCategory !== "child").length;
+    const children = state.guests.filter((g) => g.guestCategory === "child").length;
+    guestCategoryStats.textContent = `Adultes: ${adults} — Enfants: ${children}`;
   }
   if (guestVinStats) {
     const total = state.guests.length;
@@ -1132,10 +1140,11 @@ function renderGuests() {
     const attendanceType = normalizeGuestAttendanceType(guest.attendanceType);
     const groupMeta = node.querySelector(".guest-meta");
     if (groupMeta) {
+      const catLabel = guest.guestCategory === "child" ? "Enfant" : "Adulte";
       const submittedPart = guest.rsvpSubmittedAt > 0
         ? ` — RSVP le ${new Date(guest.rsvpSubmittedAt).toLocaleDateString("fr-FR")}`
         : "";
-      groupMeta.textContent = `${getGuestAttendanceTypeLabel(attendanceType)}${submittedPart}`;
+      groupMeta.textContent = `${catLabel} — ${getGuestAttendanceTypeLabel(attendanceType)}${submittedPart}`;
     }
 
     const hebergCheck = node.querySelector(".hebergement-check");
@@ -1521,6 +1530,7 @@ function normalizeState(candidate) {
           rsvpToken: typeof guest.rsvpToken === "string" && guest.rsvpToken.trim() ? guest.rsvpToken.trim() : createGuestToken(),
           hebergement: Boolean(guest.hebergement),
           rsvpSubmittedAt: Number(guest.rsvpSubmittedAt) || 0,
+          guestCategory: guest.guestCategory === "child" ? "child" : "adult",
         };
       })
       .filter((guest) => guest.name);

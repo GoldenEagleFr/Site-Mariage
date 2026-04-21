@@ -201,6 +201,7 @@ def normalize_data(candidate: object) -> dict:
                     "rsvpToken": str(guest.get("rsvpToken", "")).strip(),
                     "hebergement": bool(guest.get("hebergement", False)),
                     "rsvpSubmittedAt": int(guest.get("rsvpSubmittedAt", 0) or 0),
+                    "guestCategory": "child" if str(guest.get("guestCategory", "")).strip() == "child" else "adult",
                 }
             )
         normalized["guests"] = cleaned_guests
@@ -522,6 +523,8 @@ def write_budget_excel(data: dict) -> None:  # noqa: PLR0912, PLR0915
     percent_format  = "0.00%"
 
     total_guests   = len(guests)
+    adults         = sum(1 for g in guests if g.get("guestCategory") != "child")
+    children       = sum(1 for g in guests if g.get("guestCategory") == "child")
     confirmed      = sum(1 for g in guests if g.get("status") == "yes")
     declined       = sum(1 for g in guests if g.get("status") == "no")
     pending        = total_guests - confirmed - declined
@@ -531,6 +534,8 @@ def write_budget_excel(data: dict) -> None:  # noqa: PLR0912, PLR0915
 
     guest_summary_rows = [
         ("Invités au total",              total_guests,        None),
+        ("Adultes",                       adults,              None),
+        ("Enfants",                       children,            None),
         ("Confirmés",                     confirmed,           None),
         ("Déclinés",                      declined,            None),
         ("En attente",                    pending,             None),
@@ -560,7 +565,7 @@ def write_budget_excel(data: dict) -> None:  # noqa: PLR0912, PLR0915
             vc.number_format = fmt
 
     guests_table_header_row = guests_start_row + len(guest_summary_rows) + 2
-    guest_headers = ["Invité", "Présence", "Type invitation", "Hébergement", "Date RSVP"]
+    guest_headers = ["Invité", "Catégorie", "Présence", "Type invitation", "Hébergement", "Date RSVP"]
     for col, header in enumerate(guest_headers, start=1):
         cell = guests_sheet.cell(row=guests_table_header_row, column=col, value=header)
         cell.font = header_font; cell.fill = header_fill
@@ -586,47 +591,54 @@ def write_budget_excel(data: dict) -> None:  # noqa: PLR0912, PLR0915
     ))
     for index, guest in enumerate(sorted_guests):
         r = guests_table_start_row + index
-        name         = str(guest.get("name", "")).strip()
-        status_key   = guest.get("status", "pending") if guest.get("status") in status_label_map else "pending"
-        attendance   = normalize_guest_attendance_type(guest.get("attendanceType"))
-        hebergement  = bool(guest.get("hebergement", False))
-        submitted_at = int(guest.get("rsvpSubmittedAt", 0) or 0)
-        rsvp_date    = datetime.fromtimestamp(submitted_at / 1000).strftime("%d/%m/%Y") if submitted_at > 0 else ""
+        name          = str(guest.get("name", "")).strip()
+        cat           = guest.get("guestCategory", "adult")
+        cat_label     = "Enfant" if cat == "child" else "Adulte"
+        status_key    = guest.get("status", "pending") if guest.get("status") in status_label_map else "pending"
+        attendance    = normalize_guest_attendance_type(guest.get("attendanceType"))
+        hebergement   = bool(guest.get("hebergement", False))
+        submitted_at  = int(guest.get("rsvpSubmittedAt", 0) or 0)
+        rsvp_date     = datetime.fromtimestamp(submitted_at / 1000).strftime("%d/%m/%Y") if submitted_at > 0 else ""
 
         row_values = [
             name,
+            cat_label,
             status_label_map[status_key],
             attendance_label_map.get(attendance, "Vin d'honneur + repas"),
             "Oui — 75 €" if hebergement else "Non",
             rsvp_date,
         ]
-        aligns = [left_aligned, centered, left_aligned, centered, centered]
+        aligns = [left_aligned, centered, centered, left_aligned, centered, centered]
         for col, (value, aln) in enumerate(zip(row_values, aligns), start=1):
             cell = guests_sheet.cell(row=r, column=col, value=value)
             cell.font = value_font; cell.border = soft_border; cell.alignment = aln
 
-        guests_sheet.cell(row=r, column=2).fill = status_fill_map[status_key]
+        guests_sheet.cell(row=r, column=3).fill = status_fill_map[status_key]
+        if cat == "child":
+            guests_sheet.cell(row=r, column=2).fill = PatternFill(fill_type="solid", fgColor="FFF9E6")
+            guests_sheet.cell(row=r, column=2).font = Font(name="Calibri", size=11, color="A04000")
         if hebergement:
-            hc = guests_sheet.cell(row=r, column=4)
+            hc = guests_sheet.cell(row=r, column=5)
             hc.fill = hebergement_fill
             hc.font = Font(name="Calibri", size=11, bold=True, color="1F618D")
         guests_sheet.row_dimensions[r].height = 18
 
     total_row = guests_table_start_row + len(sorted_guests)
     tl = guests_sheet.cell(row=total_row, column=1, value="TOTAL INVITÉS")
-    tv = guests_sheet.cell(row=total_row, column=2, value=total_guests)
+    tv = guests_sheet.cell(row=total_row, column=3, value=total_guests)
     for cell in (tl, tv):
         cell.font = Font(name="Calibri", size=11, bold=True, color="6B1433")
         cell.fill = total_fill; cell.border = soft_border
         cell.alignment = left_aligned if cell.column == 1 else centered
 
     guests_sheet.column_dimensions["A"].width = 34
-    guests_sheet.column_dimensions["B"].width = 13
-    guests_sheet.column_dimensions["C"].width = 24
-    guests_sheet.column_dimensions["D"].width = 16
-    guests_sheet.column_dimensions["E"].width = 14
+    guests_sheet.column_dimensions["B"].width = 11
+    guests_sheet.column_dimensions["C"].width = 13
+    guests_sheet.column_dimensions["D"].width = 24
+    guests_sheet.column_dimensions["E"].width = 16
+    guests_sheet.column_dimensions["F"].width = 14
     guests_sheet.freeze_panes = f"A{guests_table_start_row}"
-    guests_sheet.auto_filter.ref = f"A{guests_table_header_row}:E{total_row}"
+    guests_sheet.auto_filter.ref = f"A{guests_table_header_row}:F{total_row}"
 
     wb.save(BUDGET_EXCEL_FILE)
 

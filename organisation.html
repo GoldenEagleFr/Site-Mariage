@@ -192,6 +192,10 @@
               <div class="panel-controls">
                 <form id="guestForm" class="row-form">
                   <input id="guestName" type="text" placeholder="Prénom Nom" required>
+                  <select id="guestCategory">
+                    <option value="adult">Adulte</option>
+                    <option value="child">Enfant</option>
+                  </select>
                   <select id="guestAttendanceType">
                     <option value="vin_repas">Vin d'honneur + repas</option>
                     <option value="vin_only">Vin d'honneur uniquement</option>
@@ -216,9 +220,15 @@
                     <option value="vin_repas">Vin + repas</option>
                     <option value="vin_only">Vin seul</option>
                   </select>
+                  <select id="guestCategoryFilter">
+                    <option value="all">Adultes et enfants</option>
+                    <option value="adult">Adultes</option>
+                    <option value="child">Enfants</option>
+                  </select>
                 </div>
                 <p id="guestStats" class="list-stats">0 invitation</p>
                 <div class="guest-split-stats" aria-live="polite">
+                  <p id="guestCategoryStats" class="list-stats">Adultes: 0 — Enfants: 0</p>
                   <p id="guestVinStats" class="list-stats">Vin d'honneur: 0 invitation - 0 pers.</p>
                   <p id="guestMealStats" class="list-stats">Repas: 0 invitation - 0 pers.</p>
                   <p id="guestHebergStats" class="list-stats">Hébergement: 0 pers. — 0 €</p>
