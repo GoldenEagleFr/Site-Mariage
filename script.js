@@ -1147,6 +1147,15 @@ function renderGuests() {
       groupMeta.textContent = `${catLabel} — ${getGuestAttendanceTypeLabel(attendanceType)}${submittedPart}`;
     }
 
+    const categorySelect = node.querySelector("select.inline-category");
+    if (categorySelect) {
+      categorySelect.value = guest.guestCategory === "child" ? "child" : "adult";
+      categorySelect.addEventListener("change", () => {
+        guest.guestCategory = categorySelect.value;
+        refresh();
+      });
+    }
+
     const hebergCheck = node.querySelector(".hebergement-check");
     if (hebergCheck) {
       hebergCheck.checked = Boolean(guest.hebergement);
