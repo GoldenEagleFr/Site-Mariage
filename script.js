@@ -92,6 +92,9 @@ const guestHebergStats = document.getElementById("guestHebergStats");
 
 const metricBudgetTotal = document.getElementById("metricBudgetTotal");
 const metricBudgetLeft = document.getElementById("metricBudgetLeft");
+const metricBudgetPaid = document.getElementById("metricBudgetPaid");
+const metricBudgetDue = document.getElementById("metricBudgetDue");
+const metricBudgetDueSub = document.getElementById("metricBudgetDueSub");
 const metricTasks = document.getElementById("metricTasks");
 const metricRsvp = document.getElementById("metricRsvp");
 const syncStatus = document.getElementById("syncStatus");
@@ -1163,6 +1166,9 @@ function renderGuests() {
 
 function renderMetrics() {
   const budgetTotal = state.budgetItems.reduce((sum, item) => sum + Number(item.amountTotal ?? item.amount ?? 0), 0);
+  const budgetPaid = state.budgetItems.reduce((sum, item) => sum + Number(item.amountPaid ?? 0), 0);
+  const unsettledItems = state.budgetItems.filter((item) => !item.solde && Number(item.amountTotal ?? 0) > 0);
+  const budgetDue = unsettledItems.reduce((sum, item) => sum + Math.max(Number(item.amountTotal ?? 0) - Number(item.amountPaid ?? 0), 0), 0);
   const budgetGoal = state.budgetGoal || 0;
   const guestCount = Number.isFinite(state.budgetGuestCount) && state.budgetGuestCount > 0
     ? Math.floor(state.budgetGuestCount)
@@ -1190,6 +1196,17 @@ function renderMetrics() {
   }
   if (metricBudgetLeft) {
     metricBudgetLeft.textContent = formatMoney(budgetLeft);
+  }
+  if (metricBudgetPaid) {
+    metricBudgetPaid.textContent = formatMoney(budgetPaid);
+  }
+  if (metricBudgetDue) {
+    metricBudgetDue.textContent = formatMoney(budgetDue);
+  }
+  if (metricBudgetDueSub) {
+    metricBudgetDueSub.textContent = unsettledItems.length > 0
+      ? `${unsettledItems.length} prestataire${unsettledItems.length > 1 ? "s" : ""} non soldé${unsettledItems.length > 1 ? "s" : ""}`
+      : "Tout est soldé ✓";
   }
   if (budgetPerGuestLabel) {
     budgetPerGuestLabel.textContent = `Tarif final par invité (${guestCount} pers.)`;

@@ -1019,7 +1019,7 @@ body::after {
 
 .metrics {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 14px;
   position: relative;
   z-index: 1;
@@ -1063,6 +1063,16 @@ body::after {
   font-size: clamp(1.15rem, 2vw, 1.45rem);
   color: var(--ink);
 }
+
+.metric-sub {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--ink-soft);
+  margin-top: 4px;
+}
+
+.metric-card-paid p { color: #1e8449; }
+.metric-card-due p  { color: #ba4a00; }
 
 .grid {
   margin-top: 2px;
