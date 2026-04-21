@@ -1525,7 +1525,7 @@ body::after {
 }
 
 .list-tools-3 {
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 }
 
 .list-tools-actions {
@@ -1654,7 +1654,20 @@ button:hover {
 }
 
 .guest-item {
-  grid-template-columns: minmax(220px, 1fr) auto auto auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.guest-item .guest-main {
+  flex: 1 1 100%;
+}
+
+.guest-item select,
+.guest-item .guest-hebergement-label,
+.guest-item button {
+  flex: 0 0 auto;
 }
 
 .guest-main {
@@ -2489,5 +2502,5 @@ body.rsvp-page .kicker {
 
 /* Colonne gauche plus étroite pour l'onglet invités */
 #adminTabGuests .panel-two-col {
-  grid-template-columns: minmax(200px, 0.45fr) minmax(0, 1fr);
+  grid-template-columns: minmax(240px, 0.55fr) minmax(0, 1fr);
 }
