@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plan de table — Florence &amp; Antoine</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💍</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="admin">
+  <main class="app-shell">
+    <header class="hero" id="accueil">
+      <nav class="top-nav" aria-label="Navigation">
+        <a href="index.html">🏠 Accueil</a>
+        <a href="organisation.html">← Organisation</a>
+        <button class="dark-mode-toggle-btn" type="button" aria-label="Basculer mode sombre">🌙 Mode sombre</button>
+      </nav>
+      <div class="hero-content">
+        <p class="kicker">Espace privé</p>
+        <h1>Plan de table</h1>
+        <p class="subtitle">Assignez vos invités confirmés aux tables de votre réception.</p>
+      </div>
+    </header>
+
+    <section class="private-zone" id="organisation">
+      <div class="section-head">
+        <p class="panel-kicker">Organisation</p>
+        <h2>Plan de table</h2>
+      </div>
+
+      <!-- Gate d'authentification -->
+      <section id="adminGate" class="admin-gate">
+        <p>Cette zone est réservée à l'administrateur du mariage.</p>
+        <form id="adminLoginForm" class="row-form row-form-2 admin-login">
+          <input id="adminPassword" type="password" placeholder="Mot de passe administrateur" autocomplete="current-password" required>
+          <button type="submit">Se connecter</button>
+        </form>
+        <p id="adminError" class="admin-error" aria-live="polite"></p>
+      </section>
+
+      <!-- Contenu admin -->
+      <div id="adminContent" class="is-hidden">
+        <div class="private-tools-head">
+          <p id="syncStatus" class="sync-note"></p>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <button onclick="window.print()" class="cta cta-secondary" style="font-size:0.8rem;padding:6px 14px;">🖨️ Imprimer</button>
+            <button id="adminLogout" type="button" class="cta cta-secondary">Déconnexion</button>
+          </div>
+        </div>
+
+        <!-- Stats rapides -->
+        <div id="tableStats" class="list-stats" style="margin-bottom:12px;"></div>
+
+        <!-- Toggle vue -->
+        <div class="view-toggle">
+          <button id="viewBtnList" class="view-toggle-btn is-active" type="button">📋 Liste</button>
+          <button id="viewBtnRoom" class="view-toggle-btn" type="button">🏠 Vue salle</button>
+        </div>
+
+        <!-- ── Vue Liste ─────────────────────────────────────── -->
+        <div id="viewList">
+          <div class="panel-two-col" style="align-items:start;">
+
+            <!-- Colonne gauche : tables + contraintes -->
+            <div class="panel-controls">
+
+              <!-- Créer une table -->
+              <div class="panel">
+                <div class="panel-head">
+                  <p class="panel-kicker">Tables</p>
+                  <h2>Créer une table</h2>
+                </div>
+                <form id="tableForm" class="row-form">
+                  <input id="tableName" type="text" placeholder="Nom de la table (ex : Table 1)" required>
+                  <input id="tableCapacity" type="number" min="1" max="30" step="1" placeholder="Capacité (pers.)" required>
+                  <select id="tableShape">
+                    <option value="round">⭕ Ronde</option>
+                    <option value="rect">▭ Rectangulaire</option>
+                    <option value="square">□ Carrée</option>
+                    <option value="oval">⬮ Ovale</option>
+                  </select>
+                  <button type="submit">Créer</button>
+                </form>
+                <div id="tableListGrid" class="plan-table-grid"></div>
+              </div>
+
+              <!-- Contraintes -->
+              <div class="panel" style="margin-top:16px;">
+                <div class="panel-head">
+                  <p class="panel-kicker">Contraintes</p>
+                  <h2>Ne pas mettre ensemble</h2>
+                </div>
+                <p style="font-size:0.83rem;color:var(--ink-soft);margin:0 0 10px;">
+                  Un avertissement ⚠️ apparaîtra si deux invités incompatibles sont à la même table.
+                </p>
+                <div class="constraint-form">
+                  <select id="constraintGuest1"><option value="">— Invité 1 —</option></select>
+                  <select id="constraintGuest2"><option value="">— Invité 2 —</option></select>
+                  <button id="addConstraintBtn" type="button">Ajouter</button>
+                </div>
+                <div id="constraintList" class="constraint-list"></div>
+              </div>
+            </div>
+
+            <!-- Colonne droite : placement invités -->
+            <div class="panel">
+              <div class="panel-head">
+                <p class="panel-kicker">Invités confirmés</p>
+                <h2>Placement</h2>
+              </div>
+              <p style="font-size:0.84rem;color:var(--ink-soft);margin:0 0 10px;">
+                Seuls les invités ayant répondu <strong>Oui</strong> apparaissent ici.
+              </p>
+              <div class="list-tools" style="margin-bottom:10px;">
+                <input id="guestSearch" type="text" placeholder="Rechercher un invité…">
+                <select id="tableFilter">
+                  <option value="all">Tous les invités</option>
+                  <option value="unassigned">Non placés</option>
+                  <option value="assigned">Déjà placés</option>
+                </select>
+              </div>
+              <div id="guestPlacementList" class="data-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Vue Salle ─────────────────────────────────────── -->
+        <div id="viewRoom" class="is-hidden">
+          <p style="font-size:0.84rem;color:var(--ink-soft);margin:0 0 12px;">
+            Glissez les tables pour les repositionner. Les tables pleines sont en jaune, les violations de contrainte en rouge.
+          </p>
+          <div class="room-canvas-container">
+            <canvas id="roomCanvas"></canvas>
+          </div>
+          <div id="roomViolationsPanel" class="room-violations-panel is-hidden"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+  (() => {
+    // ── Config ────────────────────────────────────────────────
+    const SERVER_ENDPOINT   = "/api/data";
+    const ADMIN_CHECK       = "/api/admin/check";
+    const ADMIN_SESSION_KEY = "plan_mariage_admin_token";
+    const TABLE_STORAGE_KEY = "plan_mariage_tables_v1";
+
+    const isServerMode = window.location.protocol === "http:" || window.location.protocol === "https:";
+    let adminToken  = "";
+    let guests      = [];
+    let tables      = [];       // [{id,name,capacity,shape,x,y}]
+    let assignments = {};       // {guestId: tableId}
+    let constraints = [];       // [{id,guest1Id,guest2Id}]
+
+    // ── DOM ───────────────────────────────────────────────────
+    const adminGate         = document.getElementById("adminGate");
+    const adminContent      = document.getElementById("adminContent");
+    const adminLoginForm    = document.getElementById("adminLoginForm");
+    const adminPassword     = document.getElementById("adminPassword");
+    const adminError        = document.getElementById("adminError");
+    const adminLogout       = document.getElementById("adminLogout");
+    const syncStatus        = document.getElementById("syncStatus");
+    const tableStats        = document.getElementById("tableStats");
+    const tableForm         = document.getElementById("tableForm");
+    const tableName         = document.getElementById("tableName");
+    const tableCapacity     = document.getElementById("tableCapacity");
+    const tableShape        = document.getElementById("tableShape");
+    const tableListGrid     = document.getElementById("tableListGrid");
+    const guestList         = document.getElementById("guestPlacementList");
+    const guestSearch       = document.getElementById("guestSearch");
+    const tableFilter       = document.getElementById("tableFilter");
+    const viewBtnList       = document.getElementById("viewBtnList");
+    const viewBtnRoom       = document.getElementById("viewBtnRoom");
+    const viewListEl        = document.getElementById("viewList");
+    const viewRoomEl        = document.getElementById("viewRoom");
+    const roomCanvas        = document.getElementById("roomCanvas");
+    const roomViolations    = document.getElementById("roomViolationsPanel");
+    const constraintGuest1  = document.getElementById("constraintGuest1");
+    const constraintGuest2  = document.getElementById("constraintGuest2");
+    const addConstraintBtn  = document.getElementById("addConstraintBtn");
+    const constraintListEl  = document.getElementById("constraintList");
+
+    const roomCtx = roomCanvas ? roomCanvas.getContext("2d") : null;
+
+    // ── Persistance ───────────────────────────────────────────
+    function loadTables() {
+      try {
+        const raw = localStorage.getItem(TABLE_STORAGE_KEY);
+        if (!raw) return;
+        const data = JSON.parse(raw);
+        if (Array.isArray(data.tables))                           tables      = data.tables;
+        if (data.assignments && typeof data.assignments === "object") assignments = data.assignments;
+        if (Array.isArray(data.constraints))                       constraints = data.constraints;
+      } catch { /* */ }
+    }
+
+    function saveTables() {
+      localStorage.setItem(TABLE_STORAGE_KEY, JSON.stringify({ tables, assignments, constraints }));
+    }
+
+    function createId() {
+      return Math.random().toString(36).slice(2, 10);
+    }
+
+    // ── Auth ──────────────────────────────────────────────────
+    adminLoginForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const token = adminPassword.value.trim();
+      if (!token) return;
+      adminError.textContent = "";
+      const btn = adminLoginForm.querySelector("button");
+      btn.disabled = true;
+      try {
+        if (!isServerMode) { adminError.textContent = "Ouvrez via http://127.0.0.1:8000"; return; }
+        const res = await fetch(ADMIN_CHECK, { headers: { "X-Admin-Key": token } });
+        if (!res.ok) { adminError.textContent = "Mot de passe incorrect."; return; }
+        localStorage.setItem(ADMIN_SESSION_KEY, token);
+        adminPassword.value = "";
+        await unlock(token);
+      } finally { btn.disabled = false; }
+    });
+
+    adminLogout.addEventListener("click", () => {
+      localStorage.removeItem(ADMIN_SESSION_KEY);
+      adminGate.classList.remove("is-hidden");
+      adminContent.classList.add("is-hidden");
+      adminError.textContent = "Session fermée.";
+      guests = []; tables = []; assignments = {}; constraints = [];
+    });
+
+    async function unlock(token) {
+      adminToken = token;
+      adminGate.classList.add("is-hidden");
+      adminContent.classList.remove("is-hidden");
+      syncStatus.textContent = "Chargement…";
+      try {
+        const res = await fetch(SERVER_ENDPOINT, { cache: "no-store", headers: { "X-Admin-Key": token } });
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const data = await res.json();
+        guests = (data.guests || []).filter(g => g.status === "yes");
+        syncStatus.textContent = "Données chargées.";
+      } catch {
+        syncStatus.textContent = "Serveur indisponible.";
+        syncStatus.classList.add("error");
+        guests = [];
+      }
+      loadTables();
+      render();
+    }
+
+    // ── Vue toggle ────────────────────────────────────────────
+    let currentView = "list";
+
+    viewBtnList.addEventListener("click", () => switchView("list"));
+    viewBtnRoom.addEventListener("click", () => switchView("room"));
+
+    function switchView(view) {
+      currentView = view;
+      viewListEl.classList.toggle("is-hidden", view !== "list");
+      viewRoomEl.classList.toggle("is-hidden", view !== "room");
+      viewBtnList.classList.toggle("is-active", view === "list");
+      viewBtnRoom.classList.toggle("is-active", view === "room");
+      if (view === "room") {
+        initTablePositions();
+        renderRoom();
+      }
+    }
+
+    // ── Créer une table ───────────────────────────────────────
+    tableForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const name  = tableName.value.trim();
+      const cap   = Math.max(1, parseInt(tableCapacity.value) || 8);
+      const shape = tableShape.value || "round";
+      if (!name) return;
+      tables.push({ id: createId(), name, capacity: cap, shape });
+      tableForm.reset();
+      saveTables();
+      render();
+    });
+
+    // ── Assignation ───────────────────────────────────────────
+    function assignGuest(guestId, tableId) {
+      if (!tableId) delete assignments[guestId];
+      else assignments[guestId] = tableId;
+      saveTables();
+      render();
+    }
+
+    function removeGuestFromTable(guestId) {
+      delete assignments[guestId];
+      saveTables();
+      render();
+    }
+
+    function deleteTable(tableId) {
+      tables = tables.filter(t => t.id !== tableId);
+      for (const gId of Object.keys(assignments)) {
+        if (assignments[gId] === tableId) delete assignments[gId];
+      }
+      saveTables();
+      render();
+    }
+
+    // ── Contraintes ───────────────────────────────────────────
+    addConstraintBtn.addEventListener("click", () => {
+      const g1 = constraintGuest1.value;
+      const g2 = constraintGuest2.value;
+      if (!g1 || !g2 || g1 === g2) return;
+      const exists = constraints.some(c =>
+        (c.guest1Id === g1 && c.guest2Id === g2) ||
+        (c.guest1Id === g2 && c.guest2Id === g1)
+      );
+      if (!exists) {
+        constraints.push({ id: createId(), guest1Id: g1, guest2Id: g2 });
+        saveTables();
+        render();
+      }
+    });
+
+    function removeConstraint(cId) {
+      constraints = constraints.filter(c => c.id !== cId);
+      saveTables();
+      render();
+    }
+
+    function getTableViolations(tableId) {
+      const tIds = guests.filter(g => assignments[g.id] === tableId).map(g => g.id);
+      return constraints
+        .filter(c => tIds.includes(c.guest1Id) && tIds.includes(c.guest2Id))
+        .map(c => ({
+          g1: guests.find(g => g.id === c.guest1Id)?.name || "?",
+          g2: guests.find(g => g.id === c.guest2Id)?.name || "?",
+        }));
+    }
+
+    function renderConstraints() {
+      // Populate selects
+      const makeOpts = (selEl) => {
+        const current = selEl.value;
+        selEl.innerHTML = `<option value="">— Invité —</option>` +
+          guests.map(g => `<option value="${g.id}" ${g.id === current ? "selected" : ""}>${g.name}</option>`).join("");
+      };
+      makeOpts(constraintGuest1);
+      makeOpts(constraintGuest2);
+
+      // Render list
+      constraintListEl.innerHTML = "";
+      if (!constraints.length) {
+        constraintListEl.innerHTML = '<p style="font-size:0.82rem;color:var(--ink-soft);font-style:italic;">Aucune contrainte.</p>';
+        return;
+      }
+      for (const c of constraints) {
+        const g1 = guests.find(g => g.id === c.guest1Id);
+        const g2 = guests.find(g => g.id === c.guest2Id);
+        if (!g1 || !g2) continue;
+        const item = document.createElement("div");
+        item.className = "constraint-item";
+        item.innerHTML = `<span><strong>${g1.name}</strong> ✕ <strong>${g2.name}</strong></span>
+          <button data-cid="${c.id}" title="Supprimer">×</button>`;
+        item.querySelector("button").addEventListener("click", () => removeConstraint(c.id));
+        constraintListEl.appendChild(item);
+      }
+    }
+
+    // ── Rendu principal ───────────────────────────────────────
+    function render() {
+      renderTables();
+      renderGuests();
+      renderStats();
+      renderConstraints();
+      if (currentView === "room") renderRoom();
+    }
+
+    function renderStats() {
+      const total    = guests.length;
+      const placed   = guests.filter(g => assignments[g.id]).length;
+      const unplaced = total - placed;
+      const allViolations = tables.reduce((acc, t) => acc + getTableViolations(t.id).length, 0);
+      tableStats.innerHTML = `${total} invités confirmés — ${placed} placés — ${unplaced} à placer — ${tables.length} table(s)` +
+        (allViolations ? ` — <span style="color:#b91c1c;">⚠️ ${allViolations} conflit(s)</span>` : "");
+    }
+
+    function renderTables() {
+      tableListGrid.innerHTML = "";
+      if (!tables.length) {
+        tableListGrid.innerHTML = '<p style="font-size:0.84rem;color:var(--ink-soft);font-style:italic;">Aucune table créée.</p>';
+        return;
+      }
+      for (const table of tables) {
+        const tableGuests = guests.filter(g => assignments[g.id] === table.id);
+        const isFull      = tableGuests.length >= table.capacity;
+        const violations  = getTableViolations(table.id);
+
+        const card = document.createElement("div");
+        card.className = "table-card" + (isFull ? " is-full" : "");
+
+        const guestsHtml = tableGuests.length
+          ? tableGuests.map(g => `
+              <div class="table-guest-badge">
+                <span>${g.name}</span>
+                <button class="table-guest-remove" data-gid="${g.id}" title="Retirer">×</button>
+              </div>`).join("")
+          : '<span style="font-size:0.75rem;color:var(--ink-soft);font-style:italic;">Vide</span>';
+
+        const shapeLabel = { round:"⭕", rect:"▭", square:"□", oval:"⬮" }[table.shape || "round"] || "";
+
+        card.innerHTML = `
+          <div class="table-card-header">
+            <span class="table-card-name">${shapeLabel} ${table.name}</span>
+            <span class="table-card-capacity">${tableGuests.length}/${table.capacity}</span>
+          </div>
+          <div class="table-card-guests">${guestsHtml}</div>
+          ${violations.length ? `<div class="table-violation-warning">⚠️ ${violations.map(v => `${v.g1} & ${v.g2}`).join(" — ")}</div>` : ""}
+          <div style="margin-top:8px;display:flex;justify-content:flex-end;">
+            <button class="ghost-action delete-table-btn" data-tid="${table.id}" style="font-size:0.72rem;padding:3px 8px;">Supprimer</button>
+          </div>`;
+
+        card.querySelectorAll(".table-guest-remove").forEach(btn => {
+          btn.addEventListener("click", () => removeGuestFromTable(btn.dataset.gid));
+        });
+        card.querySelector(".delete-table-btn").addEventListener("click", () => {
+          if (confirm(`Supprimer "${table.name}" ?`)) deleteTable(table.id);
+        });
+
+        tableListGrid.appendChild(card);
+      }
+    }
+
+    function renderGuests() {
+      guestList.innerHTML = "";
+      const search     = (guestSearch.value || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+      const filterMode = tableFilter.value;
+
+      const filtered = guests.filter(g => {
+        const nameNorm = g.name.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+        if (search && !nameNorm.includes(search)) return false;
+        const isAssigned = Boolean(assignments[g.id]);
+        if (filterMode === "unassigned" && isAssigned)  return false;
+        if (filterMode === "assigned"   && !isAssigned) return false;
+        return true;
+      });
+
+      if (!filtered.length) {
+        const el = document.createElement("div");
+        el.className = "list-empty";
+        el.textContent = guests.length ? "Aucun invité pour ce filtre." : "Aucun invité confirmé.";
+        guestList.appendChild(el);
+        return;
+      }
+
+      for (const guest of filtered) {
+        const currentTableId = assignments[guest.id] || "";
+        const currentTable   = tables.find(t => t.id === currentTableId);
+
+        const row = document.createElement("div");
+        row.className = "unassigned-guest-item";
+
+        const opts = tables.map(t => {
+          const cnt  = guests.filter(g => assignments[g.id] === t.id).length;
+          const full = cnt >= t.capacity;
+          return `<option value="${t.id}" ${t.id === currentTableId ? "selected" : ""} ${full && t.id !== currentTableId ? "disabled" : ""}>
+            ${t.name} (${cnt}/${t.capacity})${full && t.id !== currentTableId ? " — complet" : ""}
+          </option>`;
+        }).join("");
+
+        row.innerHTML = `
+          <span class="unassigned-guest-name">${guest.name}</span>
+          ${currentTable ? `<span style="font-size:0.72rem;color:var(--ink-soft);">→ ${currentTable.name}</span>` : ""}
+          <select class="assign-table-select" data-gid="${guest.id}">
+            <option value="">— Non placé —</option>
+            ${opts}
+          </select>`;
+
+        row.querySelector("select").addEventListener("change", (e) => assignGuest(guest.id, e.target.value));
+        guestList.appendChild(row);
+      }
+    }
+
+    // ── Vue salle — Canvas ────────────────────────────────────
+    const SHAPE_DIMS = {
+      round:  { rx: 46, ry: 46 },
+      rect:   { rx: 62, ry: 37 },
+      square: { rx: 44, ry: 44 },
+      oval:   { rx: 60, ry: 36 },
+    };
+
+    const TABLE_FILL_LIGHT = { round:"#fce8f0", rect:"#e8f0fc", square:"#e8fce8", oval:"#fcf4e8" };
+    const TABLE_FILL_DARK  = { round:"#4a2535", rect:"#253548", square:"#253825", oval:"#453525" };
+
+    function initTablePositions() {
+      const cols = 4, spacingX = 170, spacingY = 140, startX = 90, startY = 90;
+      tables.forEach((t, i) => {
+        if (t.x == null || t.y == null) {
+          t.x = startX + (i % cols) * spacingX;
+          t.y = startY + Math.floor(i / cols) * spacingY;
+        }
+      });
+    }
+
+    function renderRoom() {
+      if (!roomCtx) return;
+      const container = roomCanvas.parentElement;
+      roomCanvas.width  = container.clientWidth  || 800;
+      roomCanvas.height = 520;
+      const ctx   = roomCtx;
+      const isDark = document.body.classList.contains("dark-mode");
+
+      // Background
+      ctx.fillStyle = isDark ? "#1a1612" : "#f7f3ee";
+      ctx.fillRect(0, 0, roomCanvas.width, roomCanvas.height);
+
+      // Contour de salle
+      ctx.strokeStyle = isDark ? "#4a3f35" : "#c9b89a";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(20, 20, roomCanvas.width - 40, roomCanvas.height - 40);
+
+      // Label salle
+      ctx.fillStyle = isDark ? "#7a6a5a" : "#bda98a";
+      ctx.font = "13px 'Manrope', sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("Salle de réception", roomCanvas.width / 2, 40);
+
+      // Tables
+      for (const table of tables) {
+        drawTableShape(ctx, table, isDark);
+      }
+
+      // Panel violations
+      const allViol = tables.flatMap(t =>
+        getTableViolations(t.id).map(v => `${t.name} : ${v.g1} & ${v.g2}`)
+      );
+      if (allViol.length) {
+        roomViolations.classList.remove("is-hidden");
+        roomViolations.innerHTML = "<strong>⚠️ Conflits :</strong> " + allViol.join(" — ");
+      } else {
+        roomViolations.classList.add("is-hidden");
+      }
+    }
+
+    function drawTableShape(ctx, table, isDark) {
+      const x     = table.x || 100;
+      const y     = table.y || 100;
+      const shape = table.shape || "round";
+      const dims  = SHAPE_DIMS[shape] || SHAPE_DIMS.round;
+      const tableGuests = guests.filter(g => assignments[g.id] === table.id);
+      const isFull      = tableGuests.length >= table.capacity;
+      const hasViol     = getTableViolations(table.id).length > 0;
+
+      ctx.save();
+
+      // Tracé de la forme
+      ctx.beginPath();
+      switch (shape) {
+        case "round":
+          ctx.arc(x, y, dims.rx, 0, Math.PI * 2);
+          break;
+        case "rect":
+        case "square":
+          if (ctx.roundRect) ctx.roundRect(x - dims.rx, y - dims.ry, dims.rx * 2, dims.ry * 2, 8);
+          else ctx.rect(x - dims.rx, y - dims.ry, dims.rx * 2, dims.ry * 2);
+          break;
+        case "oval":
+          ctx.ellipse(x, y, dims.rx, dims.ry, 0, 0, Math.PI * 2);
+          break;
+      }
+
+      // Couleur de fond
+      if (hasViol)     ctx.fillStyle = isDark ? "#5a1515" : "#ffe0e0";
+      else if (isFull) ctx.fillStyle = isDark ? "#3a3010" : "#fff5cc";
+      else             ctx.fillStyle = (isDark ? TABLE_FILL_DARK : TABLE_FILL_LIGHT)[shape] || (isDark ? "#2a2520" : "#f0ece5");
+      ctx.fill();
+
+      // Contour
+      if (hasViol)          ctx.strokeStyle = "#e05555";
+      else if (table._drag) ctx.strokeStyle = "#b17a4a";
+      else                  ctx.strokeStyle = isDark ? "#6a5a4a" : "#9a7a5a";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Texte
+      ctx.textAlign   = "center";
+      ctx.fillStyle   = isDark ? "#e8d8c8" : "#3d2b1f";
+      ctx.font        = "bold 12px 'Manrope', sans-serif";
+      const label     = table.name.length > 13 ? table.name.slice(0, 12) + "…" : table.name;
+      ctx.fillText(label, x, y - 2);
+
+      ctx.fillStyle = isDark ? "#9a8a7a" : "#7a6a5a";
+      ctx.font      = "10px 'Manrope', sans-serif";
+      ctx.fillText(`${tableGuests.length}/${table.capacity}`, x, y + 13);
+
+      if (hasViol) {
+        ctx.font      = "14px sans-serif";
+        ctx.fillStyle = "#e05555";
+        ctx.textAlign = "left";
+        ctx.fillText("⚠", x + dims.rx - 12, y - dims.ry + 14);
+      }
+
+      ctx.restore();
+    }
+
+    function isPointInTable(mx, my, table) {
+      const x    = table.x || 100;
+      const y    = table.y || 100;
+      const dims = SHAPE_DIMS[table.shape || "round"] || SHAPE_DIMS.round;
+      switch (table.shape || "round") {
+        case "round":
+        case "oval":
+          return ((mx - x) / dims.rx) ** 2 + ((my - y) / dims.ry) ** 2 <= 1;
+        case "rect":
+        case "square":
+          return Math.abs(mx - x) <= dims.rx && Math.abs(my - y) <= dims.ry;
+      }
+      return false;
+    }
+
+    function getRoomPos(e) {
+      const rect  = roomCanvas.getBoundingClientRect();
+      const scaleX = roomCanvas.width  / rect.width;
+      const scaleY = roomCanvas.height / rect.height;
+      return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
+    }
+    function getRoomPosTouch(e) {
+      const rect   = roomCanvas.getBoundingClientRect();
+      const scaleX = roomCanvas.width  / rect.width;
+      const scaleY = roomCanvas.height / rect.height;
+      const t      = e.touches[0];
+      return { x: (t.clientX - rect.left) * scaleX, y: (t.clientY - rect.top) * scaleY };
+    }
+
+    let roomDragTable = null, roomDragOffX = 0, roomDragOffY = 0;
+    const ROOM_PAD = 30;
+
+    function clampPos(val, dim, max) {
+      return Math.max(dim + ROOM_PAD, Math.min(max - dim - ROOM_PAD, val));
+    }
+
+    roomCanvas.addEventListener("mousedown", (e) => {
+      const pos = getRoomPos(e);
+      for (const table of [...tables].reverse()) {
+        if (isPointInTable(pos.x, pos.y, table)) {
+          roomDragTable    = table;
+          roomDragOffX     = pos.x - (table.x || 100);
+          roomDragOffY     = pos.y - (table.y || 100);
+          table._drag      = true;
+          renderRoom();
+          break;
+        }
+      }
+    });
+
+    roomCanvas.addEventListener("mousemove", (e) => {
+      if (!roomDragTable) return;
+      const pos     = getRoomPos(e);
+      const dims    = SHAPE_DIMS[roomDragTable.shape || "round"] || SHAPE_DIMS.round;
+      roomDragTable.x = clampPos(pos.x - roomDragOffX, dims.rx, roomCanvas.width);
+      roomDragTable.y = clampPos(pos.y - roomDragOffY, dims.ry, roomCanvas.height);
+      renderRoom();
+    });
+
+    function stopRoomDrag() {
+      if (roomDragTable) {
+        delete roomDragTable._drag;
+        saveTables();
+        roomDragTable = null;
+        renderRoom();
+      }
+    }
+
+    roomCanvas.addEventListener("mouseup",    stopRoomDrag);
+    roomCanvas.addEventListener("mouseleave", stopRoomDrag);
+
+    roomCanvas.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      const pos = getRoomPosTouch(e);
+      for (const table of [...tables].reverse()) {
+        if (isPointInTable(pos.x, pos.y, table)) {
+          roomDragTable = table;
+          roomDragOffX  = pos.x - (table.x || 100);
+          roomDragOffY  = pos.y - (table.y || 100);
+          table._drag   = true;
+          renderRoom();
+          break;
+        }
+      }
+    }, { passive: false });
+
+    roomCanvas.addEventListener("touchmove", (e) => {
+      e.preventDefault();
+      if (!roomDragTable) return;
+      const pos  = getRoomPosTouch(e);
+      const dims = SHAPE_DIMS[roomDragTable.shape || "round"] || SHAPE_DIMS.round;
+      roomDragTable.x = clampPos(pos.x - roomDragOffX, dims.rx, roomCanvas.width);
+      roomDragTable.y = clampPos(pos.y - roomDragOffY, dims.ry, roomCanvas.height);
+      renderRoom();
+    }, { passive: false });
+
+    roomCanvas.addEventListener("touchend", stopRoomDrag);
+
+    window.addEventListener("resize", () => { if (currentView === "room") renderRoom(); });
+
+    // ── Filtres ───────────────────────────────────────────────
+    guestSearch.addEventListener("input",  () => renderGuests());
+    tableFilter.addEventListener("change", () => renderGuests());
+
+    // ── Dark mode ─────────────────────────────────────────────
+    (function initDark() {
+      const isDark = localStorage.getItem("dark-mode") === "true";
+      if (isDark) document.body.classList.add("dark-mode");
+      const label = isDark ? "☀️ Mode clair" : "🌙 Mode sombre";
+      document.querySelectorAll(".dark-mode-toggle-btn").forEach(btn => {
+        btn.textContent = label;
+        btn.addEventListener("click", () => {
+          const d = document.body.classList.toggle("dark-mode");
+          localStorage.setItem("dark-mode", d);
+          document.querySelectorAll(".dark-mode-toggle-btn").forEach(b => {
+            b.textContent = d ? "☀️ Mode clair" : "🌙 Mode sombre";
+          });
+          if (currentView === "room") renderRoom();
+        });
+      });
+    })();
+
+    // ── Init ──────────────────────────────────────────────────
+    (async function init() {
+      if (!isServerMode) {
+        adminError.textContent = "Ouvrez via http://127.0.0.1:8000.";
+        return;
+      }
+      const saved = localStorage.getItem(ADMIN_SESSION_KEY);
+      if (!saved) {
+        adminError.textContent = "Connectez-vous pour accéder au plan de table.";
+        return;
+      }
+      const res = await fetch(ADMIN_CHECK, {
+        cache: "no-store",
+        headers: { "X-Admin-Key": saved },
+      }).catch(() => null);
+
+      if (!res || !res.ok) {
+        localStorage.removeItem(ADMIN_SESSION_KEY);
+        adminError.textContent = "Session expirée. Reconnectez-vous.";
+        return;
+      }
+      await unlock(saved);
+    })();
+  })();
+  </script>
+</body>
+</html>
