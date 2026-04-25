@@ -4,12 +4,24 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mariage Florence et Antoine</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💍</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <!-- Navigation sticky (apparaît après le hero) -->
+  <nav class="nav-sticky" id="navSticky" aria-label="Navigation principale">
+    <a href="#programme">Programme</a>
+    <a href="#infos">Infos pratiques</a>
+    <a href="#lieux">Lieux</a>
+    <a href="#faq">FAQ</a>
+    <a href="#rsvp">RSVP</a>
+    <a href="organisation.html">Organisation</a>
+    <button class="dark-mode-toggle-btn" id="darkModeToggleSticky" type="button" aria-label="Basculer mode sombre">🌙 Mode sombre</button>
+  </nav>
+
   <main class="app-shell">
     <header class="hero" id="accueil">
       <div class="sakura-layer sakura-back" aria-hidden="true">
@@ -39,8 +51,11 @@
       <nav class="top-nav" aria-label="Navigation principale">
         <a href="#programme">Programme</a>
         <a href="#infos">Infos pratiques</a>
+        <a href="#lieux">Lieux</a>
+        <a href="#faq">FAQ</a>
         <a href="#rsvp">RSVP</a>
         <a href="organisation.html">Espace organisation</a>
+        <button class="dark-mode-toggle-btn" id="darkModeToggleHero" type="button" aria-label="Basculer mode sombre">🌙 Mode sombre</button>
       </nav>
       <div class="hero-content">
         <p class="kicker">17 avril 2027</p>
@@ -113,13 +128,14 @@
       </div>
     </header>
 
-    <section class="section-card" id="programme">
+    <section class="section-card" id="programme" data-reveal>
       <div class="section-head">
         <p class="panel-kicker">Programme</p>
         <h2>Le déroulé de la journée (horaires à définir)</h2>
       </div>
       <ol class="timeline">
         <li>
+          <span class="timeline-icon">⚖️</span>
           <span class="time">À définir</span>
           <div>
             <h3>Passage en mairie</h3>
@@ -127,6 +143,7 @@
           </div>
         </li>
         <li>
+          <span class="timeline-icon">⛪</span>
           <span class="time">À définir</span>
           <div>
             <h3>Cérémonie religieuse</h3>
@@ -134,6 +151,7 @@
           </div>
         </li>
         <li>
+          <span class="timeline-icon">🏰</span>
           <span class="time">À définir</span>
           <div>
             <h3>Arrivée au domaine</h3>
@@ -141,6 +159,7 @@
           </div>
         </li>
         <li>
+          <span class="timeline-icon">🥂</span>
           <span class="time">À définir</span>
           <div>
             <h3>Vin d'honneur, cocktail et repas</h3>
@@ -150,7 +169,7 @@
       </ol>
     </section>
 
-    <section class="section-card rsvp-card" id="rsvp">
+    <section class="section-card rsvp-card" id="rsvp" data-reveal>
       <div class="section-head">
         <p class="panel-kicker">RSVP</p>
         <h2>Merci de confirmer avant le 1er mars 2027</h2>
@@ -162,7 +181,7 @@
       </div>
     </section>
 
-    <section class="section-card save-the-date-card">
+    <section class="section-card save-the-date-card" data-reveal>
       <div class="section-head">
         <p class="panel-kicker">Save the Date</p>
         <h2>Partagez la date</h2>
@@ -170,6 +189,102 @@
       <p>Scannez ce QR code pour enregistrer la date dans votre agenda ou partager l'invitation.</p>
       <div class="save-the-date-qr">
         <img src="assets/qrcode/qr.jpg" alt="QR code Save the Date — Florence et Antoine, 17 avril 2027" class="qr-image">
+      </div>
+    </section>
+
+    <section class="section-card" id="lieux" data-reveal>
+      <div class="section-head">
+        <p class="panel-kicker">Lieux</p>
+        <h2>Nous retrouver</h2>
+      </div>
+      <p>Cliquez sur les cartes pour ouvrir l'itinéraire dans Google Maps.</p>
+      <div class="maps-grid">
+
+        <div class="map-card">
+          <div class="map-card-header">
+            <h3>⚖️ Mairie de Gisors</h3>
+            <p>Place Carpeaux, 27140 Gisors</p>
+            <a href="https://maps.google.com/?q=Mairie+de+Gisors,+27140+Gisors" target="_blank" rel="noopener">Ouvrir dans Maps ↗</a>
+          </div>
+          <div class="map-embed">
+            <iframe
+              src="https://maps.google.com/maps?q=Mairie+de+Gisors,+27140+Gisors,+France&output=embed&z=15"
+              loading="lazy"
+              allowfullscreen
+              title="Mairie de Gisors"></iframe>
+          </div>
+        </div>
+
+        <div class="map-card">
+          <div class="map-card-header">
+            <h3>⛪ Église de Gisors</h3>
+            <p>Parvis Saint-Gervais, 27140 Gisors</p>
+            <a href="https://maps.google.com/?q=Cathédrale+Saint-Gervais+Gisors" target="_blank" rel="noopener">Ouvrir dans Maps ↗</a>
+          </div>
+          <div class="map-embed">
+            <iframe
+              src="https://maps.google.com/maps?q=Cathédrale+Saint-Gervais+Saint-Protais+Gisors,+France&output=embed&z=15"
+              loading="lazy"
+              allowfullscreen
+              title="Église de Gisors"></iframe>
+          </div>
+        </div>
+
+        <div class="map-card">
+          <div class="map-card-header">
+            <h3>🏰 Les Domaines de Gaston</h3>
+            <p>Les Andelys, 27700</p>
+            <a href="https://maps.google.com/?q=Les+Domaines+de+Gaston,+Les+Andelys" target="_blank" rel="noopener">Ouvrir dans Maps ↗</a>
+          </div>
+          <div class="map-embed">
+            <iframe
+              src="https://maps.google.com/maps?q=Les+Domaines+de+Gaston,+27700+Les+Andelys,+France&output=embed&z=14"
+              loading="lazy"
+              allowfullscreen
+              title="Les Domaines de Gaston"></iframe>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <section class="section-card" id="faq" data-reveal>
+      <div class="section-head">
+        <p class="panel-kicker">FAQ</p>
+        <h2>Questions fréquentes</h2>
+      </div>
+      <div class="faq-list">
+
+        <details class="faq-item">
+          <summary>👗 Quel est le dress code ?</summary>
+          <p>Tenue de cérémonie recommandée — costume ou robe habillée. Nous vous demandons d'éviter le blanc et le noir strict pour laisser la place aux mariés. Choisissez des couleurs gaies, on adore ça !</p>
+        </details>
+
+        <details class="faq-item">
+          <summary>👶 Peut-on venir avec ses enfants ?</summary>
+          <p>Les enfants sont les bienvenus ! Merci de bien les indiquer dans votre réponse RSVP afin qu'on puisse prévoir le nombre de couverts et, si possible, une animation pour les petits.</p>
+        </details>
+
+        <details class="faq-item">
+          <summary>🅿️ Y a-t-il un parking sur place ?</summary>
+          <p>Oui, un parking est disponible aux Domaines de Gaston. Pour les cérémonies à Gisors, des parkings publics sont à proximité de la mairie et de l'église. Les détails seront précisés prochainement.</p>
+        </details>
+
+        <details class="faq-item">
+          <summary>🎁 Comment offrir un cadeau ?</summary>
+          <p>Votre présence est déjà le plus beau des cadeaux ! Si vous souhaitez nous faire plaisir, une participation à notre voyage de noces sera très appréciée. Une liste sera partagée prochainement.</p>
+        </details>
+
+        <details class="faq-item">
+          <summary>🚌 Y a-t-il des navettes prévues ?</summary>
+          <p>Des navettes seront organisées pour le trajet depuis Gisors vers les Domaines de Gaston en fin de soirée. Les horaires et points de départ seront communiqués avant le mariage.</p>
+        </details>
+
+        <details class="faq-item">
+          <summary>🌿 Y a-t-il des options végétariennes / allergies ?</summary>
+          <p>Bien sûr ! Pensez à mentionner vos régimes alimentaires et allergies dans votre formulaire RSVP. Nous transmettrons toutes les informations au traiteur pour que chacun passe un excellent repas.</p>
+        </details>
+
       </div>
     </section>
 
