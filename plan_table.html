@@ -192,14 +192,18 @@
         const raw = localStorage.getItem(TABLE_STORAGE_KEY);
         if (!raw) return;
         const data = JSON.parse(raw);
-        if (Array.isArray(data.tables))                           tables      = data.tables;
+        if (Array.isArray(data.tables))                               tables      = data.tables;
         if (data.assignments && typeof data.assignments === "object") assignments = data.assignments;
-        if (Array.isArray(data.constraints))                       constraints = data.constraints;
+        if (Array.isArray(data.constraints))                          constraints = data.constraints;
+        // Nettoie un éventuel _drag persisté après fermeture pendant un glisser
+        tables.forEach(t => { delete t._drag; });
       } catch { /* */ }
     }
 
     function saveTables() {
-      localStorage.setItem(TABLE_STORAGE_KEY, JSON.stringify({ tables, assignments, constraints }));
+      // Exclut _drag du JSON : propriété d'état visuel, pas de données
+      const cleanTables = tables.map(({ _drag, ...rest }) => rest);
+      localStorage.setItem(TABLE_STORAGE_KEY, JSON.stringify({ tables: cleanTables, assignments, constraints }));
     }
 
     function createId() {
@@ -504,6 +508,7 @@
 
     function renderRoom() {
       if (!roomCtx) return;
+      initTablePositions();
       const container = roomCanvas.parentElement;
       roomCanvas.width  = container.clientWidth  || 800;
       roomCanvas.height = 520;
@@ -543,8 +548,8 @@
     }
 
     function drawTableShape(ctx, table, isDark) {
-      const x     = table.x || 100;
-      const y     = table.y || 100;
+      const x     = table.x ?? 100;
+      const y     = table.y ?? 100;
       const shape = table.shape || "round";
       const dims  = SHAPE_DIMS[shape] || SHAPE_DIMS.round;
       const tableGuests = guests.filter(g => assignments[g.id] === table.id);
@@ -604,8 +609,8 @@
     }
 
     function isPointInTable(mx, my, table) {
-      const x    = table.x || 100;
-      const y    = table.y || 100;
+      const x    = table.x ?? 100;
+      const y    = table.y ?? 100;
       const dims = SHAPE_DIMS[table.shape || "round"] || SHAPE_DIMS.round;
       switch (table.shape || "round") {
         case "round":
@@ -644,8 +649,8 @@
       for (const table of [...tables].reverse()) {
         if (isPointInTable(pos.x, pos.y, table)) {
           roomDragTable    = table;
-          roomDragOffX     = pos.x - (table.x || 100);
-          roomDragOffY     = pos.y - (table.y || 100);
+          roomDragOffX     = pos.x - (table.x ?? 100);
+          roomDragOffY     = pos.y - (table.y ?? 100);
           table._drag      = true;
           renderRoom();
           break;
@@ -680,8 +685,8 @@
       for (const table of [...tables].reverse()) {
         if (isPointInTable(pos.x, pos.y, table)) {
           roomDragTable = table;
-          roomDragOffX  = pos.x - (table.x || 100);
-          roomDragOffY  = pos.y - (table.y || 100);
+          roomDragOffX  = pos.x - (table.x ?? 100);
+          roomDragOffY  = pos.y - (table.y ?? 100);
           table._drag   = true;
           renderRoom();
           break;
