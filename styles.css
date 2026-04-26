@@ -3569,8 +3569,7 @@ body[data-page="plan-table"] .panel:nth-child(3) {
   grid-area: unset;
 }
 
-/* .panel-controls en flex pour empiler proprement les deux panneaux gauches */
-body[data-page="plan-table"] .panel-controls {
+.pt-col-left {
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -3844,7 +3843,7 @@ body.dark-mode .table-violation-warning {
   .hero-content,
   .admin-gate,
   .private-tools-head,
-  .panel-controls,
+  .pt-col-left,
   #guestPlacementList,
   .list-tools,
   .view-toggle,
