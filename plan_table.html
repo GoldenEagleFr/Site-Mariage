@@ -65,7 +65,7 @@
           <div class="panel-two-col" style="align-items:start;">
 
             <!-- Colonne gauche : tables + contraintes -->
-            <div class="panel-controls">
+            <div class="pt-col-left">
 
               <!-- Créer une table -->
               <div class="panel">
@@ -547,7 +547,94 @@
       }
     }
 
+    function drawChairs(ctx, table, isDark) {
+      const x     = table.x ?? 100;
+      const y     = table.y ?? 100;
+      const shape = table.shape || "round";
+      const dims  = SHAPE_DIMS[shape] || SHAPE_DIMS.round;
+      const n     = table.capacity;
+      if (n <= 0) return;
+
+      const tableGuests = guests.filter(g => assignments[g.id] === table.id);
+      const occupied    = tableGuests.length;
+
+      // Rayon dynamique : s'adapte au nombre de chaises disponibles sur le pourtour
+      const CHAIR_GAP = 6;
+      const outerRx   = dims.rx + CHAIR_GAP;
+      const outerRy   = dims.ry + CHAIR_GAP;
+      const outerPerim = (shape === "rect" || shape === "square")
+        ? 2 * (outerRx * 2 + outerRy * 2)
+        : 2 * Math.PI * Math.sqrt((outerRx * outerRx + outerRy * outerRy) / 2);
+      const CHAIR_R = Math.max(3, Math.min(7, outerPerim / n / 2 - 1));
+
+      const fillOcc  = isDark ? "#8a6040" : "#d4a870";
+      const fillFree = isDark ? "#2e2822" : "#ede5d8";
+      const stroke   = isDark ? "#6a5a4a" : "#9a7a5a";
+
+      for (let i = 0; i < n; i++) {
+        const isOcc = i < occupied;
+        let cx, cy;
+
+        if (shape === "round") {
+          const angle = (2 * Math.PI * i) / n - Math.PI / 2;
+          const dist  = dims.rx + CHAIR_GAP + CHAIR_R;
+          cx = x + dist * Math.cos(angle);
+          cy = y + dist * Math.sin(angle);
+        } else if (shape === "oval") {
+          const angle = (2 * Math.PI * i) / n - Math.PI / 2;
+          const ex    = dims.rx * Math.cos(angle);
+          const ey    = dims.ry * Math.sin(angle);
+          // Normale sortante de l'ellipse au point (ex, ey)
+          const nx    = ex / (dims.rx * dims.rx);
+          const ny    = ey / (dims.ry * dims.ry);
+          const len   = Math.sqrt(nx * nx + ny * ny);
+          cx = x + ex + (nx / len) * (CHAIR_GAP + CHAIR_R);
+          cy = y + ey + (ny / len) * (CHAIR_GAP + CHAIR_R);
+        } else {
+          // rect / square : distribution uniforme le long du périmètre
+          const W = dims.rx * 2, H = dims.ry * 2;
+          const perimRect = 2 * (W + H);
+          const t = (i / n) * perimRect;
+          if (t < W) {
+            cx = x - dims.rx + t;
+            cy = y - dims.ry - CHAIR_GAP - CHAIR_R;
+          } else if (t < W + H) {
+            cx = x + dims.rx + CHAIR_GAP + CHAIR_R;
+            cy = y - dims.ry + (t - W);
+          } else if (t < 2 * W + H) {
+            cx = x + dims.rx - (t - W - H);
+            cy = y + dims.ry + CHAIR_GAP + CHAIR_R;
+          } else {
+            cx = x - dims.rx - CHAIR_GAP - CHAIR_R;
+            cy = y + dims.ry - (t - 2 * W - H);
+          }
+        }
+
+        ctx.save();
+
+        // Assise (cercle plein)
+        ctx.beginPath();
+        ctx.arc(cx, cy, CHAIR_R, 0, Math.PI * 2);
+        ctx.fillStyle = isOcc ? fillOcc : fillFree;
+        ctx.fill();
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // Dossier (arc épais côté extérieur = loin du centre de la table)
+        const outAngle = Math.atan2(cy - y, cx - x);
+        ctx.beginPath();
+        ctx.arc(cx, cy, CHAIR_R + 2, outAngle - 0.75, outAngle + 0.75);
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+
+        ctx.restore();
+      }
+    }
+
     function drawTableShape(ctx, table, isDark) {
+      drawChairs(ctx, table, isDark);
       const x     = table.x ?? 100;
       const y     = table.y ?? 100;
       const shape = table.shape || "round";
