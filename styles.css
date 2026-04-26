@@ -3913,7 +3913,7 @@ body.dark-mode .table-violation-warning {
 .room-element-item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 4px;
   padding: 4px 8px;
   background: var(--bg);
   border: 1px solid var(--border);
@@ -3930,6 +3930,22 @@ body.dark-mode .table-violation-warning {
   line-height: 1;
 }
 .del-elem-btn:hover { color: #b91c1c; }
+.elem-icon-col  { flex-shrink: 0; }
+.elem-label-edit {
+  flex: 1;
+  min-width: 0;
+  font: 0.82rem 'Manrope', sans-serif;
+  color: var(--ink);
+  background: transparent;
+  border: none;
+  border-bottom: 1.5px solid transparent;
+  padding: 1px 2px;
+  outline: none;
+  transition: border-color .15s;
+}
+.elem-label-edit:hover { border-bottom-color: var(--border); }
+.elem-label-edit:focus { border-bottom-color: var(--accent); background: var(--surface-alt, #f9f7f4); border-radius: 3px 3px 0 0; }
+.elem-dims-col  { flex-shrink: 0; font-size: 0.75rem; color: var(--ink-soft); white-space: nowrap; }
 
 /* ═══════════════════════════════════════════════════════════
    CANVAS WRAPPER + TABLE MANAGE PANEL

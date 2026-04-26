@@ -1117,8 +1117,20 @@
         const hM = ((el.h ?? 50) / ppm).toFixed(1);
         const div = document.createElement("div");
         div.className = "room-element-item";
-        div.innerHTML = `<span>${ELEM_ICONS[el.type] || "📦"} ${el.label || el.type} — ${wM}m × ${hM}m</span>
+        div.innerHTML = `
+          <span class="elem-icon-col">${ELEM_ICONS[el.type] || "📦"}</span>
+          <input class="elem-label-edit" type="text" value="${(el.label || el.type).replace(/"/g, '&quot;')}" title="Cliquer pour renommer">
+          <span class="elem-dims-col">${wM}×${hM}m</span>
           <button class="del-elem-btn" data-eid="${el.id}">×</button>`;
+
+        const inp = div.querySelector(".elem-label-edit");
+        const saveName = () => {
+          const v = inp.value.trim();
+          if (v) { el.label = v; saveTables(); renderRoom(); }
+        };
+        inp.addEventListener("blur",    saveName);
+        inp.addEventListener("keydown", e => { if (e.key === "Enter") inp.blur(); });
+
         div.querySelector(".del-elem-btn").addEventListener("click", () => {
           roomConfig.elements = roomConfig.elements.filter(e => e.id !== el.id);
           saveTables();
