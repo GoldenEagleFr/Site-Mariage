@@ -130,6 +130,8 @@
             <button id="btnZoomReset" class="room-tool-btn" type="button" title="Réinitialiser la vue">⊡</button>
             <span class="room-toolbar-sep"></span>
             <button id="btnConfigRoom" class="room-tool-btn" type="button" title="Configurer la salle et ses éléments">⚙️ Salle</button>
+            <span class="room-toolbar-sep"></span>
+            <button id="btnPrintRoom" class="room-tool-btn" type="button" title="Imprimer le plan de salle">🖨️ Imprimer</button>
           </div>
 
           <div id="roomConfigPanel" class="room-config-panel is-hidden">
@@ -166,7 +168,10 @@
             </div>
             <div id="tableManagePanel" class="table-manage-panel is-hidden">
               <div class="table-manage-header">
-                <span id="tableManageTitle"></span>
+                <div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:0;">
+                  <input id="tableNameEditInput" type="text" class="table-name-edit" placeholder="Nom de la table">
+                  <span id="tableManageTitle" style="font-size:0.78rem;color:var(--ink-soft);"></span>
+                </div>
                 <button id="tableManageClose" type="button">✕</button>
               </div>
               <div id="tableManageContent" class="table-manage-content"></div>
@@ -317,31 +322,38 @@
     viewBtnRoom.addEventListener("click", () => switchView("room"));
 
     // ── Éléments fixes de la salle ───────────────────────────────
-    // Scène : à DROITE de la salle (bande de service 12,5m), centrée en hauteur
-    // Dimensions : 11,20 m (longueur, le long du mur droit) × 3,48 m (profondeur, vers la droite)
-    const DEFAULTS_VERSION = 3;
+    // Bande de service à DROITE (35m - 22,5m = 12,5m) :
+    //   Scène 11,20×3,48m centrée en hauteur (mur droit de la salle)
+    //   Locaux techniques : espaces au-dessus et en-dessous de la scène
+    const DEFAULTS_VERSION = 4;
 
     function ensureDefaultElements() {
       if ((roomConfig._defaultsVersion ?? 0) >= DEFAULTS_VERSION) return;
       roomConfig._defaultsVersion = DEFAULTS_VERSION;
 
-      const PPM = ROOM_WORLD_W / roomConfig.widthM;  // px/m
+      const PPM = ROOM_WORLD_W / roomConfig.widthM;
       const RH  = getRoomWorldH();
 
-      // Supprime tous les builtins existants, conserve les éléments personnalisés
       roomConfig.elements = roomConfig.elements.filter(e => !String(e.id).startsWith("builtin-"));
 
-      // Scène — 3,48 m de profondeur (= largeur dans le canvas, extension à droite)
-      //         11,20 m de longueur  (= hauteur dans le canvas, le long du mur droit)
-      const sw = Math.round(3.48  * PPM);  // largeur canvas (profondeur réelle)
-      const sh = Math.round(11.20 * PPM);  // hauteur canvas (longueur réelle)
+      // Scène — 11,20 m de longueur × 3,48 m de profondeur
+      const sw      = Math.round(3.48  * PPM);
+      const sh      = Math.round(11.20 * PPM);
+      const sceneX  = ROOM_WORLD_X + ROOM_WORLD_W;
+      const sceneY  = ROOM_WORLD_Y + Math.round((RH - sh) / 2);
+      const ltH     = sceneY - ROOM_WORLD_Y;  // hauteur des locaux (espace restant haut et bas)
 
-      roomConfig.elements.push({
-        id: "builtin-scene", type: "scene", label: "Scène",
-        x: ROOM_WORLD_X + ROOM_WORLD_W,              // collée au mur droit
-        y: ROOM_WORLD_Y + Math.round((RH - sh) / 2), // centrée en hauteur
-        w: sw, h: sh
-      });
+      roomConfig.elements.push(
+        // Local technique haut
+        { id: "builtin-lt-top", type: "custom", label: "Local tech.",
+          x: sceneX, y: ROOM_WORLD_Y, w: sw, h: ltH },
+        // Scène
+        { id: "builtin-scene",  type: "scene",  label: "Scène",
+          x: sceneX, y: sceneY,        w: sw, h: sh  },
+        // Local technique bas
+        { id: "builtin-lt-bot", type: "custom", label: "Local tech.",
+          x: sceneX, y: sceneY + sh,   w: sw, h: ltH }
+      );
 
       saveTables();
     }
@@ -818,10 +830,9 @@
           ctx.fillText(String(i + 1), cx, cy);
         }
 
-        // Prénom
+        // Nom complet
         if (showNames && guest) {
-          const first = guest.name.split(" ")[0];
-          const lbl   = first.length > 9 ? first.slice(0, 8) + "." : first;
+          const lbl = guest.name.length > 14 ? guest.name.slice(0, 13) + "." : guest.name;
           const nd    = r + 5;
           ctx.textAlign    = "center";
           ctx.textBaseline = "middle";
@@ -1122,6 +1133,36 @@
       if (!roomConfigPanel.classList.contains("is-hidden")) renderRoomConfig();
     });
 
+    document.getElementById("btnPrintRoom")?.addEventListener("click", () => {
+      // Capture le canvas au zoom minimum (salle entière visible)
+      const savedZoom = roomZoom, savedPanX = roomPanX, savedPanY = roomPanY;
+      roomZoom = getMinZoom(); roomPanX = 0; roomPanY = 0;
+      renderRoom();
+      const imgData = roomCanvas.toDataURL("image/png");
+      // Restore
+      roomZoom = savedZoom; roomPanX = savedPanX; roomPanY = savedPanY;
+      renderRoom();
+
+      const w = window.open("", "_blank");
+      if (!w) return;
+      w.document.write(`<!DOCTYPE html><html lang="fr"><head>
+        <meta charset="UTF-8">
+        <title>Plan de salle — Florence &amp; Antoine</title>
+        <style>
+          * { margin:0; padding:0; box-sizing:border-box; }
+          body { background:#fff; display:flex; flex-direction:column; align-items:center; padding:20px; font-family:'Helvetica Neue',sans-serif; }
+          h1 { font-size:1.1rem; font-weight:600; margin-bottom:14px; color:#333; letter-spacing:.02em; }
+          img { max-width:100%; height:auto; border:1px solid #ddd; border-radius:4px; }
+          @media print { body { padding:0; } h1 { margin-bottom:8px; } button { display:none; } }
+        </style>
+      </head><body>
+        <h1>Plan de salle — Florence &amp; Antoine</h1>
+        <img src="${imgData}" alt="Plan de salle">
+        <script>window.addEventListener('load', () => window.print());<\/script>
+      </body></html>`);
+      w.document.close();
+    });
+
     // ── Table manage panel ────────────────────────────────────
     function openTableManagePanel(tableId) {
       selectedTableId = tableId;
@@ -1144,7 +1185,20 @@
       if (!table) { closeTableManagePanel(); return; }
 
       const tableGuests = guests.filter(g => assignments[g.id] === table.id);
-      tableManageTitle.textContent = `${table.name} (${tableGuests.length}/${table.capacity})`;
+      tableManageTitle.textContent = `${tableGuests.length}/${table.capacity} personnes`;
+
+      const nameInput = document.getElementById("tableNameEditInput");
+      if (nameInput) {
+        nameInput.value = table.name;
+        nameInput.onblur  = null;
+        nameInput.onkeydown = null;
+        const saveName = () => {
+          const v = nameInput.value.trim();
+          if (v && v !== table.name) { table.name = v; saveTables(); renderRoom(); }
+        };
+        nameInput.onblur   = saveName;
+        nameInput.onkeydown = (ev) => { if (ev.key === "Enter") { ev.preventDefault(); nameInput.blur(); } };
+      }
 
       const specificGuestIds = new Set(
         Object.entries(seatMap)

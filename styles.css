@@ -3973,6 +3973,19 @@ body.dark-mode .table-violation-warning {
   line-height: 1;
 }
 .table-manage-header button:hover { color: var(--ink); }
+.table-name-edit {
+  font: 600 0.9rem 'Manrope', sans-serif;
+  color: var(--ink);
+  background: transparent;
+  border: none;
+  border-bottom: 1.5px solid transparent;
+  padding: 0 2px;
+  width: 100%;
+  outline: none;
+  transition: border-color .15s;
+}
+.table-name-edit:hover  { border-bottom-color: var(--border); }
+.table-name-edit:focus  { border-bottom-color: var(--accent); background: var(--surface-alt, #f9f7f4); border-radius: 3px 3px 0 0; }
 .table-manage-content { padding: 8px 12px 14px; }
 .tms-seats-list { display: flex; flex-direction: column; gap: 4px; }
 .tms-seat {
