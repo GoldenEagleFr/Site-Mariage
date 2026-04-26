@@ -612,6 +612,22 @@
       oval:   { rx: 30, ry: 15 },   // rétrocompat
     };
 
+    // Coordonnées fixes du monde (indépendantes du zoom)
+    const ROOM_WORLD_X = 30;   // marge gauche/droite en px monde
+    const ROOM_WORLD_Y = 55;   // marge haute (bord haut de la salle)
+    const ROOM_WORLD_W = 740;  // largeur fixe de la salle en px monde
+
+    function getRoomWorldH() {
+      return Math.round(ROOM_WORLD_W * roomConfig.heightM / roomConfig.widthM);
+    }
+    function getMinZoom() {
+      const cw = (roomCanvas && roomCanvas.width) || 800;
+      return Math.max(0.05, Math.min(
+        cw  / (ROOM_WORLD_X * 2 + ROOM_WORLD_W),
+        650 / (ROOM_WORLD_Y * 2 + getRoomWorldH())
+      ));
+    }
+
     const TABLE_FILL_LIGHT = { round:"#fce8f0", rect:"#e8f0fc", square:"#e8fce8", oval:"#fcf4e8" };
     const TABLE_FILL_DARK  = { round:"#4a2535", rect:"#253548", square:"#253825", oval:"#453525" };
 
@@ -782,12 +798,12 @@
     }
 
     // ── Dessin des éléments de salle ──────────────────────────
-    function drawRoomElements(ctx, isDark, WW, WH, PAD) {
-      const ppm   = (WW - 2 * PAD) / roomConfig.widthM;
+    function drawRoomElements(ctx, isDark) {
+      const ppm = ROOM_WORLD_W / roomConfig.widthM;
       for (const el of roomConfig.elements) {
         ctx.save();
-        const ex = el.x ?? PAD + 20;
-        const ey = el.y ?? PAD + 40;
+        const ex = el.x ?? ROOM_WORLD_X + 20;
+        const ey = el.y ?? ROOM_WORLD_Y + 20;
         const ew = el.w ?? 3 * ppm;
         const eh = el.h ?? 2 * ppm;
 
@@ -931,7 +947,9 @@
 
     // ── Rendu de la salle ─────────────────────────────────────
     function initTablePositions() {
-      const cols = 5, spacingX = 100, spacingY = 110, startX = 60, startY = 70;
+      const cols = 5, spacingX = 100, spacingY = 110;
+      const startX = ROOM_WORLD_X + 50;
+      const startY = ROOM_WORLD_Y + 60;
       tables.forEach((t, i) => {
         if (t.x == null || t.y == null) {
           t.x = startX + (i % cols) * spacingX;
@@ -944,8 +962,11 @@
       if (!roomCtx) return;
       initTablePositions();
       const container = roomCanvas.parentElement;
-      roomCanvas.width  = container.clientWidth || 800;
-      roomCanvas.height = 560;
+      roomCanvas.width = container.clientWidth || 800;
+      const RH = getRoomWorldH();
+      const minZ = getMinZoom();
+      if (roomZoom < minZ) { roomZoom = minZ; roomPanX = 0; roomPanY = 0; }
+      roomCanvas.height = Math.round((ROOM_WORLD_Y * 2 + RH) * minZ + 20);
       const ctx    = roomCtx;
       const isDark = document.body.classList.contains("dark-mode");
 
@@ -957,24 +978,21 @@
       ctx.translate(roomPanX, roomPanY);
       ctx.scale(roomZoom, roomZoom);
 
-      const WW  = roomCanvas.width  / roomZoom;
-      const WH  = roomCanvas.height / roomZoom;
-      const PAD = 20;
-
-      // Contour salle
+      // Contour salle — coordonnées monde fixes
       ctx.strokeStyle = isDark ? "#4a3f35" : "#c9b89a";
       ctx.lineWidth   = 2 / roomZoom;
-      ctx.strokeRect(PAD, PAD, WW - 2 * PAD, WH - 2 * PAD);
+      ctx.strokeRect(ROOM_WORLD_X, ROOM_WORLD_Y, ROOM_WORLD_W, RH);
 
       // Label + dimensions
       ctx.fillStyle    = isDark ? "#7a6a5a" : "#bda98a";
       ctx.font         = `13px 'Manrope', sans-serif`;
       ctx.textAlign    = "center";
       ctx.textBaseline = "alphabetic";
-      ctx.fillText(`Salle de réception — ${roomConfig.widthM} m × ${roomConfig.heightM} m`, WW / 2, PAD + 16);
+      ctx.fillText(`Salle de réception — ${roomConfig.widthM} m × ${roomConfig.heightM} m`,
+                   ROOM_WORLD_X + ROOM_WORLD_W / 2, ROOM_WORLD_Y - 6);
 
       // Éléments (scène, DJ, bar…)
-      drawRoomElements(ctx, isDark, WW, WH, PAD);
+      drawRoomElements(ctx, isDark);
 
       // Tables
       for (const table of tables) {
@@ -1012,7 +1030,7 @@
         roomElementsList.innerHTML = '<p style="font-size:0.82rem;color:var(--ink-soft);font-style:italic;margin:4px 0;">Aucun élément ajouté.</p>';
         return;
       }
-      const ppm = (roomCanvas.width - 40) / roomConfig.widthM;
+      const ppm = ROOM_WORLD_W / roomConfig.widthM;
       for (const el of roomConfig.elements) {
         const wM = ((el.w ?? 80) / ppm).toFixed(1);
         const hM = ((el.h ?? 50) / ppm).toFixed(1);
@@ -1046,15 +1064,14 @@
       const label = document.getElementById("elementLabel")?.value.trim() || "";
       const wM    = parseFloat(document.getElementById("elementWM")?.value) || 3;
       const hM    = parseFloat(document.getElementById("elementHM")?.value) || 2;
-      const ppm   = (roomCanvas.width - 40) / roomConfig.widthM;
-      const wPx   = Math.max(30, Math.min(wM * ppm, (roomCanvas.width - 40) * 0.8));
-      const hPx   = Math.max(20, Math.min(hM * ppm, (roomCanvas.height - 60) * 0.8));
-      const canvasW = roomCanvas.width || 800;
-      const canvasH = roomCanvas.height || 560;
+      const ppm   = ROOM_WORLD_W / roomConfig.widthM;
+      const RH    = getRoomWorldH();
+      const wPx   = Math.max(30, Math.min(wM * ppm, ROOM_WORLD_W * 0.8));
+      const hPx   = Math.max(20, Math.min(hM * ppm, RH * 0.8));
       roomConfig.elements.push({
         id: createId(), type, label,
-        x: 20 + (canvasW - 40 - wPx) / 2 / roomZoom,
-        y: 40 + (canvasH - 60 - hPx) / 2 / roomZoom,
+        x: ROOM_WORLD_X + (ROOM_WORLD_W - wPx) / 2,
+        y: ROOM_WORLD_Y + (RH - hPx) / 2,
         w: wPx, h: hPx
       });
       saveTables();
@@ -1198,10 +1215,10 @@
 
     // ── Zoom ──────────────────────────────────────────────────
     function applyZoom(factor, centerX, centerY) {
+      const minZoom = getMinZoom();
       const newZoom = roomZoom * factor;
-      if (newZoom <= 1.0) {
-        // Zoom minimum atteint : salle dans le bloc, pan réinitialisé
-        roomZoom = 1.0; roomPanX = 0; roomPanY = 0;
+      if (newZoom <= minZoom) {
+        roomZoom = minZoom; roomPanX = 0; roomPanY = 0;
       } else {
         const cx = centerX ?? roomCanvas.width  / 2;
         const cy = centerY ?? roomCanvas.height / 2;
@@ -1218,7 +1235,7 @@
     document.getElementById("btnZoomIn") ?.addEventListener("click", () => applyZoom(1.2));
     document.getElementById("btnZoomOut")?.addEventListener("click", () => applyZoom(1 / 1.2));
     document.getElementById("btnZoomReset")?.addEventListener("click", () => {
-      roomZoom = 1; roomPanX = 0; roomPanY = 0;
+      roomZoom = getMinZoom(); roomPanX = 0; roomPanY = 0;
       renderRoom();
     });
 
@@ -1292,10 +1309,9 @@
       if (roomDragEl) {
         const pos  = getRoomPos(e);
         const { wx, wy } = screenToWorld(pos.x, pos.y);
-        const WW = roomCanvas.width  / roomZoom;
-        const WH = roomCanvas.height / roomZoom;
-        roomDragEl.x = Math.max(20, Math.min(WW - 20 - (roomDragEl.w ?? 80), wx - roomDragElOffX));
-        roomDragEl.y = Math.max(20, Math.min(WH - 20 - (roomDragEl.h ?? 50), wy - roomDragElOffY));
+        const RH = getRoomWorldH();
+        roomDragEl.x = Math.max(ROOM_WORLD_X, Math.min(ROOM_WORLD_X + ROOM_WORLD_W - (roomDragEl.w ?? 80), wx - roomDragElOffX));
+        roomDragEl.y = Math.max(ROOM_WORLD_Y, Math.min(ROOM_WORLD_Y + RH - (roomDragEl.h ?? 50), wy - roomDragElOffY));
         renderRoom();
         return;
       }
@@ -1304,10 +1320,9 @@
         const pos  = getRoomPos(e);
         const { wx, wy } = screenToWorld(pos.x, pos.y);
         const dims = SHAPE_DIMS[roomDragTable.shape || "round"] || SHAPE_DIMS.round;
-        const WW   = roomCanvas.width  / roomZoom;
-        const WH   = roomCanvas.height / roomZoom;
-        roomDragTable.x = clampPos(wx - roomDragOffX, dims.rx, WW);
-        roomDragTable.y = clampPos(wy - roomDragOffY, dims.ry, WH);
+        const RH   = getRoomWorldH();
+        roomDragTable.x = Math.max(ROOM_WORLD_X + dims.rx + ROOM_PAD, Math.min(ROOM_WORLD_X + ROOM_WORLD_W - dims.rx - ROOM_PAD, wx - roomDragOffX));
+        roomDragTable.y = Math.max(ROOM_WORLD_Y + dims.ry + ROOM_PAD, Math.min(ROOM_WORLD_Y + RH - dims.ry - ROOM_PAD, wy - roomDragOffY));
         renderRoom();
       } else if (roomIsPanning) {
         const rect   = roomCanvas.getBoundingClientRect();
@@ -1370,10 +1385,9 @@
       const pos  = getRoomPosTouch(e);
       const { wx, wy } = screenToWorld(pos.x, pos.y);
       const dims = SHAPE_DIMS[roomDragTable.shape || "round"] || SHAPE_DIMS.round;
-      const WW   = roomCanvas.width  / roomZoom;
-      const WH   = roomCanvas.height / roomZoom;
-      roomDragTable.x = clampPos(wx - roomDragOffX, dims.rx, WW);
-      roomDragTable.y = clampPos(wy - roomDragOffY, dims.ry, WH);
+      const RH   = getRoomWorldH();
+      roomDragTable.x = Math.max(ROOM_WORLD_X + dims.rx + ROOM_PAD, Math.min(ROOM_WORLD_X + ROOM_WORLD_W - dims.rx - ROOM_PAD, wx - roomDragOffX));
+      roomDragTable.y = Math.max(ROOM_WORLD_Y + dims.ry + ROOM_PAD, Math.min(ROOM_WORLD_Y + RH - dims.ry - ROOM_PAD, wy - roomDragOffY));
       renderRoom();
     }, { passive: false });
 
