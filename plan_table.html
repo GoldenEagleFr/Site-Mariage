@@ -830,15 +830,25 @@
           ctx.fillText(String(i + 1), cx, cy);
         }
 
-        // Nom complet
+        // Nom complet — rayonnant vers l'extérieur de la table
         if (showNames && guest) {
-          const lbl = guest.name.length > 14 ? guest.name.slice(0, 13) + "." : guest.name;
-          const nd    = r + 5;
-          ctx.textAlign    = "center";
-          ctx.textBaseline = "middle";
+          const lbl = guest.name.length > 18 ? guest.name.slice(0, 17) + "." : guest.name;
           ctx.fillStyle    = isDark ? "#e8d8c8" : "#3d2b1f";
           ctx.font         = `9px 'Manrope', sans-serif`;
-          ctx.fillText(lbl, cx + (nd + 5) * Math.cos(outAngle), cy + (nd + 5) * Math.sin(outAngle));
+          ctx.textBaseline = "middle";
+          // Translate au centre de la chaise puis rotation radiale
+          ctx.translate(cx, cy);
+          if (Math.cos(outAngle) >= 0) {
+            // Demi-cercle droit → texte part vers la droite (lisible normalement)
+            ctx.rotate(outAngle);
+            ctx.textAlign = "left";
+            ctx.fillText(lbl, r + 5, 0);
+          } else {
+            // Demi-cercle gauche → on retourne de 180° pour éviter le texte à l'envers
+            ctx.rotate(outAngle + Math.PI);
+            ctx.textAlign = "right";
+            ctx.fillText(lbl, -(r + 5), 0);
+          }
         }
 
         ctx.restore();
