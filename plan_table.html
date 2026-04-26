@@ -880,6 +880,7 @@
         ctx.strokeStyle = isDark ? "#6a6a6a" : "#aaaaaa";
         ctx.lineWidth   = 1.5;
         if (el._drag) ctx.strokeStyle = "#b17a4a";
+        ctx.beginPath();
         if (ctx.roundRect) ctx.roundRect(ex, ey, ew, eh, 4);
         else ctx.rect(ex, ey, ew, eh);
         ctx.fill();
