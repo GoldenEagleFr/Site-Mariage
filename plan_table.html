@@ -135,8 +135,8 @@
           <div id="roomConfigPanel" class="room-config-panel is-hidden">
             <div class="room-config-dims">
               <label>Dimensions de la salle :
-                <input id="roomWidthM" type="number" min="1" max="500" step="1" value="20" style="width:55px"> m ×
-                <input id="roomHeightM" type="number" min="1" max="500" step="1" value="15" style="width:55px"> m
+                <input id="roomWidthM" type="number" min="1" max="500" step="0.5" value="22.5" style="width:55px"> m ×
+                <input id="roomHeightM" type="number" min="1" max="500" step="0.5" value="16" style="width:55px"> m
               </label>
               <button id="applyRoomDims" type="button">Appliquer</button>
             </div>
@@ -316,6 +316,38 @@
     viewBtnList.addEventListener("click", () => switchView("list"));
     viewBtnRoom.addEventListener("click", () => switchView("room"));
 
+    // ── Éléments fixes de la salle (initialisés une seule fois) ─
+    function ensureDefaultElements() {
+      if (roomConfig._defaultsInit) return;
+      roomConfig._defaultsInit = true;
+      // Dimensions fixes du domaine (source : plaquette commerciale)
+      // Salle : 22,50 × 16 m  |  Scène : 11,20 × 3,48 m  |  Office : 9,10 × 4,90 m
+      const PPM = ROOM_WORLD_W / roomConfig.widthM;  // px/m
+      const RH  = getRoomWorldH();
+
+      // Scène — centrée contre le mur du fond (bas)
+      const sw = Math.round(11.20 * PPM);
+      const sh = Math.round(3.48  * PPM);
+      roomConfig.elements.unshift({
+        id: "builtin-scene", type: "scene", label: "Scène",
+        x: ROOM_WORLD_X + Math.round((ROOM_WORLD_W - sw) / 2),
+        y: ROOM_WORLD_Y + RH - sh,
+        w: sw, h: sh
+      });
+
+      // Office — accolé au mur droit, haut de salle
+      const ow = Math.round(9.10 * PPM);
+      const oh = Math.round(4.90 * PPM);
+      roomConfig.elements.push({
+        id: "builtin-office", type: "buffet", label: "Office",
+        x: ROOM_WORLD_X + ROOM_WORLD_W - ow,
+        y: ROOM_WORLD_Y,
+        w: ow, h: oh
+      });
+
+      saveTables();
+    }
+
     function switchView(view) {
       currentView = view;
       viewListEl.classList.toggle("is-hidden", view !== "list");
@@ -323,6 +355,7 @@
       viewBtnList.classList.toggle("is-active", view === "list");
       viewBtnRoom.classList.toggle("is-active", view === "room");
       if (view === "room") {
+        ensureDefaultElements();
         initTablePositions();
         renderRoom();
         renderRoomConfig();
@@ -1049,8 +1082,8 @@
     }
 
     document.getElementById("applyRoomDims")?.addEventListener("click", () => {
-      const wM = parseFloat(document.getElementById("roomWidthM")?.value) || 20;
-      const hM = parseFloat(document.getElementById("roomHeightM")?.value) || 15;
+      const wM = parseFloat(document.getElementById("roomWidthM")?.value) || 22.5;
+      const hM = parseFloat(document.getElementById("roomHeightM")?.value) || 16;
       roomConfig.widthM  = Math.max(1, wM);
       roomConfig.heightM = Math.max(1, hM);
       saveTables();
