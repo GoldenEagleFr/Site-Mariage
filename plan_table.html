@@ -317,11 +317,9 @@
     viewBtnRoom.addEventListener("click", () => switchView("room"));
 
     // ── Éléments fixes de la salle ───────────────────────────────
-    // Mise en place basée sur la plaquette "Les Domaines de Gaston" :
-    //   Scène + DJ + Bar → mur haut (côté service/parc)
-    //   Entrée → mur bas (côté vestiaire/route)
-    //   Office 9,10×4,90m → bande de service (hors salle, non affiché sur plan)
-    const DEFAULTS_VERSION = 2;
+    // Scène : à DROITE de la salle (bande de service 12,5m), centrée en hauteur
+    // Dimensions : 11,20 m (longueur, le long du mur droit) × 3,48 m (profondeur, vers la droite)
+    const DEFAULTS_VERSION = 3;
 
     function ensureDefaultElements() {
       if ((roomConfig._defaultsVersion ?? 0) >= DEFAULTS_VERSION) return;
@@ -330,37 +328,20 @@
       const PPM = ROOM_WORLD_W / roomConfig.widthM;  // px/m
       const RH  = getRoomWorldH();
 
-      // Supprime les anciens builtins, conserve les éléments personnalisés
+      // Supprime tous les builtins existants, conserve les éléments personnalisés
       roomConfig.elements = roomConfig.elements.filter(e => !String(e.id).startsWith("builtin-"));
 
-      // Scène — 11,20 × 3,48 m — centrée contre le mur haut
-      const sw = Math.round(11.20 * PPM);
-      const sh = Math.round(3.48  * PPM);
-      const sceneX = ROOM_WORLD_X + Math.round((ROOM_WORLD_W - sw) / 2);
+      // Scène — 3,48 m de profondeur (= largeur dans le canvas, extension à droite)
+      //         11,20 m de longueur  (= hauteur dans le canvas, le long du mur droit)
+      const sw = Math.round(3.48  * PPM);  // largeur canvas (profondeur réelle)
+      const sh = Math.round(11.20 * PPM);  // hauteur canvas (longueur réelle)
 
-      // DJ — ~2,5 × 2,5 m — coin haut droit
-      const djw = Math.round(2.5 * PPM);
-      const djh = Math.round(2.5 * PPM);
-
-      // Bar — ~4 × 2 m — coin haut gauche (côté scène)
-      const bw = Math.round(4 * PPM);
-      const bh = Math.round(2 * PPM);
-
-      // Entrée — ~3 × 1 m — mur bas, centré
-      const ew = Math.round(3 * PPM);
-      const eh = Math.round(1 * PPM);
-
-      roomConfig.elements.push(
-        { id: "builtin-scene",  type: "scene",  label: "Scène",
-          x: sceneX,                             y: ROOM_WORLD_Y,     w: sw,  h: sh  },
-        { id: "builtin-dj",    type: "dj",     label: "DJ",
-          x: ROOM_WORLD_X + ROOM_WORLD_W - djw, y: ROOM_WORLD_Y,     w: djw, h: djh },
-        { id: "builtin-bar",   type: "bar",    label: "Bar",
-          x: ROOM_WORLD_X,                       y: ROOM_WORLD_Y,     w: bw,  h: bh  },
-        { id: "builtin-entree",type: "entree", label: "Entrée",
-          x: ROOM_WORLD_X + Math.round((ROOM_WORLD_W - ew) / 2),
-          y: ROOM_WORLD_Y + RH - eh,             w: ew,  h: eh  }
-      );
+      roomConfig.elements.push({
+        id: "builtin-scene", type: "scene", label: "Scène",
+        x: ROOM_WORLD_X + ROOM_WORLD_W,              // collée au mur droit
+        y: ROOM_WORLD_Y + Math.round((RH - sh) / 2), // centrée en hauteur
+        w: sw, h: sh
+      });
 
       saveTables();
     }
@@ -670,10 +651,16 @@
     function getRoomWorldH() {
       return Math.round(ROOM_WORLD_W * roomConfig.heightM / roomConfig.widthM);
     }
+    function getSceneDepthPx() {
+      // Profondeur de la scène (extension à droite) : 3,48 m
+      return Math.round(3.48 * ROOM_WORLD_W / roomConfig.widthM);
+    }
     function getMinZoom() {
       const cw = (roomCanvas && roomCanvas.width) || 800;
+      // Inclut la scène (à droite) + marge droite
+      const totalW = ROOM_WORLD_X + ROOM_WORLD_W + getSceneDepthPx() + ROOM_WORLD_X;
       return Math.max(0.05, Math.min(
-        cw  / (ROOM_WORLD_X * 2 + ROOM_WORLD_W),
+        cw  / totalW,
         650 / (ROOM_WORLD_Y * 2 + getRoomWorldH())
       ));
     }
@@ -1359,8 +1346,9 @@
       if (roomDragEl) {
         const pos  = getRoomPos(e);
         const { wx, wy } = screenToWorld(pos.x, pos.y);
-        const RH = getRoomWorldH();
-        roomDragEl.x = Math.max(ROOM_WORLD_X, Math.min(ROOM_WORLD_X + ROOM_WORLD_W - (roomDragEl.w ?? 80), wx - roomDragElOffX));
+        const RH    = getRoomWorldH();
+        const maxRX = ROOM_WORLD_X + ROOM_WORLD_W + getSceneDepthPx();
+        roomDragEl.x = Math.max(ROOM_WORLD_X, Math.min(maxRX - (roomDragEl.w ?? 80), wx - roomDragElOffX));
         roomDragEl.y = Math.max(ROOM_WORLD_Y, Math.min(ROOM_WORLD_Y + RH - (roomDragEl.h ?? 50), wy - roomDragElOffY));
         renderRoom();
         return;
