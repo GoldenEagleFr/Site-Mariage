@@ -325,7 +325,7 @@
     // Bande de service à DROITE (35m - 22,5m = 12,5m) :
     //   Scène 11,20×3,48m centrée en hauteur (mur droit de la salle)
     //   Locaux techniques : espaces au-dessus et en-dessous de la scène
-    const DEFAULTS_VERSION = 5;
+    const DEFAULTS_VERSION = 6;
 
     function ensureDefaultElements() {
       if ((roomConfig._defaultsVersion ?? 0) >= DEFAULTS_VERSION) return;
@@ -343,9 +343,9 @@
       const sceneY  = ROOM_WORLD_Y + Math.round((RH - sh) / 2);
       const ltH     = sceneY - ROOM_WORLD_Y;  // hauteur des locaux (espace restant haut et bas)
 
-      // Espace DJ — 3×3m — coin sup. droit de la salle (intérieur)
+      // Espace DJ — 2,4×2,4m — coin sup. droit de la salle (intérieur)
       // Coin inférieur gauche arrondi (il plonge dans l'espace de la salle)
-      const djPx = Math.round(3 * PPM);
+      const djPx = Math.round(2.4 * PPM);
 
       roomConfig.elements.push(
         // Local technique haut (bande de service)
