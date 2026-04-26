@@ -3946,6 +3946,24 @@ body.dark-mode .table-violation-warning {
 .elem-label-edit:hover { border-bottom-color: var(--border); }
 .elem-label-edit:focus { border-bottom-color: var(--accent); background: var(--surface-alt, #f9f7f4); border-radius: 3px 3px 0 0; }
 .elem-dims-col  { flex-shrink: 0; font-size: 0.75rem; color: var(--ink-soft); white-space: nowrap; }
+.elem-dim-input {
+  width: 38px;
+  font: 0.78rem 'Manrope', sans-serif;
+  color: var(--ink);
+  background: transparent;
+  border: none;
+  border-bottom: 1.5px solid var(--border);
+  padding: 1px 2px;
+  outline: none;
+  text-align: center;
+  -moz-appearance: textfield;
+  transition: border-color .15s;
+}
+.elem-dim-input::-webkit-outer-spin-button,
+.elem-dim-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.elem-dim-input:hover { border-bottom-color: var(--accent); }
+.elem-dim-input:focus { border-bottom-color: var(--accent); background: var(--surface-alt, #f9f7f4); border-radius: 3px 3px 0 0; }
+.elem-dim-sep   { flex-shrink: 0; font-size: 0.78rem; color: var(--ink-soft); padding: 0 1px; }
 
 /* ═══════════════════════════════════════════════════════════
    CANVAS WRAPPER + TABLE MANAGE PANEL

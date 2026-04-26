@@ -912,6 +912,16 @@
         ctx.fillStyle = isDark ? "#9a8a7a" : "#7a6a5a";
         ctx.fillText(`${wM}m × ${hM}m`, ex + ew / 2, ey + eh / 2 + 7);
 
+        // Poignée de redimensionnement — triangle coin bas-droit
+        const hs = 10;
+        ctx.beginPath();
+        ctx.moveTo(ex + ew - hs, ey + eh);
+        ctx.lineTo(ex + ew,      ey + eh - hs);
+        ctx.lineTo(ex + ew,      ey + eh);
+        ctx.closePath();
+        ctx.fillStyle = isDark ? "#5a5a6a" : "#a0a0b0";
+        ctx.fill();
+
         ctx.restore();
       }
     }
@@ -1130,8 +1140,11 @@
         div.className = "room-element-item";
         div.innerHTML = `
           <span class="elem-icon-col">${ELEM_ICONS[el.type] || "📦"}</span>
-          <input class="elem-label-edit" type="text" value="${(el.label || el.type).replace(/"/g, '&quot;')}" title="Cliquer pour renommer">
-          <span class="elem-dims-col">${wM}×${hM}m</span>
+          <input class="elem-label-edit" type="text" value="${(el.label || el.type).replace(/"/g, '&quot;')}" title="Renommer">
+          <input class="elem-dim-input" type="number" min="0.5" max="80" step="0.5" value="${wM}" title="Largeur (m)">
+          <span class="elem-dim-sep">×</span>
+          <input class="elem-dim-input" type="number" min="0.5" max="80" step="0.5" value="${hM}" title="Hauteur (m)">
+          <span class="elem-dim-sep" style="font-size:0.72rem;color:var(--ink-soft);">m</span>
           <button class="del-elem-btn" data-eid="${el.id}">×</button>`;
 
         const inp = div.querySelector(".elem-label-edit");
@@ -1141,6 +1154,18 @@
         };
         inp.addEventListener("blur",    saveName);
         inp.addEventListener("keydown", e => { if (e.key === "Enter") inp.blur(); });
+
+        const [inpW, inpH] = div.querySelectorAll(".elem-dim-input");
+        const saveDim = () => {
+          const newW = parseFloat(inpW.value), newH = parseFloat(inpH.value);
+          if (newW > 0) el.w = Math.round(newW * ppm);
+          if (newH > 0) el.h = Math.round(newH * ppm);
+          saveTables(); renderRoom();
+        };
+        inpW.addEventListener("blur",    saveDim);
+        inpH.addEventListener("blur",    saveDim);
+        inpW.addEventListener("keydown", e => { if (e.key === "Enter") inpW.blur(); });
+        inpH.addEventListener("keydown", e => { if (e.key === "Enter") inpH.blur(); });
 
         div.querySelector(".del-elem-btn").addEventListener("click", () => {
           roomConfig.elements = roomConfig.elements.filter(e => e.id !== el.id);
@@ -1432,8 +1457,16 @@
     // ── Drag canvas ───────────────────────────────────────────
     let roomDragTable = null, roomDragOffX = 0, roomDragOffY = 0, roomDragMoved = false;
     let roomDragEl    = null, roomDragElOffX = 0, roomDragElOffY = 0;
+    let roomResizeEl  = null, roomResizeOrigW = 0, roomResizeOrigH = 0, roomResizeOrigMx = 0, roomResizeOrigMy = 0;
     let roomIsPanning = false, roomPanStartX = 0, roomPanStartY = 0, roomPanOffX = 0, roomPanOffY = 0;
     const ROOM_PAD = 30;
+    const RESIZE_HIT = 12; // zone de clic de la poignée en px monde
+
+    function isPointOnElemResizeHandle(wx, wy, el) {
+      const ew = el.w ?? 80, eh = el.h ?? 50;
+      return wx >= el.x + ew - RESIZE_HIT && wx <= el.x + ew
+          && wy >= el.y + eh - RESIZE_HIT && wy <= el.y + eh;
+    }
 
     function clampPos(val, dim, max) {
       return Math.max(dim + ROOM_PAD, Math.min(max - dim - ROOM_PAD, val));
@@ -1443,7 +1476,20 @@
       const pos = getRoomPos(e);
       const { wx, wy } = screenToWorld(pos.x, pos.y);
 
-      // Éléments de salle
+      // Poignée de redimensionnement (priorité sur le drag)
+      for (const el of [...roomConfig.elements].reverse()) {
+        if (isPointOnElemResizeHandle(wx, wy, el)) {
+          roomResizeEl     = el;
+          roomResizeOrigW  = el.w ?? 80;
+          roomResizeOrigH  = el.h ?? 50;
+          roomResizeOrigMx = wx;
+          roomResizeOrigMy = wy;
+          renderRoom();
+          return;
+        }
+      }
+
+      // Éléments de salle (drag)
       for (const el of [...roomConfig.elements].reverse()) {
         if (isPointInElement(wx, wy, el)) {
           roomDragEl     = el;
@@ -1477,6 +1523,15 @@
     });
 
     roomCanvas.addEventListener("mousemove", (e) => {
+      if (roomResizeEl) {
+        const pos = getRoomPos(e);
+        const { wx, wy } = screenToWorld(pos.x, pos.y);
+        const minPx = Math.round(0.5 * ROOM_WORLD_W / roomConfig.widthM);
+        roomResizeEl.w = Math.max(minPx, roomResizeOrigW + (wx - roomResizeOrigMx));
+        roomResizeEl.h = Math.max(minPx, roomResizeOrigH + (wy - roomResizeOrigMy));
+        renderRoom();
+        return;
+      }
       if (roomDragEl) {
         const pos  = getRoomPos(e);
         const { wx, wy } = screenToWorld(pos.x, pos.y);
@@ -1507,6 +1562,9 @@
     });
 
     function stopRoomDrag() {
+      if (roomResizeEl) {
+        saveTables(); renderRoomConfig(); roomResizeEl = null; renderRoom(); return;
+      }
       if (roomDragEl) {
         delete roomDragEl._drag;
         saveTables();
@@ -1527,6 +1585,7 @@
 
     roomCanvas.addEventListener("mouseup",    stopRoomDrag);
     roomCanvas.addEventListener("mouseleave", () => {
+      if (roomResizeEl)  { saveTables(); renderRoomConfig(); roomResizeEl = null; renderRoom(); }
       if (roomDragEl)    { delete roomDragEl._drag;    saveTables(); roomDragEl    = null; renderRoom(); }
       if (roomDragTable) { delete roomDragTable._drag; saveTables(); roomDragTable = null; renderRoom(); }
       roomIsPanning = false;
