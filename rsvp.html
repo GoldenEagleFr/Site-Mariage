@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RSVP — Florence &amp; Antoine</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💍</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -15,12 +16,34 @@
       <a href="index.html" class="cta cta-secondary rsvp-back-home">← Retour au site</a>
       <p class="kicker">17 avril 2027</p>
       <h1>Florence &amp; Antoine</h1>
-      <p class="rsvp-header-sub">Confirmez votre présence avant le 1er mars 2027</p>
+      <p class="rsvp-header-sub" style="margin-bottom:1.5rem;">Confirmez votre présence avant le 1er mars 2027</p>
+
+      <!-- Indicateur de progression -->
+      <div class="rsvp-progress" id="rsvpProgress" aria-label="Progression du formulaire">
+        <div class="rsvp-progress-step">
+          <div class="rsvp-progress-dot is-active" id="progressDot1">1</div>
+          <span class="rsvp-progress-label is-active" id="progressLabel1">Invitation</span>
+        </div>
+        <div class="rsvp-progress-connector" id="progressLine1"></div>
+        <div class="rsvp-progress-step">
+          <div class="rsvp-progress-dot" id="progressDot2">2</div>
+          <span class="rsvp-progress-label" id="progressLabel2">Réponse</span>
+        </div>
+        <div class="rsvp-progress-connector" id="progressLine2"></div>
+        <div class="rsvp-progress-step">
+          <div class="rsvp-progress-dot" id="progressDot3">3</div>
+          <span class="rsvp-progress-label" id="progressLabel3">Vérification</span>
+        </div>
+        <div class="rsvp-progress-connector" id="progressLine3"></div>
+        <div class="rsvp-progress-step">
+          <div class="rsvp-progress-dot" id="progressDot4">✓</div>
+          <span class="rsvp-progress-label" id="progressLabel4">Confirmé</span>
+        </div>
+      </div>
     </header>
 
     <!-- ÉTAPE 1 : Recherche -->
     <section id="rsvpStepSearch" class="rsvp-card">
-      <p class="rsvp-step-label">Étape 1 sur 2</p>
       <h2>Trouvez votre invitation</h2>
       <p class="rsvp-hint">Tapez votre nom ou le nom de votre famille tel qu'il figure sur votre invitation.</p>
       <form id="rsvpSearchForm" class="rsvp-search-form" autocomplete="off">
@@ -28,12 +51,14 @@
         <button type="submit" class="cta cta-primary">Rechercher</button>
       </form>
       <ul id="rsvpSearchResults" class="rsvp-results" aria-live="polite"></ul>
-      <p id="rsvpSearchEmpty" class="rsvp-empty is-hidden">Aucun résultat. Vérifiez l'orthographe ou <a href="mailto:florence.antoine.mariage@gmail.com">contactez-nous</a>.</p>
+      <div id="rsvpSearchEmpty" class="rsvp-empty is-hidden">
+        <p>😕 Aucun résultat pour ce nom.</p>
+        <p style="margin-top:0.4rem;font-size:0.84rem;">Vérifiez l'orthographe ou <a href="mailto:florence.antoine.mariage@gmail.com" style="color:#e00a26;font-weight:700;">contactez-nous par email</a>.</p>
+      </div>
     </section>
 
     <!-- ÉTAPE 2 : Formulaire RSVP -->
     <section id="rsvpStepForm" class="rsvp-card is-hidden">
-      <p class="rsvp-step-label">Étape 2 sur 2</p>
       <h2 id="rsvpFormTitle">Votre réponse</h2>
       <p id="rsvpFormParty" class="rsvp-party-info"></p>
 
@@ -90,13 +115,28 @@
         <p id="rsvpFormError" class="rsvp-form-error is-hidden"></p>
 
         <div class="rsvp-form-actions">
-          <button type="button" id="rsvpBackBtn" class="cta cta-secondary">Retour</button>
-          <button type="submit" class="cta cta-primary">Confirmer ma réponse</button>
+          <button type="button" id="rsvpBackBtn" class="cta cta-secondary">← Retour</button>
+          <button type="submit" class="cta cta-primary">Vérifier ma réponse →</button>
         </div>
       </form>
     </section>
 
-    <!-- ÉTAPE 3 : Confirmation -->
+    <!-- ÉTAPE 3 : Récapitulatif avant confirmation -->
+    <section id="rsvpStepReview" class="rsvp-card is-hidden">
+      <h2>Vérifiez votre réponse</h2>
+      <p class="rsvp-hint">Voici ce que vous êtes sur le point de confirmer :</p>
+
+      <div class="rsvp-summary" id="rsvpSummaryBox"></div>
+
+      <p id="rsvpReviewError" class="rsvp-form-error is-hidden"></p>
+
+      <div class="rsvp-form-actions">
+        <button type="button" id="rsvpReviewBackBtn" class="cta cta-secondary">← Modifier</button>
+        <button type="button" id="rsvpConfirmSubmitBtn" class="cta cta-primary">Confirmer définitivement ✓</button>
+      </div>
+    </section>
+
+    <!-- ÉTAPE 4 : Confirmation finale -->
     <section id="rsvpStepDone" class="rsvp-card rsvp-confirm is-hidden">
       <div id="rsvpConfirmYes" class="is-hidden">
         <div class="rsvp-confirm-icon rsvp-confirm-icon-yes">✓</div>
@@ -113,7 +153,7 @@
         <a href="index.html" class="cta cta-primary">Retour au site</a>
       </div>
       <div class="rsvp-another-person">
-        <button type="button" id="rsvpAnotherPersonBtn" class="cta cta-secondary">Je confirme la présence d'une autre personne (enfants ou parents)</button>
+        <button type="button" id="rsvpAnotherPersonBtn" class="cta cta-secondary">Confirmer la présence d'une autre personne</button>
       </div>
     </section>
 
@@ -123,6 +163,7 @@
   (() => {
     const stepSearch = document.getElementById("rsvpStepSearch");
     const stepForm   = document.getElementById("rsvpStepForm");
+    const stepReview = document.getElementById("rsvpStepReview");
     const stepDone   = document.getElementById("rsvpStepDone");
 
     const searchInput   = document.getElementById("rsvpSearchInput");
@@ -137,20 +178,53 @@
     const allergiesInput   = document.getElementById("rsvpAllergies");
     const questionInput    = document.getElementById("rsvpQuestion");
     const formError        = document.getElementById("rsvpFormError");
+    const reviewError      = document.getElementById("rsvpReviewError");
+    const summaryBox       = document.getElementById("rsvpSummaryBox");
 
     const confirmYes     = document.getElementById("rsvpConfirmYes");
     const confirmNo      = document.getElementById("rsvpConfirmNo");
     const confirmYesTxt  = document.getElementById("rsvpConfirmYesText");
 
+    const STEPS = [stepSearch, stepForm, stepReview, stepDone];
     let currentGuest = null;
+    let pendingPayload = null;
 
     function show(el) { el.classList.remove("is-hidden"); }
     function hide(el) { el.classList.add("is-hidden"); }
 
+    // ── Indicateur de progression ────────────────────────────────
+    function setProgress(activeStep) {
+      // activeStep : 1,2,3,4
+      for (let i = 1; i <= 4; i++) {
+        const dot   = document.getElementById(`progressDot${i}`);
+        const label = document.getElementById(`progressLabel${i}`);
+        const line  = document.getElementById(`progressLine${i}`);
+        dot.classList.remove("is-active", "is-done");
+        label.classList.remove("is-active", "is-done");
+        if (line) line.classList.remove("is-done");
+        if (i < activeStep) {
+          dot.classList.add("is-done");
+          label.classList.add("is-done");
+          dot.textContent = "✓";
+          if (line) line.classList.add("is-done");
+        } else if (i === activeStep) {
+          dot.classList.add("is-active");
+          label.classList.add("is-active");
+          dot.textContent = i === 4 ? "✓" : String(i);
+        } else {
+          dot.textContent = i === 4 ? "✓" : String(i);
+        }
+      }
+    }
+
     function goToStep(step) {
-      hide(stepSearch); hide(stepForm); hide(stepDone);
+      STEPS.forEach(s => hide(s));
       show(step);
       step.scrollIntoView({ behavior: "smooth", block: "start" });
+      if (step === stepSearch) setProgress(1);
+      else if (step === stepForm)   setProgress(2);
+      else if (step === stepReview) setProgress(3);
+      else if (step === stepDone)   setProgress(4);
     }
 
     // ── Recherche ────────────────────────────────────────────────
@@ -175,7 +249,7 @@
           const groupLabels = { single: "invitation individuelle", couple: "invitation couple", family: "invitation famille" };
           const gl = groupLabels[guest.groupType] || "";
           const alreadyAnswered = guest.rsvpSubmittedAt > 0;
-          const statusLabel = guest.status === "yes" ? "Confirmé" : guest.status === "no" ? "Décliné" : "";
+          const statusLabel = guest.status === "yes" ? "Confirmé ✓" : guest.status === "no" ? "Décliné" : "";
           li.innerHTML = `
             <span class="rsvp-result-name">${guest.name}</span>
             <span class="rsvp-result-meta">${gl}${alreadyAnswered ? ` — <em>${statusLabel}</em>` : ""}</span>
@@ -199,27 +273,21 @@
       const groupLabels = { single: "1 personne", couple: "2 personnes", family: `${guest.partySize} personnes` };
       formParty.textContent = groupLabels[guest.groupType] || `${guest.partySize} personnes`;
 
-      // Pré-remplir statut
       const radios = document.querySelectorAll("input[name='rsvpStatus']");
       radios.forEach(r => { r.checked = r.value === guest.status; });
 
-      // Pré-remplir hébergement
       const hRadios = document.querySelectorAll("input[name='rsvpHebergement']");
       hRadios.forEach(r => { r.checked = r.value === (guest.hebergement ? "yes" : "no"); });
 
-      // Pré-remplir autres champs
-      if (musicInput) musicInput.value = guest.musicSuggestion || "";
+      if (musicInput)    musicInput.value    = guest.musicSuggestion || "";
       if (allergiesInput) allergiesInput.value = guest.allergies || "";
-      if (questionInput) questionInput.value = guest.otherQuestion || "";
+      if (questionInput)  questionInput.value  = guest.otherQuestion || "";
 
-      // Afficher section hébergement si présent
       if (guest.status === "yes") show(hebergSection); else hide(hebergSection);
-
       hide(formError);
       goToStep(stepForm);
     }
 
-    // Afficher/masquer hébergement selon présence
     document.querySelectorAll("input[name='rsvpStatus']").forEach(r => {
       r.addEventListener("change", () => {
         if (r.value === "yes" && r.checked) show(hebergSection);
@@ -229,21 +297,8 @@
 
     document.getElementById("rsvpBackBtn").addEventListener("click", () => goToStep(stepSearch));
 
-    document.getElementById("rsvpModifyBtn").addEventListener("click", () => {
-      if (currentGuest) openForm(currentGuest);
-      else goToStep(stepSearch);
-    });
-
-    document.getElementById("rsvpAnotherPersonBtn").addEventListener("click", () => {
-      currentGuest = null;
-      searchInput.value = "";
-      searchResults.innerHTML = "";
-      hide(searchEmpty);
-      goToStep(stepSearch);
-    });
-
-    // ── Soumission ───────────────────────────────────────────────
-    document.getElementById("rsvpForm").addEventListener("submit", async (e) => {
+    // ── Formulaire → Récapitulatif ───────────────────────────────
+    document.getElementById("rsvpForm").addEventListener("submit", (e) => {
       e.preventDefault();
       hide(formError);
 
@@ -261,20 +316,59 @@
       const allergies = (allergiesInput?.value ?? "").trim();
       const otherQuestion = (questionInput?.value ?? "").trim();
 
+      pendingPayload = { id: guestIdField.value, status, hebergement, musicSuggestion, allergies, otherQuestion };
+
+      // Construire le récapitulatif
+      const rows = [];
+      rows.push({ label: "Invité", value: currentGuest.name });
+      rows.push({ label: "Réponse", value: status === "yes" ? "✓ Présent(e)" : "✕ Absent(e)" });
+      if (status === "yes") {
+        rows.push({ label: "Hébergement", value: hebergement ? "🏨 Souhaite des informations" : "🚗 Rentre le soir" });
+      }
+      if (musicSuggestion) rows.push({ label: "Musique", value: `🎵 ${musicSuggestion}` });
+      if (allergies)       rows.push({ label: "Allergies", value: `🥗 ${allergies}` });
+      if (otherQuestion)   rows.push({ label: "Question", value: `❓ ${otherQuestion}` });
+
+      summaryBox.innerHTML = rows.map(r =>
+        `<div class="rsvp-summary-row">
+          <span class="rsvp-summary-label">${r.label}</span>
+          <span class="rsvp-summary-value">${r.value}</span>
+        </div>`
+      ).join("");
+
+      hide(reviewError);
+      goToStep(stepReview);
+    });
+
+    // ── Récapitulatif → Retour formulaire ───────────────────────
+    document.getElementById("rsvpReviewBackBtn").addEventListener("click", () => goToStep(stepForm));
+
+    // ── Récapitulatif → Soumission finale ───────────────────────
+    document.getElementById("rsvpConfirmSubmitBtn").addEventListener("click", async () => {
+      if (!pendingPayload) return;
+      hide(reviewError);
+
+      const btn = document.getElementById("rsvpConfirmSubmitBtn");
+      btn.disabled = true;
+      btn.textContent = "Envoi en cours…";
+
       try {
         const res = await fetch("/api/rsvp/submit", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id: guestIdField.value, status, hebergement, musicSuggestion, allergies, otherQuestion }),
+          body: JSON.stringify(pendingPayload),
         });
         const data = await res.json();
         if (!data.ok) throw new Error(data.error || "Erreur serveur");
 
-        currentGuest = { ...currentGuest, status, hebergement, musicSuggestion, allergies, otherQuestion };
-        showConfirmation(status, hebergement);
+        currentGuest = { ...currentGuest, ...pendingPayload };
+        showConfirmation(pendingPayload.status, pendingPayload.hebergement);
       } catch (err) {
-        formError.textContent = `Une erreur est survenue : ${err.message}. Réessayez ou contactez-nous.`;
-        show(formError);
+        reviewError.textContent = `Une erreur est survenue : ${err.message}. Réessayez ou contactez-nous.`;
+        show(reviewError);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Confirmer définitivement ✓";
       }
     });
 
@@ -284,13 +378,60 @@
       if (status === "yes") {
         show(confirmYes);
         confirmYesTxt.textContent = hebergement
-          ? "Votre présence est confirmée avec hébergement sur place. Nous avons hâte de vous retrouver !"
+          ? "Votre présence est confirmée avec demande d'information hébergement. Nous avons hâte de vous retrouver !"
           : "Votre présence est confirmée. Nous avons hâte de vous retrouver !";
       } else {
         show(confirmNo);
       }
       goToStep(stepDone);
+
+      // Animation de pétales si présent
+      if (status === "yes") {
+        stepDone.classList.add("is-celebrating");
+        launchPetals();
+      }
     }
+
+    function launchPetals() {
+      const colors = ["#f03f59", "#ffbd1c", "#f65d08", "#ff9ab5", "#ffeaa0"];
+      for (let i = 0; i < 18; i++) {
+        setTimeout(() => {
+          const p = document.createElement("span");
+          p.className = "rsvp-celebrate-petal";
+          const dx = (Math.random() - 0.5) * 160;
+          const rot = (Math.random() > 0.5 ? 1 : -1) * (200 + Math.random() * 400);
+          p.style.cssText = `
+            left: ${20 + Math.random() * 60}%;
+            top: 15%;
+            background: ${colors[Math.floor(Math.random() * colors.length)]};
+            --dx: ${dx}px;
+            --rot: ${rot}deg;
+            animation-duration: ${1.1 + Math.random() * 0.8}s;
+            animation-delay: ${Math.random() * 0.3}s;
+          `;
+          stepDone.appendChild(p);
+          p.addEventListener("animationend", () => p.remove());
+        }, i * 60);
+      }
+    }
+
+    document.getElementById("rsvpModifyBtn").addEventListener("click", () => {
+      if (currentGuest) openForm(currentGuest);
+      else goToStep(stepSearch);
+    });
+
+    document.getElementById("rsvpAnotherPersonBtn").addEventListener("click", () => {
+      currentGuest = null;
+      pendingPayload = null;
+      searchInput.value = "";
+      searchResults.innerHTML = "";
+      hide(searchEmpty);
+      stepDone.classList.remove("is-celebrating");
+      goToStep(stepSearch);
+    });
+
+    // Init
+    setProgress(1);
   })();
   </script>
 </body>
