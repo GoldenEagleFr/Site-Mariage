@@ -3558,6 +3558,25 @@ body.rsvp-page .kicker {
 }
 
 /* ═══════════════════════════════════════════════════════════
+   PLAN DE TABLE — ISOLATION DES PANNEAUX
+   Les règles .panel:nth-child(1/2/3) avec grid-area:budget/tasks/guests
+   sont conçues pour .grid dans organisation.html. On les neutralise ici
+   pour que les panneaux de plan_table.html s'auto-placent correctement.
+   ═══════════════════════════════════════════════════════════ */
+body[data-page="plan-table"] .panel:nth-child(1),
+body[data-page="plan-table"] .panel:nth-child(2),
+body[data-page="plan-table"] .panel:nth-child(3) {
+  grid-area: unset;
+}
+
+/* .panel-controls en flex pour empiler proprement les deux panneaux gauches */
+body[data-page="plan-table"] .panel-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ═══════════════════════════════════════════════════════════
    VUE SALLE — PLAN DE TABLE
    ═══════════════════════════════════════════════════════════ */
 
