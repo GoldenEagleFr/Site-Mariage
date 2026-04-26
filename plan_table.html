@@ -71,10 +71,8 @@
                   <input id="tableName" type="text" placeholder="Nom de la table (ex : Table 1)" required>
                   <input id="tableCapacity" type="number" min="1" max="30" step="1" placeholder="Capacité (pers.)" required>
                   <select id="tableShape">
-                    <option value="round">⭕ Ronde</option>
-                    <option value="rect">▭ Rectangulaire</option>
-                    <option value="square">□ Carrée</option>
-                    <option value="oval">⬮ Ovale</option>
+                    <option value="round">⭕ Ronde (⌀152cm)</option>
+                    <option value="rect">▭ Rectangulaire (183×76cm)</option>
                   </select>
                   <button type="submit">Créer</button>
                 </form>
@@ -195,7 +193,7 @@
     let assignments = {};
     let constraints = [];
     let seatMap     = {};   // { "tableId:seatIdx": guestId }
-    let roomConfig  = { widthM: 20, heightM: 15, elements: [] };
+    let roomConfig  = { widthM: 22.5, heightM: 16, elements: [] };
     let showNames    = false;
     let showSeatNums = true;
     let roomZoom  = 1.0;
@@ -505,10 +503,8 @@
             <input class="edit-table-name" type="text" value="${table.name.replace(/"/g, "&quot;")}" placeholder="Nom">
             <input class="edit-table-cap" type="number" min="1" max="30" value="${table.capacity}" placeholder="Capacité">
             <select class="edit-table-shape">
-              <option value="round"  ${table.shape === "round"  ? "selected" : ""}>⭕ Ronde</option>
-              <option value="rect"   ${table.shape === "rect"   ? "selected" : ""}>▭ Rectangulaire</option>
-              <option value="square" ${table.shape === "square" ? "selected" : ""}>□ Carrée</option>
-              <option value="oval"   ${table.shape === "oval"   ? "selected" : ""}>⬮ Ovale</option>
+              <option value="round"  ${table.shape === "round"  ? "selected" : ""}>⭕ Ronde (⌀152cm)</option>
+              <option value="rect"   ${table.shape === "rect"   ? "selected" : ""}>▭ Rectangulaire (183×76cm)</option>
             </select>
             <div style="display:flex;gap:6px;margin-top:4px;">
               <button class="save-table-edit-btn ghost-action" data-tid="${table.id}" style="font-size:0.72rem;padding:3px 8px;">✓ Enregistrer</button>
@@ -608,11 +604,12 @@
     }
 
     // ── Canvas — constantes ───────────────────────────────────
+    // Dimensions à l'échelle réelle (référence 800px canvas = 22,5m → 32,9px/m)
     const SHAPE_DIMS = {
-      round:  { rx: 46, ry: 46 },
-      rect:   { rx: 62, ry: 37 },
-      square: { rx: 44, ry: 44 },
-      oval:   { rx: 60, ry: 36 },
+      round:  { rx: 25, ry: 25 },   // ⌀152cm
+      rect:   { rx: 30, ry: 13 },   // 183×76cm
+      square: { rx: 15, ry: 15 },   // rétrocompat
+      oval:   { rx: 30, ry: 15 },   // rétrocompat
     };
 
     const TABLE_FILL_LIGHT = { round:"#fce8f0", rect:"#e8f0fc", square:"#e8fce8", oval:"#fcf4e8" };
@@ -866,21 +863,28 @@
       ctx.stroke();
 
       ctx.textAlign    = "center";
-      ctx.textBaseline = "alphabetic";
+      ctx.textBaseline = "middle";
       ctx.fillStyle    = isDark ? "#e8d8c8" : "#3d2b1f";
-      ctx.font         = "bold 12px 'Manrope', sans-serif";
-      const label      = table.name.length > 13 ? table.name.slice(0, 12) + "…" : table.name;
-      ctx.fillText(label, x, y - 2);
+      const maxChars   = Math.max(4, Math.floor(dims.rx / 3));
+      const label      = table.name.length > maxChars ? table.name.slice(0, maxChars - 1) + "…" : table.name;
 
-      ctx.fillStyle = isDark ? "#9a8a7a" : "#7a6a5a";
-      ctx.font      = "10px 'Manrope', sans-serif";
-      ctx.fillText(`${tableGuests.length}/${table.capacity}`, x, y + 13);
+      if (dims.ry >= 18) {
+        ctx.font = "bold 12px 'Manrope', sans-serif";
+        ctx.fillText(label, x, y - dims.ry * 0.25);
+        ctx.fillStyle = isDark ? "#9a8a7a" : "#7a6a5a";
+        ctx.font      = "10px 'Manrope', sans-serif";
+        ctx.fillText(`${tableGuests.length}/${table.capacity}`, x, y + dims.ry * 0.4);
+      } else {
+        const fs = Math.max(6, Math.round(dims.ry * 0.75));
+        ctx.font = `bold ${fs}px 'Manrope', sans-serif`;
+        ctx.fillText(label, x, y);
+      }
 
       if (hasViol) {
-        ctx.font      = "14px sans-serif";
+        ctx.font      = "10px sans-serif";
         ctx.fillStyle = "#e05555";
         ctx.textAlign = "left";
-        ctx.fillText("⚠", x + dims.rx - 12, y - dims.ry + 14);
+        ctx.fillText("⚠", x + dims.rx - 8, y - dims.ry + 8);
       }
 
       ctx.restore();
@@ -927,7 +931,7 @@
 
     // ── Rendu de la salle ─────────────────────────────────────
     function initTablePositions() {
-      const cols = 4, spacingX = 170, spacingY = 150, startX = 90, startY = 100;
+      const cols = 5, spacingX = 100, spacingY = 110, startX = 60, startY = 70;
       tables.forEach((t, i) => {
         if (t.x == null || t.y == null) {
           t.x = startX + (i % cols) * spacingX;
@@ -1194,14 +1198,20 @@
 
     // ── Zoom ──────────────────────────────────────────────────
     function applyZoom(factor, centerX, centerY) {
-      const cx = centerX ?? roomCanvas.width  / 2;
-      const cy = centerY ?? roomCanvas.height / 2;
-      const newZoom = Math.max(0.25, Math.min(4.0, roomZoom * factor));
-      const wx = (cx - roomPanX) / roomZoom;
-      const wy = (cy - roomPanY) / roomZoom;
-      roomPanX = cx - wx * newZoom;
-      roomPanY = cy - wy * newZoom;
-      roomZoom = newZoom;
+      const newZoom = roomZoom * factor;
+      if (newZoom <= 1.0) {
+        // Zoom minimum atteint : salle dans le bloc, pan réinitialisé
+        roomZoom = 1.0; roomPanX = 0; roomPanY = 0;
+      } else {
+        const cx = centerX ?? roomCanvas.width  / 2;
+        const cy = centerY ?? roomCanvas.height / 2;
+        const clamped = Math.min(5.0, newZoom);
+        const wx = (cx - roomPanX) / roomZoom;
+        const wy = (cy - roomPanY) / roomZoom;
+        roomPanX = cx - wx * clamped;
+        roomPanY = cy - wy * clamped;
+        roomZoom = clamped;
+      }
       renderRoom();
     }
 
