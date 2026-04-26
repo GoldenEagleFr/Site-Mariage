@@ -325,7 +325,7 @@
     // Bande de service à DROITE (35m - 22,5m = 12,5m) :
     //   Scène 11,20×3,48m centrée en hauteur (mur droit de la salle)
     //   Locaux techniques : espaces au-dessus et en-dessous de la scène
-    const DEFAULTS_VERSION = 4;
+    const DEFAULTS_VERSION = 5;
 
     function ensureDefaultElements() {
       if ((roomConfig._defaultsVersion ?? 0) >= DEFAULTS_VERSION) return;
@@ -343,16 +343,26 @@
       const sceneY  = ROOM_WORLD_Y + Math.round((RH - sh) / 2);
       const ltH     = sceneY - ROOM_WORLD_Y;  // hauteur des locaux (espace restant haut et bas)
 
+      // Espace DJ — 3×3m — coin sup. droit de la salle (intérieur)
+      // Coin inférieur gauche arrondi (il plonge dans l'espace de la salle)
+      const djPx = Math.round(3 * PPM);
+
       roomConfig.elements.push(
-        // Local technique haut
+        // Local technique haut (bande de service)
         { id: "builtin-lt-top", type: "custom", label: "Local tech.",
           x: sceneX, y: ROOM_WORLD_Y, w: sw, h: ltH },
         // Scène
         { id: "builtin-scene",  type: "scene",  label: "Scène",
           x: sceneX, y: sceneY,        w: sw, h: sh  },
-        // Local technique bas
+        // Local technique bas (bande de service)
         { id: "builtin-lt-bot", type: "custom", label: "Local tech.",
-          x: sceneX, y: sceneY + sh,   w: sw, h: ltH }
+          x: sceneX, y: sceneY + sh,   w: sw, h: ltH },
+        // DJ — coin sup. droit de la salle, coin bas-gauche arrondi
+        { id: "builtin-dj", type: "dj", label: "DJ",
+          x: ROOM_WORLD_X + ROOM_WORLD_W - djPx,
+          y: ROOM_WORLD_Y,
+          w: djPx, h: djPx,
+          radii: [0, 0, 0, 20] }   // [tl, tr, br, bl] — seul bl arrondi
       );
 
       saveTables();
@@ -881,7 +891,7 @@
         ctx.lineWidth   = 1.5;
         if (el._drag) ctx.strokeStyle = "#b17a4a";
         ctx.beginPath();
-        if (ctx.roundRect) ctx.roundRect(ex, ey, ew, eh, 4);
+        if (ctx.roundRect) ctx.roundRect(ex, ey, ew, eh, el.radii ?? 4);
         else ctx.rect(ex, ey, ew, eh);
         ctx.fill();
         ctx.stroke();
