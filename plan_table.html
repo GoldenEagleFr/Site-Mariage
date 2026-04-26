@@ -316,34 +316,51 @@
     viewBtnList.addEventListener("click", () => switchView("list"));
     viewBtnRoom.addEventListener("click", () => switchView("room"));
 
-    // ── Éléments fixes de la salle (initialisés une seule fois) ─
+    // ── Éléments fixes de la salle ───────────────────────────────
+    // Mise en place basée sur la plaquette "Les Domaines de Gaston" :
+    //   Scène + DJ + Bar → mur haut (côté service/parc)
+    //   Entrée → mur bas (côté vestiaire/route)
+    //   Office 9,10×4,90m → bande de service (hors salle, non affiché sur plan)
+    const DEFAULTS_VERSION = 2;
+
     function ensureDefaultElements() {
-      if (roomConfig._defaultsInit) return;
-      roomConfig._defaultsInit = true;
-      // Dimensions fixes du domaine (source : plaquette commerciale)
-      // Salle : 22,50 × 16 m  |  Scène : 11,20 × 3,48 m  |  Office : 9,10 × 4,90 m
+      if ((roomConfig._defaultsVersion ?? 0) >= DEFAULTS_VERSION) return;
+      roomConfig._defaultsVersion = DEFAULTS_VERSION;
+
       const PPM = ROOM_WORLD_W / roomConfig.widthM;  // px/m
       const RH  = getRoomWorldH();
 
-      // Scène — centrée contre le mur du fond (bas)
+      // Supprime les anciens builtins, conserve les éléments personnalisés
+      roomConfig.elements = roomConfig.elements.filter(e => !String(e.id).startsWith("builtin-"));
+
+      // Scène — 11,20 × 3,48 m — centrée contre le mur haut
       const sw = Math.round(11.20 * PPM);
       const sh = Math.round(3.48  * PPM);
-      roomConfig.elements.unshift({
-        id: "builtin-scene", type: "scene", label: "Scène",
-        x: ROOM_WORLD_X + Math.round((ROOM_WORLD_W - sw) / 2),
-        y: ROOM_WORLD_Y + RH - sh,
-        w: sw, h: sh
-      });
+      const sceneX = ROOM_WORLD_X + Math.round((ROOM_WORLD_W - sw) / 2);
 
-      // Office — accolé au mur droit, haut de salle
-      const ow = Math.round(9.10 * PPM);
-      const oh = Math.round(4.90 * PPM);
-      roomConfig.elements.push({
-        id: "builtin-office", type: "buffet", label: "Office",
-        x: ROOM_WORLD_X + ROOM_WORLD_W - ow,
-        y: ROOM_WORLD_Y,
-        w: ow, h: oh
-      });
+      // DJ — ~2,5 × 2,5 m — coin haut droit
+      const djw = Math.round(2.5 * PPM);
+      const djh = Math.round(2.5 * PPM);
+
+      // Bar — ~4 × 2 m — coin haut gauche (côté scène)
+      const bw = Math.round(4 * PPM);
+      const bh = Math.round(2 * PPM);
+
+      // Entrée — ~3 × 1 m — mur bas, centré
+      const ew = Math.round(3 * PPM);
+      const eh = Math.round(1 * PPM);
+
+      roomConfig.elements.push(
+        { id: "builtin-scene",  type: "scene",  label: "Scène",
+          x: sceneX,                             y: ROOM_WORLD_Y,     w: sw,  h: sh  },
+        { id: "builtin-dj",    type: "dj",     label: "DJ",
+          x: ROOM_WORLD_X + ROOM_WORLD_W - djw, y: ROOM_WORLD_Y,     w: djw, h: djh },
+        { id: "builtin-bar",   type: "bar",    label: "Bar",
+          x: ROOM_WORLD_X,                       y: ROOM_WORLD_Y,     w: bw,  h: bh  },
+        { id: "builtin-entree",type: "entree", label: "Entrée",
+          x: ROOM_WORLD_X + Math.round((ROOM_WORLD_W - ew) / 2),
+          y: ROOM_WORLD_Y + RH - eh,             w: ew,  h: eh  }
+      );
 
       saveTables();
     }
