@@ -3987,6 +3987,42 @@ body.dark-mode .table-violation-warning {
 .table-name-edit:hover  { border-bottom-color: var(--border); }
 .table-name-edit:focus  { border-bottom-color: var(--accent); background: var(--surface-alt, #f9f7f4); border-radius: 3px 3px 0 0; }
 .table-manage-content { padding: 8px 12px 14px; }
+.tms-rotation-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 0 6px;
+  flex-wrap: wrap;
+}
+.tms-rot-btn {
+  font-size: 0.72rem;
+  padding: 3px 7px;
+  background: var(--surface-alt, #f0ece5);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--ink);
+  line-height: 1.4;
+}
+.tms-rot-btn:hover { background: var(--accent-pale, #f9ede8); border-color: var(--accent); }
+.tms-rot-val {
+  min-width: 36px;
+  text-align: center;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+.tms-rot-reset {
+  font-size: 0.9rem;
+  padding: 2px 6px;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--ink-soft);
+  margin-left: 2px;
+}
+.tms-rot-reset:hover { color: var(--ink); border-color: var(--ink-soft); }
 .tms-seats-list { display: flex; flex-direction: column; gap: 4px; }
 .tms-seat {
   display: flex;

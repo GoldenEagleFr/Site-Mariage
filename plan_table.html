@@ -770,6 +770,16 @@
           }
         }
       }
+
+      // Rotation de la table autour de son centre
+      const rot = (table.rotation ?? 0) * Math.PI / 180;
+      if (rot !== 0) {
+        const cos = Math.cos(rot), sin = Math.sin(rot);
+        return pos.map(p => {
+          const dx = p.cx - x, dy = p.cy - y;
+          return { cx: x + dx * cos - dy * sin, cy: y + dx * sin + dy * cos, r: p.r };
+        });
+      }
       return pos;
     }
 
@@ -900,6 +910,7 @@
       drawChairs(ctx, table, isDark);
       const x     = table.x ?? 100;
       const y     = table.y ?? 100;
+      const rot   = (table.rotation ?? 0) * Math.PI / 180;
       const shape = table.shape || "round";
       const dims  = SHAPE_DIMS[shape] || SHAPE_DIMS.round;
       const tableGuests = guests.filter(g => assignments[g.id] === table.id);
@@ -908,19 +919,22 @@
       const isSelected  = table.id === selectedTableId;
 
       ctx.save();
+      // Rotation autour du centre de la table
+      ctx.translate(x, y);
+      ctx.rotate(rot);
 
       ctx.beginPath();
       switch (shape) {
         case "round":
-          ctx.arc(x, y, dims.rx, 0, Math.PI * 2);
+          ctx.arc(0, 0, dims.rx, 0, Math.PI * 2);
           break;
         case "rect":
         case "square":
-          if (ctx.roundRect) ctx.roundRect(x - dims.rx, y - dims.ry, dims.rx * 2, dims.ry * 2, 8);
-          else ctx.rect(x - dims.rx, y - dims.ry, dims.rx * 2, dims.ry * 2);
+          if (ctx.roundRect) ctx.roundRect(-dims.rx, -dims.ry, dims.rx * 2, dims.ry * 2, 8);
+          else ctx.rect(-dims.rx, -dims.ry, dims.rx * 2, dims.ry * 2);
           break;
         case "oval":
-          ctx.ellipse(x, y, dims.rx, dims.ry, 0, 0, Math.PI * 2);
+          ctx.ellipse(0, 0, dims.rx, dims.ry, 0, 0, Math.PI * 2);
           break;
       }
 
@@ -936,6 +950,8 @@
       ctx.lineWidth = isSelected ? 3 : 2;
       ctx.stroke();
 
+      // Texte horizontal même si la table est tournée (plus lisible)
+      ctx.rotate(-rot);
       ctx.textAlign    = "center";
       ctx.textBaseline = "middle";
       ctx.fillStyle    = isDark ? "#e8d8c8" : "#3d2b1f";
@@ -944,21 +960,21 @@
 
       if (dims.ry >= 18) {
         ctx.font = "bold 12px 'Manrope', sans-serif";
-        ctx.fillText(label, x, y - dims.ry * 0.25);
+        ctx.fillText(label, 0, -dims.ry * 0.25);
         ctx.fillStyle = isDark ? "#9a8a7a" : "#7a6a5a";
         ctx.font      = "10px 'Manrope', sans-serif";
-        ctx.fillText(`${tableGuests.length}/${table.capacity}`, x, y + dims.ry * 0.4);
+        ctx.fillText(`${tableGuests.length}/${table.capacity}`, 0, dims.ry * 0.4);
       } else {
         const fs = Math.max(6, Math.round(dims.ry * 0.75));
         ctx.font = `bold ${fs}px 'Manrope', sans-serif`;
-        ctx.fillText(label, x, y);
+        ctx.fillText(label, 0, 0);
       }
 
       if (hasViol) {
         ctx.font      = "10px sans-serif";
         ctx.fillStyle = "#e05555";
         ctx.textAlign = "left";
-        ctx.fillText("⚠", x + dims.rx - 8, y - dims.ry + 8);
+        ctx.fillText("⚠", dims.rx - 8, -dims.ry + 8);
       }
 
       ctx.restore();
@@ -968,13 +984,20 @@
       const x    = table.x ?? 100;
       const y    = table.y ?? 100;
       const dims = SHAPE_DIMS[table.shape || "round"] || SHAPE_DIMS.round;
+      // Transforme le point dans le repère local (sans rotation)
+      const rot = (table.rotation ?? 0) * Math.PI / 180;
+      let dx = wx - x, dy = wy - y;
+      if (rot !== 0) {
+        const cos = Math.cos(-rot), sin = Math.sin(-rot);
+        [dx, dy] = [dx * cos - dy * sin, dx * sin + dy * cos];
+      }
       switch (table.shape || "round") {
         case "round":
         case "oval":
-          return ((wx - x) / dims.rx) ** 2 + ((wy - y) / dims.ry) ** 2 <= 1;
+          return (dx / dims.rx) ** 2 + (dy / dims.ry) ** 2 <= 1;
         case "rect":
         case "square":
-          return Math.abs(wx - x) <= dims.rx && Math.abs(wy - y) <= dims.ry;
+          return Math.abs(dx) <= dims.rx && Math.abs(dy) <= dims.ry;
       }
       return false;
     }
@@ -1272,6 +1295,19 @@
           </div>`;
       }
 
+      const curRot = Math.round(table.rotation ?? 0);
+      html += `<div class="tms-section">Rotation</div>
+        <div class="tms-rotation-row">
+          <button class="tms-rot-btn" data-deg="-90">−90°</button>
+          <button class="tms-rot-btn" data-deg="-15">−15°</button>
+          <button class="tms-rot-btn" data-deg="-5">−5°</button>
+          <span class="tms-rot-val">${curRot}°</span>
+          <button class="tms-rot-btn" data-deg="5">+5°</button>
+          <button class="tms-rot-btn" data-deg="15">+15°</button>
+          <button class="tms-rot-btn" data-deg="90">+90°</button>
+          <button class="tms-rot-reset" title="Remettre à 0°">↺</button>
+        </div>`;
+
       tableManageContent.innerHTML = html;
 
       tableManageContent.querySelectorAll(".tms-remove").forEach(btn => {
@@ -1311,6 +1347,17 @@
         if (!sel?.value) return;
         assignGuest(sel.value, table.id);
         renderTableManagePanel();
+      });
+
+      tableManageContent.querySelectorAll(".tms-rot-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          table.rotation = ((table.rotation ?? 0) + parseInt(btn.dataset.deg) + 3600) % 360;
+          saveTables(); renderRoom(); renderTableManagePanel();
+        });
+      });
+      tableManageContent.querySelector(".tms-rot-reset")?.addEventListener("click", () => {
+        table.rotation = 0;
+        saveTables(); renderRoom(); renderTableManagePanel();
       });
     }
 
