@@ -1654,27 +1654,38 @@ button:hover {
 }
 
 .guest-item {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto auto auto;
-  gap: 6px;
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  padding: 7px 10px;
+  gap: 5px 8px;
+  padding: 8px 10px;
 }
 
 .guest-item .guest-main {
-  min-width: 0;
+  flex: 1 1 auto;
+  min-width: 160px;
 }
 
 .guest-item .inline-category,
 .guest-item .inline-status {
   font-size: 0.78rem;
   padding: 3px 6px;
-  min-width: 0;
+  flex-shrink: 0;
 }
 
 .guest-item .guest-hebergement-label {
   font-size: 0.75rem;
   white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.guest-item button.danger {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.guest-item .guest-rsvp-details {
+  flex: 1 1 100%;
 }
 
 .guest-meta {
@@ -3533,7 +3544,6 @@ body.rsvp-page .kicker {
 
 /* ── RSVP details in admin guest list ─────────────────────── */
 .guest-rsvp-details {
-  grid-column: 1 / -1;
   display: flex;
   flex-wrap: wrap;
   gap: 5px;
