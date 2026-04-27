@@ -31,6 +31,7 @@ DEFAULT_DATA = {
     "budgetCategories": [],
     "tasks": [],
     "guests": [],
+    "guestGroups": [],
     "updatedAt": 0,
 }
 
@@ -81,6 +82,7 @@ def create_default_data() -> dict:
         "budgetCategories": [],
         "tasks": [],
         "guests": [],
+        "guestGroups": [],
         "updatedAt": DEFAULT_DATA["updatedAt"],
     }
 
@@ -118,32 +120,62 @@ def normalize_data(candidate: object) -> dict:
             label = str(item.get("label", "")).strip()
             if not label:
                 continue
-            amount_total_raw = item.get("amountTotal", item.get("amount", 0))
-            amount_paid_raw = item.get("amountPaid", 0)
-            amount_total = float(amount_total_raw) if isinstance(amount_total_raw, (int, float)) else 0.0
-            amount_paid = float(amount_paid_raw) if isinstance(amount_paid_raw, (int, float)) else 0.0
-            category_id = str(item.get("categoryId", "")).strip() or None
             identifier = str(item.get("id", "")).strip() or "item"
+            category_id = str(item.get("categoryId", "")).strip() or None
             sup = item.get("supplier", {})
             sup = sup if isinstance(sup, dict) else {}
-            cleaned_budget.append(
-                {
-                    "id": identifier,
-                    "label": label,
-                    "categoryId": category_id,
-                    "amountTotal": max(0.0, amount_total),
-                    "amountPaid": max(0.0, amount_paid),
-                    "solde": bool(item.get("solde", False)),
-                    "supplier": {
-                        "contact": str(sup.get("contact", "")).strip(),
-                        "phone": str(sup.get("phone", "")).strip(),
-                        "email": str(sup.get("email", "")).strip(),
-                        "address": str(sup.get("address", "")).strip(),
-                        "website": str(sup.get("website", "")).strip(),
-                        "notes": str(sup.get("notes", "")).strip(),
-                    },
-                }
-            )
+
+            # Versements partiels (optionnel)
+            raw_payments = item.get("payments")
+            cleaned_payments = []
+            if isinstance(raw_payments, list):
+                for pmt in raw_payments:
+                    if not isinstance(pmt, dict):
+                        continue
+                    pmt_label = str(pmt.get("label", "")).strip() or "Versement"
+                    pmt_total_raw = pmt.get("amountTotal", 0)
+                    pmt_paid_raw  = pmt.get("amountPaid", 0)
+                    pmt_total = float(pmt_total_raw) if isinstance(pmt_total_raw, (int, float)) else 0.0
+                    pmt_paid  = float(pmt_paid_raw)  if isinstance(pmt_paid_raw,  (int, float)) else 0.0
+                    cleaned_payments.append({
+                        "id":          str(pmt.get("id", "")).strip() or "pmt",
+                        "label":       pmt_label,
+                        "amountTotal": max(0.0, pmt_total),
+                        "amountPaid":  max(0.0, pmt_paid),
+                        "dueDate":     str(pmt.get("dueDate", "")).strip(),
+                        "solde":       bool(pmt.get("solde", False)),
+                    })
+
+            # Totaux calculés depuis les versements si présents, sinon flat
+            if cleaned_payments:
+                amount_total = sum(p["amountTotal"] for p in cleaned_payments)
+                amount_paid  = sum(p["amountPaid"]  for p in cleaned_payments)
+            else:
+                amount_total_raw = item.get("amountTotal", item.get("amount", 0))
+                amount_paid_raw  = item.get("amountPaid", 0)
+                amount_total = float(amount_total_raw) if isinstance(amount_total_raw, (int, float)) else 0.0
+                amount_paid  = float(amount_paid_raw)  if isinstance(amount_paid_raw,  (int, float)) else 0.0
+
+            entry = {
+                "id": identifier,
+                "label": label,
+                "categoryId": category_id,
+                "amountTotal": max(0.0, amount_total),
+                "amountPaid":  max(0.0, amount_paid),
+                "solde": bool(item.get("solde", False)),
+                "dueDate": str(item.get("dueDate", "")).strip(),
+                "supplier": {
+                    "contact": str(sup.get("contact", "")).strip(),
+                    "phone":   str(sup.get("phone",   "")).strip(),
+                    "email":   str(sup.get("email",   "")).strip(),
+                    "address": str(sup.get("address", "")).strip(),
+                    "website": str(sup.get("website", "")).strip(),
+                    "notes":   str(sup.get("notes",   "")).strip(),
+                },
+            }
+            if cleaned_payments:
+                entry["payments"] = cleaned_payments
+            cleaned_budget.append(entry)
         normalized["budgetItems"] = cleaned_budget
 
     budget_categories = candidate.get("budgetCategories")
@@ -206,9 +238,29 @@ def normalize_data(candidate: object) -> dict:
                     "musicSuggestion": str(guest.get("musicSuggestion", "")).strip(),
                     "allergies": str(guest.get("allergies", "")).strip(),
                     "otherQuestion": str(guest.get("otherQuestion", "")).strip(),
+                    "colorGroupId": str(guest.get("colorGroupId", "")).strip() or None,
                 }
             )
         normalized["guests"] = cleaned_guests
+
+    guest_groups = candidate.get("guestGroups")
+    if isinstance(guest_groups, list):
+        cleaned_groups = []
+        for grp in guest_groups:
+            if not isinstance(grp, dict):
+                continue
+            grp_name = str(grp.get("name", "")).strip()
+            if not grp_name:
+                continue
+            grp_color = str(grp.get("color", "#888888")).strip()
+            if not grp_color.startswith("#"):
+                grp_color = "#888888"
+            cleaned_groups.append({
+                "id":    str(grp.get("id", "")).strip() or "grp",
+                "name":  grp_name,
+                "color": grp_color,
+            })
+        normalized["guestGroups"] = cleaned_groups
 
     return normalized
 
@@ -851,6 +903,16 @@ class PlannerHandler(SimpleHTTPRequestHandler):
                 self._send_json({"ok": False, "error": "unauthorized"}, HTTPStatus.UNAUTHORIZED)
                 return
             self._send_json(load_data_file())
+            return
+
+        if path == "/api/stats":
+            data = load_data_file()
+            guests_list = data.get("guests", [])
+            total     = len(guests_list)
+            confirmed = sum(1 for g in guests_list if g.get("status") == "yes")
+            declined  = sum(1 for g in guests_list if g.get("status") == "no")
+            pending   = total - confirmed - declined
+            self._send_json({"total": total, "confirmed": confirmed, "declined": declined, "pending": pending})
             return
 
         if path == "/api/rsvp/search":

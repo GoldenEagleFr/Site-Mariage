@@ -175,6 +175,12 @@
         <h2>Merci de confirmer avant le 1er mars 2027</h2>
       </div>
       <p>Confirmez votre présence en ligne ou contactez-nous directement.</p>
+      <div id="rsvpCounterBar" class="rsvp-counter-bar is-hidden" aria-live="polite">
+        <span id="rsvpCounterLabel" class="rsvp-counter-label"></span>
+        <div class="rsvp-progress-track">
+          <div id="rsvpProgressFill" class="rsvp-progress-fill"></div>
+        </div>
+      </div>
       <div class="rsvp-actions">
         <a class="cta cta-primary" href="rsvp.html">Confirmer ma présence</a>
         <a class="cta cta-secondary" href="mailto:florence.antoine.mariage@gmail.com">Écrire par email</a>
@@ -188,7 +194,7 @@
       </div>
       <p>Scannez ce QR code pour enregistrer la date dans votre agenda ou partager l'invitation.</p>
       <div class="save-the-date-qr">
-        <img src="assets/qrcode/qr.jpg" alt="QR code Save the Date — Florence et Antoine, 17 avril 2027" class="qr-image">
+        <img src="assets/qrcode/qr.jpg" alt="QR code Save the Date — Florence et Antoine, 17 avril 2027" class="qr-image" width="560" height="560" loading="lazy" decoding="async">
       </div>
     </section>
 
@@ -291,6 +297,25 @@
   </main>
 
   <script src="script.js"></script>
+  <script>
+    (async () => {
+      try {
+        const res = await fetch("/api/stats", { cache: "no-store" });
+        if (!res.ok) return;
+        const { total, confirmed } = await res.json();
+        if (!total) return;
+        const pct = Math.round((confirmed / total) * 100);
+        const bar   = document.getElementById("rsvpCounterBar");
+        const label = document.getElementById("rsvpCounterLabel");
+        const fill  = document.getElementById("rsvpProgressFill");
+        if (bar && label && fill) {
+          label.textContent = `${confirmed} confirmation${confirmed > 1 ? "s" : ""} reçue${confirmed > 1 ? "s" : ""} sur ${total} invitations`;
+          fill.style.width = pct + "%";
+          bar.classList.remove("is-hidden");
+        }
+      } catch { /* serveur indisponible ou hors-ligne */ }
+    })();
+  </script>
 </body>
 </html>
 

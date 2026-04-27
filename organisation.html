@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Organisation mariage</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💍</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -16,6 +17,7 @@
         <a href="index.html#programme">Programme</a>
         <a href="index.html#infos">Infos pratiques</a>
         <a href="index.html#rsvp">RSVP</a>
+        <button class="dark-mode-toggle-btn" id="darkModeToggleHero" type="button" aria-label="Basculer mode sombre">🌙 Mode sombre</button>
       </nav>
       <div class="hero-content">
         <p class="kicker">Espace privé</p>
@@ -54,32 +56,56 @@
 
         <section id="adminTabDashboard" class="admin-tab-panel is-active" data-admin-tab-panel="dashboard" role="tabpanel" aria-labelledby="adminTabBtnDashboard">
           <section class="metrics">
-            <article class="metric-card">
+            <article class="metric-card" data-goto-tab="budget" tabindex="0" role="button" aria-label="Aller au budget">
               <h2>Budget engagé</h2>
               <p id="metricBudgetTotal">0 EUR</p>
+              <span class="metric-card-arrow">→ Voir le budget</span>
             </article>
-            <article class="metric-card">
+            <article class="metric-card" data-goto-tab="budget" tabindex="0" role="button" aria-label="Aller au budget">
               <h2>Reste à dépenser</h2>
               <p id="metricBudgetLeft">0 EUR</p>
+              <span class="metric-card-arrow">→ Voir le budget</span>
             </article>
-            <article class="metric-card metric-card-paid">
+            <article class="metric-card metric-card-paid" data-goto-tab="budget" tabindex="0" role="button" aria-label="Aller au budget">
               <h2>Déjà payé</h2>
               <p id="metricBudgetPaid">0 EUR</p>
+              <span class="metric-card-arrow">→ Voir le budget</span>
             </article>
-            <article class="metric-card metric-card-due">
+            <article class="metric-card metric-card-due" data-goto-tab="budget" tabindex="0" role="button" aria-label="Aller au budget">
               <h2>Reste à régler</h2>
               <p id="metricBudgetDue">0 EUR</p>
               <span class="metric-sub" id="metricBudgetDueSub"></span>
+              <span class="metric-card-arrow">→ Voir le budget</span>
             </article>
-            <article class="metric-card">
+            <article class="metric-card" data-goto-tab="tasks" tabindex="0" role="button" aria-label="Aller aux tâches">
               <h2>Tâches complétées</h2>
               <p id="metricTasks">0%</p>
+              <span class="metric-card-arrow">→ Voir les tâches</span>
             </article>
-            <article class="metric-card">
+            <article class="metric-card" data-goto-tab="guests" tabindex="0" role="button" aria-label="Aller aux invités">
               <h2>RSVP reçus</h2>
               <p id="metricRsvp">0%</p>
+              <span class="metric-card-arrow">→ Voir les invités</span>
             </article>
           </section>
+
+          <!-- Graphiques supplémentaires -->
+          <div class="extra-charts-grid">
+            <div class="extra-chart-card">
+              <p class="extra-chart-title">📬 Évolution des RSVP</p>
+              <canvas id="rsvpChartCanvas" class="extra-chart-canvas" role="img" aria-label="Évolution des RSVP"></canvas>
+            </div>
+            <div class="extra-chart-card">
+              <p class="extra-chart-title">💶 Budget par catégorie</p>
+              <canvas id="budgetBarCanvas" class="extra-chart-canvas" role="img" aria-label="Budget par catégorie"></canvas>
+            </div>
+          </div>
+
+          <!-- À payer prochainement -->
+          <div id="upcomingPaymentsPanel" class="upcoming-payments-panel is-hidden" style="margin-top:14px;">
+            <p class="upcoming-payments-title">⏰ À régler prochainement</p>
+            <div id="upcomingPaymentsList"></div>
+          </div>
         </section>
 
         <section id="adminTabBudget" class="admin-tab-panel is-hidden" data-admin-tab-panel="budget" role="tabpanel" aria-labelledby="adminTabBtnBudget">
@@ -118,6 +144,10 @@
                     <input id="budgetAmountTotal" type="number" min="0" step="1" placeholder="Montant total prévu (€)">
                     <input id="budgetAmountPaid" type="number" min="0" step="1" placeholder="Déjà payé (€)">
                     <button type="submit">Ajouter</button>
+                  </div>
+                  <div class="budget-form-row" style="grid-template-columns:1fr auto">
+                    <input id="budgetDueDate" type="date" title="Date d'échéance (optionnel)">
+                    <span style="display:flex;align-items:center;font-size:0.78rem;color:var(--ink-soft);padding:0 6px;white-space:nowrap;">Date d'échéance</span>
                   </div>
                 </form>
                 <div class="budget-unit-prices" aria-live="polite">
@@ -160,6 +190,11 @@
               <div class="panel-controls">
                 <form id="taskForm" class="row-form">
                   <input id="taskText" type="text" placeholder="Nouvelle tâche" required>
+                  <select id="taskPriority">
+                    <option value="normal">⚪ Normal</option>
+                    <option value="urgent">🔴 Urgent</option>
+                    <option value="faible">🟢 Faible</option>
+                  </select>
                   <button type="submit">Ajouter</button>
                 </form>
                 <div class="list-tools">
@@ -238,6 +273,23 @@
                 <ul id="guestList" class="data-list"></ul>
               </div>
             </div>
+            <div class="plan-table-btn-wrap">
+              <a href="plan_table.html" class="cta cta-primary">🪑 Plan de table</a>
+            </div>
+          </section>
+
+          <section class="panel" style="margin-top:14px;">
+            <div class="panel-head">
+              <p class="panel-kicker">Couleurs</p>
+              <h2>Groupes d'invités</h2>
+            </div>
+            <p style="font-size:0.83rem;color:var(--ink-soft);margin:0 0 10px;">Assignez une couleur à chaque groupe (famille, amis…) pour les visualiser sur le plan de table.</p>
+            <div id="guestGroupList" class="category-chips" style="margin-bottom:10px;"></div>
+            <form id="guestGroupForm" class="row-form row-form-3" style="align-items:center;">
+              <input id="guestGroupName" type="text" placeholder="Nom du groupe (ex : Famille)">
+              <input id="guestGroupColor" type="color" value="#7c6ae6" title="Couleur" style="width:44px;height:36px;padding:2px;border-radius:6px;cursor:pointer;">
+              <button type="submit">Ajouter</button>
+            </form>
           </section>
         </section>
 
@@ -325,6 +377,7 @@
           <input type="checkbox" class="solde-check">
           Soldé
         </label>
+        <span class="budget-due-date budget-item-due-date"></span>
         <button class="supplier-info-btn ghost-action" type="button" aria-label="Informations prestataire">ℹ</button>
         <button class="budget-edit-btn ghost-action" type="button">Modifier</button>
         <button class="budget-delete-btn danger" type="button">Supprimer</button>
@@ -333,17 +386,21 @@
         <select class="edit-category"></select>
         <input class="edit-amount-total" type="number" min="0" step="1" placeholder="Montant total (€)">
         <input class="edit-amount-paid" type="number" min="0" step="1" placeholder="Déjà payé (€)">
+        <input class="edit-due-date" type="date" title="Date d'échéance">
         <button class="save-btn" type="button">Enregistrer</button>
       </div>
+      <div class="budget-payments-wrap"></div>
     </li>
   </template>
 
   <template id="taskItemTemplate">
-    <li class="data-item">
+    <li class="data-item" draggable="true">
+      <span class="drag-handle" title="Glisser pour réordonner">⠿</span>
       <label class="checkbox-line">
         <input type="checkbox">
         <span class="main-text"></span>
       </label>
+      <span class="task-priority-badge"></span>
       <button class="danger" type="button">Supprimer</button>
     </li>
   </template>
@@ -367,6 +424,7 @@
         <option value="yes">Oui</option>
         <option value="no">Non</option>
       </select>
+      <div class="guest-color-group-wrap is-hidden"></div>
       <button class="danger" type="button">Supprimer</button>
       <div class="guest-rsvp-details is-hidden"></div>
     </li>

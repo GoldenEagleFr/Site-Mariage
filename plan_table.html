@@ -129,10 +129,20 @@
             <button id="btnZoomIn" class="room-tool-btn" type="button" title="Zoomer">+</button>
             <button id="btnZoomReset" class="room-tool-btn" type="button" title="Réinitialiser la vue">⊡</button>
             <span class="room-toolbar-sep"></span>
-            <button id="btnConfigRoom" class="room-tool-btn" type="button" title="Configurer la salle et ses éléments">⚙️ Salle</button>
+            <button id="btnSnapGrid" class="room-tool-btn" type="button" title="Aligner les tables sur une grille de 0,5 m">⊞ Grille</button>
             <span class="room-toolbar-sep"></span>
+            <button id="btnConfigRoom" class="room-tool-btn" type="button" title="Configurer la salle et ses éléments">⚙️ Salle</button>
+            <button id="btnLegend" class="room-tool-btn" type="button" title="Afficher la légende des couleurs">📌 Légende</button>
+            <span class="room-toolbar-sep"></span>
+            <button id="btnExportCSV" class="room-tool-btn" type="button" title="Télécharger la liste des placements (CSV)">⬇ CSV</button>
+            <button id="btnExportHD" class="room-tool-btn" type="button" title="Exporter le plan en image haute résolution">🖼 Plan HD</button>
             <button id="btnPrintRoom" class="room-tool-btn" type="button" title="Imprimer le plan de salle">🖨️ Imprimer</button>
           </div>
+          <div class="room-search-bar">
+            <input id="roomGuestSearch" type="text" class="room-guest-search-input" placeholder="🔍 Rechercher un invité dans la salle…" autocomplete="off">
+            <button id="btnClearGuestSearch" class="room-search-clear is-hidden" type="button" title="Effacer">✕</button>
+          </div>
+          <div id="roomLegendPanel" class="room-legend-panel is-hidden"></div>
 
           <div id="roomConfigPanel" class="room-config-panel is-hidden">
             <div class="room-config-dims">
@@ -201,10 +211,15 @@
     let roomConfig  = { widthM: 22.5, heightM: 16, elements: [] };
     let showNames    = false;
     let showSeatNums = true;
+    let snapToGrid   = false;
+    let highlightGuestId = null;
+    let guestGroups  = [];
     let roomZoom  = 1.0;
     let roomPanX  = 0, roomPanY = 0;
     let selectedTableId = null;
     let editingTableId  = null;
+    let lastKnownUpdatedAt = 0;
+    let syncPollTimer = null;
 
     // ── DOM ───────────────────────────────────────────────────
     const adminGate         = document.getElementById("adminGate");
@@ -304,7 +319,9 @@
         const res = await fetch(SERVER_ENDPOINT, { cache: "no-store", headers: { "X-Admin-Key": token } });
         if (!res.ok) throw new Error("HTTP " + res.status);
         const data = await res.json();
-        guests = (data.guests || []).filter(g => g.status === "yes");
+        guests      = (data.guests || []).filter(g => g.status === "yes");
+        guestGroups = Array.isArray(data.guestGroups) ? data.guestGroups : [];
+        lastKnownUpdatedAt = data.updatedAt ?? 0;
         syncStatus.textContent = "Données chargées.";
       } catch {
         syncStatus.textContent = "Serveur indisponible.";
@@ -313,6 +330,27 @@
       }
       loadTables();
       render();
+      startSyncPolling(token);
+    }
+
+    function startSyncPolling(token) {
+      if (syncPollTimer) clearInterval(syncPollTimer);
+      syncPollTimer = setInterval(async () => {
+        try {
+          const res = await fetch(SERVER_ENDPOINT, { cache: "no-store", headers: { "X-Admin-Key": token } });
+          if (!res.ok) return;
+          const data = await res.json();
+          if ((data.updatedAt ?? 0) > lastKnownUpdatedAt) {
+            lastKnownUpdatedAt = data.updatedAt;
+            const prevCount = guests.length;
+            guests      = (data.guests || []).filter(g => g.status === "yes");
+            guestGroups = Array.isArray(data.guestGroups) ? data.guestGroups : [];
+            syncStatus.textContent = "Synchronisé " + new Date().toLocaleTimeString("fr-FR", { hour:"2-digit", minute:"2-digit" });
+            if (guests.length !== prevCount) render();
+            else if (currentView === "room") renderRoom();
+          }
+        } catch { /* réseau indisponible, on réessaie au prochain tick */ }
+      }, 60_000);
     }
 
     // ── Vue toggle ────────────────────────────────────────────
@@ -687,6 +725,23 @@
       ));
     }
 
+    const GRID_M = 0.5;
+    function getGridPx() { return Math.round(GRID_M * ROOM_WORLD_W / roomConfig.widthM); }
+    function snapVal(v) {
+      if (!snapToGrid) return v;
+      const gp = getGridPx();
+      return Math.round(v / gp) * gp;
+    }
+
+    // Couleur du groupe d'un invité (pour les chaises)
+    function getGroupColor(guestId) {
+      if (!guestGroups.length) return null;
+      const g = guests.find(x => x.id === guestId);
+      if (!g || !g.colorGroupId) return null;
+      const grp = guestGroups.find(x => x.id === g.colorGroupId);
+      return grp ? grp.color : null;
+    }
+
     const TABLE_FILL_LIGHT = { round:"#fce8f0", rect:"#e8f0fc", square:"#e8fce8", oval:"#fcf4e8" };
     const TABLE_FILL_DARK  = { round:"#4a2535", rect:"#253548", square:"#253825", oval:"#453525" };
 
@@ -824,14 +879,26 @@
         const isOcc    = guest != null;
         const outAngle = positions[i].outAngle ?? Math.atan2(cy - y, cx - x);
 
+        // Couleur groupe
+        const groupColor = isOcc && guest ? getGroupColor(guest.id) : null;
+
         ctx.save();
+
+        // Halo de surbrillance (recherche invité)
+        if (highlightGuestId && guest && guest.id === highlightGuestId) {
+          ctx.beginPath();
+          ctx.arc(cx, cy, r + 5, 0, Math.PI * 2);
+          ctx.strokeStyle = "#e00a26";
+          ctx.lineWidth = 2.5;
+          ctx.stroke();
+        }
 
         // Assise
         ctx.beginPath();
         ctx.arc(cx, cy, r, 0, Math.PI * 2);
-        ctx.fillStyle = isOcc ? fillOcc : fillFree;
+        ctx.fillStyle = groupColor ?? (isOcc ? fillOcc : fillFree);
         ctx.fill();
-        ctx.strokeStyle = strokeC;
+        ctx.strokeStyle = groupColor ? (isDark ? "rgba(0,0,0,0.35)" : "rgba(0,0,0,0.22)") : strokeC;
         ctx.lineWidth = 1.5;
         ctx.stroke();
 
@@ -1082,6 +1149,19 @@
       ctx.save();
       ctx.translate(roomPanX, roomPanY);
       ctx.scale(roomZoom, roomZoom);
+
+      // Grille d'alignement (optionnelle)
+      if (snapToGrid) {
+        const gp = getGridPx();
+        ctx.strokeStyle = isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.06)";
+        ctx.lineWidth = 0.5 / roomZoom;
+        for (let gx = ROOM_WORLD_X; gx <= ROOM_WORLD_X + ROOM_WORLD_W; gx += gp) {
+          ctx.beginPath(); ctx.moveTo(gx, ROOM_WORLD_Y); ctx.lineTo(gx, ROOM_WORLD_Y + RH); ctx.stroke();
+        }
+        for (let gy = ROOM_WORLD_Y; gy <= ROOM_WORLD_Y + RH; gy += gp) {
+          ctx.beginPath(); ctx.moveTo(ROOM_WORLD_X, gy); ctx.lineTo(ROOM_WORLD_X + ROOM_WORLD_W, gy); ctx.stroke();
+        }
+      }
 
       // Contour salle — coordonnées monde fixes
       ctx.strokeStyle = isDark ? "#4a3f35" : "#c9b89a";
@@ -1551,8 +1631,8 @@
         const { wx, wy } = screenToWorld(pos.x, pos.y);
         const dims = SHAPE_DIMS[roomDragTable.shape || "round"] || SHAPE_DIMS.round;
         const RH   = getRoomWorldH();
-        roomDragTable.x = Math.max(ROOM_WORLD_X + dims.rx + ROOM_PAD, Math.min(ROOM_WORLD_X + ROOM_WORLD_W - dims.rx - ROOM_PAD, wx - roomDragOffX));
-        roomDragTable.y = Math.max(ROOM_WORLD_Y + dims.ry + ROOM_PAD, Math.min(ROOM_WORLD_Y + RH - dims.ry - ROOM_PAD, wy - roomDragOffY));
+        roomDragTable.x = Math.max(ROOM_WORLD_X + dims.rx + ROOM_PAD, Math.min(ROOM_WORLD_X + ROOM_WORLD_W - dims.rx - ROOM_PAD, snapVal(wx - roomDragOffX)));
+        roomDragTable.y = Math.max(ROOM_WORLD_Y + dims.ry + ROOM_PAD, Math.min(ROOM_WORLD_Y + RH - dims.ry - ROOM_PAD, snapVal(wy - roomDragOffY)));
         renderRoom();
       } else if (roomIsPanning) {
         const rect   = roomCanvas.getBoundingClientRect();
@@ -1636,6 +1716,159 @@
     });
 
     window.addEventListener("resize", () => { if (currentView === "room") renderRoom(); });
+
+    // ── Snap to grid ─────────────────────────────────────────
+    document.getElementById("btnSnapGrid")?.addEventListener("click", function () {
+      snapToGrid = !snapToGrid;
+      this.classList.toggle("is-active", snapToGrid);
+      renderRoom();
+    });
+
+    // ── Recherche invité dans la salle ────────────────────────
+    const roomGuestSearch = document.getElementById("roomGuestSearch");
+    const btnClearSearch  = document.getElementById("btnClearGuestSearch");
+
+    roomGuestSearch?.addEventListener("input", function () {
+      const q = this.value.trim().toLowerCase();
+      btnClearSearch?.classList.toggle("is-hidden", !q);
+      if (!q) { highlightGuestId = null; renderRoom(); return; }
+      const match = guests.find(g => g.name.toLowerCase().includes(q));
+      highlightGuestId = match ? match.id : null;
+      if (match && assignments[match.id]) {
+        const t = tables.find(t => t.id === assignments[match.id]);
+        if (t && t.x != null && t.y != null) {
+          // Centrer la vue sur cette table
+          const cx = roomCanvas.width  / 2;
+          const cy = roomCanvas.height / 2;
+          roomPanX = cx - t.x * roomZoom;
+          roomPanY = cy - t.y * roomZoom;
+        }
+      }
+      renderRoom();
+    });
+
+    btnClearSearch?.addEventListener("click", () => {
+      if (roomGuestSearch) roomGuestSearch.value = "";
+      highlightGuestId = null;
+      btnClearSearch.classList.add("is-hidden");
+      renderRoom();
+    });
+
+    // ── Légende ───────────────────────────────────────────────
+    document.getElementById("btnLegend")?.addEventListener("click", function () {
+      const panel = document.getElementById("roomLegendPanel");
+      if (!panel) return;
+      const visible = !panel.classList.contains("is-hidden");
+      if (visible) { panel.classList.add("is-hidden"); this.classList.remove("is-active"); return; }
+      this.classList.add("is-active");
+      renderLegend();
+      panel.classList.remove("is-hidden");
+    });
+
+    function renderLegend() {
+      const panel = document.getElementById("roomLegendPanel");
+      if (!panel) return;
+      const isDark = document.body.classList.contains("dark-mode");
+      const entries = [
+        { color: isDark ? "#253548" : "#e8f0fc", label: "Table normale" },
+        { color: isDark ? "#3a3010" : "#fff5cc", label: "Table complète" },
+        { color: isDark ? "#5a1515" : "#ffe0e0", label: "Conflit contrainte" },
+        { color: isDark ? "#e0b060" : "#c07820", label: "Table sélectionnée", border: true },
+        { color: isDark ? "#8a6040" : "#d4a870", label: "Siège occupé" },
+        { color: isDark ? "#2e2822" : "#ede5d8", label: "Siège libre" },
+      ];
+      for (const g of guestGroups) {
+        entries.push({ color: g.color, label: "Groupe : " + g.name });
+      }
+      panel.innerHTML = "<strong style='font-size:0.8rem;display:block;margin-bottom:6px;'>Légende</strong>"
+        + entries.map(e => `<span class="legend-item"><span class="legend-swatch" style="background:${e.color};${e.border ? "border:2px solid " + e.color + ";" : ""}"></span><span>${e.label}</span></span>`).join("");
+    }
+
+    // ── Export CSV ────────────────────────────────────────────
+    document.getElementById("btnExportCSV")?.addEventListener("click", exportCSV);
+
+    function exportCSV() {
+      const rows = [["Nom", "Table", "Siège"]];
+      const assigned = new Set();
+
+      for (const table of tables) {
+        for (let i = 0; i < table.capacity; i++) {
+          const gId = seatMap[`${table.id}:${i}`];
+          if (gId) {
+            assigned.add(gId);
+            const g = guests.find(g => g.id === gId);
+            if (g) rows.push([g.name, table.name, String(i + 1)]);
+          }
+        }
+        // Invités à cette table sans siège précis
+        const tableGuests = guests.filter(g => assignments[g.id] === table.id && !assigned.has(g.id));
+        for (const g of tableGuests) { assigned.add(g.id); rows.push([g.name, table.name, "—"]); }
+      }
+
+      // Non placés
+      for (const g of guests) {
+        if (!assigned.has(g.id)) rows.push([g.name, "—", "—"]);
+      }
+
+      const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\r\n");
+      const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "plan_table.csv";
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    }
+
+    // ── Export plan HD ────────────────────────────────────────
+    document.getElementById("btnExportHD")?.addEventListener("click", exportHD);
+
+    function exportHD() {
+      const SCALE  = 3;
+      const offCtx = document.createElement("canvas");
+      offCtx.width  = roomCanvas.width  * SCALE;
+      offCtx.height = roomCanvas.height * SCALE;
+      const ctx2  = offCtx.getContext("2d");
+      const isDark = document.body.classList.contains("dark-mode");
+      const RH    = getRoomWorldH();
+
+      ctx2.fillStyle = isDark ? "#1a1612" : "#f7f3ee";
+      ctx2.fillRect(0, 0, offCtx.width, offCtx.height);
+
+      ctx2.save();
+      ctx2.translate(roomPanX * SCALE, roomPanY * SCALE);
+      ctx2.scale(roomZoom * SCALE, roomZoom * SCALE);
+
+      // Contour
+      ctx2.strokeStyle = isDark ? "#4a3f35" : "#c9b89a";
+      ctx2.lineWidth   = 2 / (roomZoom * SCALE);
+      ctx2.strokeRect(ROOM_WORLD_X, ROOM_WORLD_Y, ROOM_WORLD_W, RH);
+
+      ctx2.fillStyle    = isDark ? "#7a6a5a" : "#bda98a";
+      ctx2.font         = `13px 'Manrope', sans-serif`;
+      ctx2.textAlign    = "center";
+      ctx2.textBaseline = "alphabetic";
+      ctx2.fillText(`Salle de réception — ${roomConfig.widthM} m × ${roomConfig.heightM} m`,
+                    ROOM_WORLD_X + ROOM_WORLD_W / 2, ROOM_WORLD_Y - 6);
+
+      drawRoomElements(ctx2, isDark);
+      for (const table of tables) drawTableShape(ctx2, table, isDark);
+
+      ctx2.restore();
+
+      offCtx.toBlob(blob => {
+        const url = URL.createObjectURL(blob);
+        const win = window.open("", "_blank");
+        if (!win) { alert("Autorisez les popups pour exporter."); return; }
+        win.document.write(
+          `<!doctype html><html><head><title>Plan de salle HD</title>` +
+          `<style>body{margin:0;background:#fff;display:flex;flex-direction:column;align-items:center;padding:12px;font-family:sans-serif}` +
+          `img{max-width:100%;height:auto;border:1px solid #ddd}` +
+          `p{font-size:0.78rem;color:#888;margin:8px 0}</style></head>` +
+          `<body><img src="${url}"><p>Plan généré le ${new Date().toLocaleDateString("fr-FR")}</p></body></html>`
+        );
+        win.document.close();
+        setTimeout(() => win.print(), 800);
+      }, "image/png");
+    }
 
     // ── Filtres ───────────────────────────────────────────────
     guestSearch.addEventListener("input",  () => renderGuests());

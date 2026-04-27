@@ -21,6 +21,7 @@ const DEFAULT_STATE = {
   budgetCategories: DEFAULT_BUDGET_CATEGORIES,
   tasks: [],
   guests: [],
+  guestGroups: [],
   updatedAt: 0,
 };
 
@@ -93,6 +94,10 @@ const guestCategoryStats = document.getElementById("guestCategoryStats");
 const guestVinStats = document.getElementById("guestVinStats");
 const guestMealStats = document.getElementById("guestMealStats");
 const guestHebergStats = document.getElementById("guestHebergStats");
+const guestGroupForm  = document.getElementById("guestGroupForm");
+const guestGroupName  = document.getElementById("guestGroupName");
+const guestGroupColor = document.getElementById("guestGroupColor");
+const guestGroupList  = document.getElementById("guestGroupList");
 
 const metricBudgetTotal = document.getElementById("metricBudgetTotal");
 const metricBudgetLeft = document.getElementById("metricBudgetLeft");
@@ -109,6 +114,9 @@ const budgetChartEmpty = document.getElementById("budgetChartEmpty");
 const budgetTemplate = document.getElementById("budgetItemTemplate");
 const taskTemplate = document.getElementById("taskItemTemplate");
 const guestTemplate = document.getElementById("guestItemTemplate");
+
+const taskPrioritySelect = document.getElementById("taskPriority");
+const budgetDueDateInput  = document.getElementById("budgetDueDate");
 
 const adminGate = document.getElementById("adminGate");
 const adminContent = document.getElementById("adminContent");
@@ -146,6 +154,9 @@ bindPlannerEvents();
 bindAdminEvents();
 bindBudgetChartResize();
 initCountdown();
+initDarkMode();
+initStickyNav();
+initScrollReveal();
 
 function bindPlannerEvents() {
   if (budgetForm) {
@@ -170,6 +181,7 @@ function bindPlannerEvents() {
         amountTotal,
         amountPaid,
         solde: amountTotal > 0 && amountPaid >= amountTotal,
+        dueDate: budgetDueDateInput?.value || "",
         supplier: normalizeSupplier(null),
       });
 
@@ -253,6 +265,7 @@ function bindPlannerEvents() {
         id: createId(),
         text,
         done: false,
+        priority: taskPrioritySelect?.value || "normal",
       });
 
       taskForm.reset();
@@ -355,6 +368,21 @@ function bindPlannerEvents() {
       renderGuests();
     });
   }
+
+  if (guestGroupForm) {
+    guestGroupForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      if (!isAdminUnlocked) return;
+      const name  = guestGroupName?.value.trim();
+      const color = guestGroupColor?.value || "#888888";
+      if (!name) return;
+      if (!Array.isArray(state.guestGroups)) state.guestGroups = [];
+      state.guestGroups.push({ id: createId(), name, color });
+      guestGroupForm.reset();
+      if (guestGroupColor) guestGroupColor.value = "#7c6ae6";
+      refresh();
+    });
+  }
 }
 
 function bindAdminEvents() {
@@ -421,6 +449,7 @@ function bindAdminEvents() {
   }
 
   bindAdminTabs();
+  bindMetricCardNavigation();
 }
 
 function bindBudgetChartResize() {
@@ -438,6 +467,8 @@ function bindBudgetChartResize() {
     }
     budgetChartResizeTimerId = window.setTimeout(() => {
       renderBudgetChart();
+      renderRsvpChart();
+      renderBudgetBarChart();
     }, 120);
   });
 }
@@ -701,8 +732,12 @@ function refresh(options = {}) {
   renderBudget();
   renderTasks();
   renderGuests();
+  renderGuestGroups();
   renderMetrics();
   renderBudgetChart();
+  renderUpcomingPayments();
+  renderRsvpChart();
+  renderBudgetBarChart();
 
   if (persist) {
     schedulePersist();
@@ -850,6 +885,29 @@ function renderBudget() {
       });
     }
 
+    // Afficher la date d'échéance
+    const dueDateEl = node.querySelector(".budget-item-due-date");
+    if (dueDateEl) {
+      if (item.dueDate && !item.solde) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const due = new Date(item.dueDate + "T00:00:00");
+        const diffDays = Math.round((due - today) / 86400000);
+        const formatted = due.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+        if (diffDays < 0) {
+          dueDateEl.textContent = `⚠ En retard : ${formatted}`;
+          dueDateEl.classList.add("is-overdue");
+        } else if (diffDays <= 30) {
+          dueDateEl.textContent = `⏰ Échéance : ${formatted}`;
+          dueDateEl.classList.add("is-soon");
+        } else {
+          dueDateEl.textContent = `📅 Échéance : ${formatted}`;
+        }
+      } else {
+        dueDateEl.style.display = "none";
+      }
+    }
+
     const editBtn = node.querySelector(".budget-edit-btn");
     const editPanel = node.querySelector(".budget-item-edit");
     if (editBtn && editPanel) {
@@ -867,6 +925,8 @@ function renderBudget() {
           editCat.value = item.categoryId || "";
           editPanel.querySelector(".edit-amount-total").value = String(amountTotal);
           editPanel.querySelector(".edit-amount-paid").value = String(amountPaid);
+          const editDue = editPanel.querySelector(".edit-due-date");
+          if (editDue) editDue.value = item.dueDate || "";
         }
         editPanel.classList.toggle("is-hidden");
         editBtn.textContent = isOpen ? "Modifier" : "Annuler";
@@ -887,6 +947,8 @@ function renderBudget() {
         item.amountTotal = Math.max(0, Number(editPanel.querySelector(".edit-amount-total").value) || 0);
         item.amountPaid = Math.max(0, Number(editPanel.querySelector(".edit-amount-paid").value) || 0);
         item.solde = item.amountTotal > 0 && item.amountPaid >= item.amountTotal;
+        const editDue = editPanel.querySelector(".edit-due-date");
+        if (editDue) item.dueDate = editDue.value || "";
         refresh();
       });
     }
@@ -901,7 +963,133 @@ function renderBudget() {
       refresh();
     });
 
+    // ── Versements partiels ────────────────────────────────────────
+    const paymentsWrap = node.querySelector(".budget-payments-wrap");
+    if (paymentsWrap) {
+      renderPayments(item, paymentsWrap);
+    }
+
     budgetList.appendChild(node);
+  }
+}
+
+function renderPayments(item, container) {
+  container.innerHTML = "";
+  const payments = Array.isArray(item.payments) ? item.payments : [];
+
+  const toggleBtn = document.createElement("button");
+  toggleBtn.type = "button";
+  toggleBtn.className = "payments-toggle-btn";
+  toggleBtn.textContent = payments.length
+    ? `🔸 ${payments.length} versement${payments.length > 1 ? "s" : ""}`
+    : "＋ Ajouter versements";
+  container.appendChild(toggleBtn);
+
+  const inner = document.createElement("div");
+  inner.className = "payments-inner is-hidden";
+  container.appendChild(inner);
+
+  toggleBtn.addEventListener("click", () => {
+    const open = inner.classList.toggle("is-hidden");
+    toggleBtn.classList.toggle("is-active", !open);
+  });
+
+  function rebuildInner() {
+    inner.innerHTML = "";
+    const pmts = Array.isArray(item.payments) ? item.payments : [];
+
+    for (const pmt of pmts) {
+      const row = document.createElement("div");
+      row.className = "payment-row";
+      const rest = Math.max(0, pmt.amountTotal - pmt.amountPaid);
+      row.innerHTML = `
+        <span class="payment-label">${pmt.label}</span>
+        <span class="payment-amounts">
+          ${formatMoney(pmt.amountTotal)} — payé ${formatMoney(pmt.amountPaid)}
+          ${rest > 0 ? `<span class="payment-rest">(reste ${formatMoney(rest)})</span>` : `<span class="payment-solde">✓</span>`}
+          ${pmt.dueDate ? `<span class="payment-due">📅 ${new Date(pmt.dueDate + "T00:00:00").toLocaleDateString("fr-FR", {day:"numeric",month:"short"})}</span>` : ""}
+        </span>
+        <button type="button" class="payment-del-btn" title="Supprimer ce versement">×</button>`;
+      row.querySelector(".payment-del-btn").addEventListener("click", () => {
+        item.payments = item.payments.filter(p => p.id !== pmt.id);
+        if (item.payments.length === 0) delete item.payments;
+        item.amountTotal = item.payments ? item.payments.reduce((s,p) => s+p.amountTotal, 0) : item.amountTotal;
+        item.amountPaid  = item.payments ? item.payments.reduce((s,p) => s+p.amountPaid,  0) : item.amountPaid;
+        refresh();
+      });
+      inner.appendChild(row);
+    }
+
+    // Formulaire ajout versement
+    const form = document.createElement("div");
+    form.className = "payment-add-form";
+    form.innerHTML = `
+      <input type="text"   class="pmt-label"   placeholder="Ex : Acompte" value="">
+      <input type="number" class="pmt-total"   placeholder="Montant (€)" min="0" step="1">
+      <input type="number" class="pmt-paid"    placeholder="Déjà payé (€)" min="0" step="1">
+      <input type="date"   class="pmt-due"     title="Échéance">
+      <button type="button" class="pmt-add-btn">Ajouter</button>`;
+    form.querySelector(".pmt-add-btn").addEventListener("click", () => {
+      const lbl   = form.querySelector(".pmt-label").value.trim() || "Versement";
+      const total = Math.max(0, Number(form.querySelector(".pmt-total").value) || 0);
+      const paid  = Math.max(0, Number(form.querySelector(".pmt-paid").value)  || 0);
+      const due   = form.querySelector(".pmt-due").value;
+      if (!item.payments) item.payments = [];
+      item.payments.push({ id: createId(), label: lbl, amountTotal: total, amountPaid: paid, dueDate: due, solde: total > 0 && paid >= total });
+      item.amountTotal = item.payments.reduce((s,p) => s+p.amountTotal, 0);
+      item.amountPaid  = item.payments.reduce((s,p) => s+p.amountPaid,  0);
+      item.solde = item.amountTotal > 0 && item.amountPaid >= item.amountTotal;
+      refresh();
+      // Rouvrir la section
+      setTimeout(() => {
+        const newBtn = container.querySelector(".payments-toggle-btn");
+        const newInner = container.querySelector(".payments-inner");
+        if (newBtn && newInner) { newInner.classList.remove("is-hidden"); newBtn.classList.add("is-active"); }
+      }, 50);
+    });
+    inner.appendChild(form);
+  }
+
+  rebuildInner();
+}
+
+function renderGuestGroups() {
+  if (!guestGroupList) return;
+  const groups = Array.isArray(state.guestGroups) ? state.guestGroups : [];
+  guestGroupList.innerHTML = "";
+  if (groups.length === 0) {
+    const empty = document.createElement("span");
+    empty.className = "category-chip-empty";
+    empty.textContent = "Aucun groupe.";
+    guestGroupList.appendChild(empty);
+    return;
+  }
+  for (const grp of groups) {
+    const chip = document.createElement("span");
+    chip.className = "category-chip guest-group-chip";
+    chip.style.setProperty("--grp-color", grp.color);
+    const swatch = document.createElement("span");
+    swatch.className = "guest-group-swatch";
+    swatch.style.background = grp.color;
+    const label = document.createElement("span");
+    label.textContent = grp.name;
+    const del = document.createElement("button");
+    del.type = "button";
+    del.className = "category-chip-delete";
+    del.textContent = "×";
+    del.setAttribute("aria-label", `Supprimer le groupe ${grp.name}`);
+    del.addEventListener("click", () => {
+      state.guestGroups = state.guestGroups.filter(g => g.id !== grp.id);
+      // Retirer colorGroupId des invités de ce groupe
+      for (const guest of state.guests) {
+        if (guest.colorGroupId === grp.id) guest.colorGroupId = null;
+      }
+      refresh();
+    });
+    chip.appendChild(swatch);
+    chip.appendChild(label);
+    chip.appendChild(del);
+    guestGroupList.appendChild(chip);
   }
 }
 
@@ -1020,7 +1208,12 @@ function renderTasks() {
   taskList.innerHTML = "";
   const search = toSearchKey(taskSearch?.value ?? "");
   const mode = taskFilter?.value ?? "all";
-  const orderedTasks = [...state.tasks].sort((a, b) => Number(a.done) - Number(b.done));
+  const priorityRank = { urgent: 0, normal: 1, faible: 2 };
+  const orderedTasks = [...state.tasks].sort((a, b) => {
+    const doneDiff = Number(a.done) - Number(b.done);
+    if (doneDiff !== 0) return doneDiff;
+    return (priorityRank[a.priority || "normal"] ?? 1) - (priorityRank[b.priority || "normal"] ?? 1);
+  });
   const filteredTasks = orderedTasks.filter((task) => {
     if (mode === "todo" && task.done) {
       return false;
@@ -1055,6 +1248,7 @@ function renderTasks() {
   for (const [index, task] of filteredTasks.entries()) {
     const node = taskTemplate.content.firstElementChild.cloneNode(true);
     node.style.setProperty("--stagger", String(index));
+    node.dataset.taskId = task.id;
     node.classList.toggle("done", task.done);
     const check = node.querySelector("input[type='checkbox']");
     check.checked = task.done;
@@ -1064,13 +1258,25 @@ function renderTasks() {
     });
 
     node.querySelector(".main-text").textContent = task.text;
-    node.querySelector("button").addEventListener("click", () => {
+
+    const badge = node.querySelector(".task-priority-badge");
+    if (badge) {
+      const p = task.priority || "normal";
+      const labels = { urgent: "🔴 Urgent", normal: "⚪ Normal", faible: "🟢 Faible" };
+      badge.textContent = labels[p] || "";
+      badge.className = `task-priority-badge task-priority-${p}`;
+      badge.style.display = p === "normal" ? "none" : "";
+    }
+
+    node.querySelector("button.danger").addEventListener("click", () => {
       state.tasks = state.tasks.filter((entry) => entry.id !== task.id);
       refresh();
     });
 
     taskList.appendChild(node);
   }
+
+  initTaskDragAndDrop();
 }
 
 function renderGuests() {
@@ -1175,6 +1381,37 @@ function renderGuests() {
       guest.status = statusSelect.value;
       refresh();
     });
+
+    // Badge / sélecteur groupe couleur
+    const groupBadgeWrap = node.querySelector(".guest-color-group-wrap");
+    if (groupBadgeWrap && Array.isArray(state.guestGroups) && state.guestGroups.length > 0) {
+      const sel = document.createElement("select");
+      sel.className = "guest-color-group-select";
+      sel.title = "Groupe couleur";
+      const optNone = document.createElement("option");
+      optNone.value = ""; optNone.textContent = "— Groupe —";
+      sel.appendChild(optNone);
+      for (const grp of state.guestGroups) {
+        const opt = document.createElement("option");
+        opt.value = grp.id; opt.textContent = grp.name;
+        sel.appendChild(opt);
+      }
+      sel.value = guest.colorGroupId ?? "";
+      const currentGroup = state.guestGroups.find(g => g.id === guest.colorGroupId);
+      if (currentGroup) {
+        sel.style.borderLeft = `4px solid ${currentGroup.color}`;
+        sel.style.paddingLeft = "6px";
+      }
+      sel.addEventListener("change", () => {
+        guest.colorGroupId = sel.value || null;
+        const grp = state.guestGroups.find(g => g.id === sel.value);
+        sel.style.borderLeft = grp ? `4px solid ${grp.color}` : "";
+        sel.style.paddingLeft = grp ? "6px" : "";
+        refresh();
+      });
+      groupBadgeWrap.appendChild(sel);
+      groupBadgeWrap.classList.remove("is-hidden");
+    }
 
     node.querySelector("button").addEventListener("click", () => {
       state.guests = state.guests.filter((entry) => entry.id !== guest.id);
@@ -1465,6 +1702,7 @@ function createDefaultState() {
     budgetCategories: DEFAULT_BUDGET_CATEGORIES.map((c) => ({ ...c })),
     tasks: [],
     guests: [],
+    guestGroups: [],
     updatedAt: DEFAULT_STATE.updatedAt,
   };
 }
@@ -1503,17 +1741,38 @@ function normalizeState(candidate) {
     normalized.budgetItems = input.budgetItems
       .filter((item) => item && typeof item === "object")
       .map((item) => {
-        const amountTotal = Number(item.amountTotal ?? item.amount ?? 0);
-        const amountPaid = Number(item.amountPaid ?? 0);
-        return {
-          id: typeof item.id === "string" && item.id ? item.id : createId(),
-          label: String(item.label ?? "").trim(),
-          categoryId: typeof item.categoryId === "string" && item.categoryId ? item.categoryId : null,
-          amountTotal: Number.isFinite(amountTotal) && amountTotal >= 0 ? amountTotal : 0,
-          amountPaid: Number.isFinite(amountPaid) && amountPaid >= 0 ? amountPaid : 0,
-          solde: Boolean(item.solde),
-          supplier: normalizeSupplier(item.supplier),
+        // Versements partiels (optionnel)
+        let payments = null;
+        if (Array.isArray(item.payments) && item.payments.length > 0) {
+          payments = item.payments
+            .filter((p) => p && typeof p === "object")
+            .map((p) => ({
+              id:          typeof p.id === "string" && p.id ? p.id : createId(),
+              label:       String(p.label ?? "Versement").trim(),
+              amountTotal: Math.max(0, Number(p.amountTotal) || 0),
+              amountPaid:  Math.max(0, Number(p.amountPaid)  || 0),
+              dueDate:     typeof p.dueDate === "string" ? p.dueDate : "",
+              solde:       Boolean(p.solde),
+            }));
+        }
+        const amountTotal = payments
+          ? payments.reduce((s, p) => s + p.amountTotal, 0)
+          : Math.max(0, Number(item.amountTotal ?? item.amount ?? 0));
+        const amountPaid = payments
+          ? payments.reduce((s, p) => s + p.amountPaid, 0)
+          : Math.max(0, Number(item.amountPaid ?? 0));
+        const entry = {
+          id:          typeof item.id === "string" && item.id ? item.id : createId(),
+          label:       String(item.label ?? "").trim(),
+          categoryId:  typeof item.categoryId === "string" && item.categoryId ? item.categoryId : null,
+          amountTotal: Number.isFinite(amountTotal) ? amountTotal : 0,
+          amountPaid:  Number.isFinite(amountPaid)  ? amountPaid  : 0,
+          solde:       Boolean(item.solde),
+          dueDate:     typeof item.dueDate === "string" ? item.dueDate : "",
+          supplier:    normalizeSupplier(item.supplier),
         };
+        if (payments) entry.payments = payments;
+        return entry;
       })
       .filter((item) => item.label);
   }
@@ -1537,8 +1796,19 @@ function normalizeState(candidate) {
         id: typeof task.id === "string" && task.id ? task.id : createId(),
         text: String(task.text ?? "").trim(),
         done: Boolean(task.done),
+        priority: ["urgent", "normal", "faible"].includes(task.priority) ? task.priority : "normal",
       }))
       .filter((task) => task.text);
+  }
+
+  if (Array.isArray(input.guestGroups)) {
+    normalized.guestGroups = input.guestGroups
+      .filter((g) => g && typeof g === "object" && String(g.name ?? "").trim())
+      .map((g) => ({
+        id:    typeof g.id === "string" && g.id ? g.id : createId(),
+        name:  String(g.name).trim(),
+        color: typeof g.color === "string" && g.color.startsWith("#") ? g.color : "#888888",
+      }));
   }
 
   if (Array.isArray(input.guests)) {
@@ -1561,6 +1831,7 @@ function normalizeState(candidate) {
           musicSuggestion: String(guest.musicSuggestion ?? "").trim(),
           allergies: String(guest.allergies ?? "").trim(),
           otherQuestion: String(guest.otherQuestion ?? "").trim(),
+          colorGroupId: typeof guest.colorGroupId === "string" && guest.colorGroupId ? guest.colorGroupId : null,
         };
       })
       .filter((guest) => guest.name);
@@ -1762,6 +2033,8 @@ function lockAdmin(options = {}) {
   setAdminError(message);
 }
 
+let _syncPollTimer = null;
+
 async function unlockAdmin(token) {
   adminToken = token;
   isAdminUnlocked = true;
@@ -1775,6 +2048,7 @@ async function unlockAdmin(token) {
 
   if (isServerMode && serverSyncAvailable) {
     setSyncStatus("Sauvegarde activée : data.json + budget_mariage.xlsx", false);
+    startOrgSyncPolling(token);
     return;
   }
 
@@ -1784,6 +2058,24 @@ async function unlockAdmin(token) {
   }
 
   setSyncStatus("Sauvegarde navigateur activée.", false);
+}
+
+function startOrgSyncPolling(token) {
+  if (_syncPollTimer) clearInterval(_syncPollTimer);
+  _syncPollTimer = setInterval(async () => {
+    if (!isAdminUnlocked || persistInProgress) return;
+    try {
+      const res = await fetch(SERVER_ENDPOINT, { cache: "no-store", headers: { "X-Admin-Key": token } });
+      if (!res.ok) return;
+      const remote = normalizeState(await res.json());
+      if (remote.updatedAt > state.updatedAt) {
+        Object.assign(state, remote);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(remote));
+        refresh({ persist: false });
+        setSyncStatus("Mis à jour " + new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }), false);
+      }
+    } catch { /* réseau indisponible */ }
+  }, 60_000);
 }
 
 function openAdminInterface() {
@@ -1845,6 +2137,345 @@ async function init() {
   }
 
   await unlockAdmin(savedToken);
+}
+
+// ── Dark mode ────────────────────────────────────────────────────
+function initDarkMode() {
+  const isDark = localStorage.getItem("dark-mode") === "true";
+  if (isDark) document.body.classList.add("dark-mode");
+  updateDarkModeBtnLabels();
+
+  document.querySelectorAll(".dark-mode-toggle-btn").forEach(btn => {
+    btn.addEventListener("click", toggleDarkMode);
+  });
+}
+
+function toggleDarkMode() {
+  const isDark = document.body.classList.toggle("dark-mode");
+  localStorage.setItem("dark-mode", isDark);
+  updateDarkModeBtnLabels();
+}
+
+function updateDarkModeBtnLabels() {
+  const isDark = document.body.classList.contains("dark-mode");
+  const label = isDark ? "☀️ Mode clair" : "🌙 Mode sombre";
+  document.querySelectorAll(".dark-mode-toggle-btn").forEach(btn => {
+    btn.textContent = label;
+  });
+}
+
+// ── Sticky nav ───────────────────────────────────────────────────
+function initStickyNav() {
+  const stickyNav = document.getElementById("navSticky");
+  if (!stickyNav) return;
+  const hero = document.querySelector(".hero");
+  if (!hero) return;
+
+  const obs = new IntersectionObserver(([entry]) => {
+    stickyNav.classList.toggle("is-visible", !entry.isIntersecting);
+  }, { threshold: 0 });
+
+  obs.observe(hero);
+}
+
+// ── Scroll reveal ────────────────────────────────────────────────
+function initScrollReveal() {
+  const els = document.querySelectorAll("[data-reveal]");
+  if (!els.length) return;
+
+  const obs = new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add("is-revealed");
+        obs.unobserve(entry.target);
+      }
+    }
+  }, { threshold: 0.06, rootMargin: "0px 0px -30px 0px" });
+
+  els.forEach(el => obs.observe(el));
+}
+
+// ── Métriques cliquables ─────────────────────────────────────────
+function bindMetricCardNavigation() {
+  document.querySelectorAll(".metric-card[data-goto-tab]").forEach(card => {
+    const tabId = card.dataset.gotoTab;
+    card.addEventListener("click", () => setActiveAdminTab(tabId));
+    card.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setActiveAdminTab(tabId); }
+    });
+  });
+}
+
+// ── Drag & drop tâches ───────────────────────────────────────────
+let _dragSrcTaskId = null;
+
+function initTaskDragAndDrop() {
+  if (!taskList) return;
+  taskList.removeEventListener("dragstart", _onTaskDragStart);
+  taskList.removeEventListener("dragend",   _onTaskDragEnd);
+  taskList.removeEventListener("dragover",  _onTaskDragOver);
+  taskList.removeEventListener("drop",      _onTaskDrop);
+  taskList.addEventListener("dragstart", _onTaskDragStart);
+  taskList.addEventListener("dragend",   _onTaskDragEnd);
+  taskList.addEventListener("dragover",  _onTaskDragOver);
+  taskList.addEventListener("drop",      _onTaskDrop);
+}
+
+function _onTaskDragStart(e) {
+  const item = e.target.closest(".data-item[draggable]");
+  if (!item) return;
+  _dragSrcTaskId = item.dataset.taskId;
+  item.classList.add("dragging");
+  e.dataTransfer.effectAllowed = "move";
+}
+
+function _onTaskDragEnd(e) {
+  const item = e.target.closest(".data-item");
+  if (item) item.classList.remove("dragging");
+  taskList.querySelectorAll(".drag-over").forEach(el => el.classList.remove("drag-over"));
+  _dragSrcTaskId = null;
+}
+
+function _onTaskDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = "move";
+  const item = e.target.closest(".data-item[draggable]");
+  taskList.querySelectorAll(".drag-over").forEach(el => el.classList.remove("drag-over"));
+  if (item && item.dataset.taskId !== _dragSrcTaskId) item.classList.add("drag-over");
+}
+
+function _onTaskDrop(e) {
+  e.preventDefault();
+  const item = e.target.closest(".data-item[draggable]");
+  if (!item || !_dragSrcTaskId) return;
+  const dropId = item.dataset.taskId;
+  if (_dragSrcTaskId === dropId) return;
+
+  const srcIdx  = state.tasks.findIndex(t => t.id === _dragSrcTaskId);
+  const dropIdx = state.tasks.findIndex(t => t.id === dropId);
+  if (srcIdx === -1 || dropIdx === -1) return;
+
+  const newTasks = [...state.tasks];
+  const [moved] = newTasks.splice(srcIdx, 1);
+  newTasks.splice(dropIdx, 0, moved);
+  state.tasks = newTasks;
+  refresh();
+}
+
+// ── À payer prochainement ────────────────────────────────────────
+function renderUpcomingPayments() {
+  const panel = document.getElementById("upcomingPaymentsPanel");
+  const list  = document.getElementById("upcomingPaymentsList");
+  if (!panel || !list) return;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const in60 = new Date(today);
+  in60.setDate(in60.getDate() + 60);
+
+  const upcoming = state.budgetItems
+    .filter(item => !item.solde && item.dueDate)
+    .map(item => {
+      const due = new Date(item.dueDate + "T00:00:00");
+      const diffDays = Math.round((due - today) / 86400000);
+      const rest = Math.max(Number(item.amountTotal || 0) - Number(item.amountPaid || 0), 0);
+      return { ...item, due, diffDays, rest };
+    })
+    .filter(item => item.due <= in60)
+    .sort((a, b) => a.due - b.due);
+
+  if (upcoming.length === 0) {
+    panel.classList.add("is-hidden");
+    return;
+  }
+
+  panel.classList.remove("is-hidden");
+  list.innerHTML = "";
+  for (const item of upcoming) {
+    const isOverdue = item.diffDays < 0;
+    const formatted = item.due.toLocaleDateString("fr-FR", { day: "numeric", month: "long" });
+    const label = isOverdue
+      ? `En retard (${Math.abs(item.diffDays)}j)`
+      : item.diffDays === 0
+        ? "Aujourd'hui"
+        : `Dans ${item.diffDays}j — ${formatted}`;
+
+    const row = document.createElement("div");
+    row.className = "upcoming-payment-item";
+    row.innerHTML = `
+      <span class="upcoming-payment-name">${item.label}</span>
+      <span class="upcoming-payment-date${isOverdue ? " is-overdue" : ""}">${label}</span>
+      <span class="upcoming-payment-amount">${formatMoney(item.rest)}</span>`;
+    list.appendChild(row);
+  }
+}
+
+// ── Graphique évolution RSVP ─────────────────────────────────────
+function renderRsvpChart() {
+  const canvas = document.getElementById("rsvpChartCanvas");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+
+  const w = canvas.offsetWidth || 300;
+  const h = 130;
+  const pr = window.devicePixelRatio || 1;
+  canvas.width = Math.round(w * pr);
+  canvas.height = Math.round(h * pr);
+  canvas.style.width = w + "px";
+  canvas.style.height = h + "px";
+  ctx.setTransform(pr, 0, 0, pr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+
+  const answered = state.guests
+    .filter(g => g.rsvpSubmittedAt > 0)
+    .map(g => ({ date: new Date(g.rsvpSubmittedAt), status: g.status }))
+    .sort((a, b) => a.date - b.date);
+
+  const isDark = document.body.classList.contains("dark-mode");
+  const emptyColor = isDark ? "rgba(240, 160, 168, 0.5)" : "rgba(240, 63, 89, 0.18)";
+  const textColor  = isDark ? "rgba(240, 200, 200, 0.7)" : "rgba(90, 40, 55, 0.7)";
+
+  if (answered.length === 0) {
+    ctx.fillStyle = textColor;
+    ctx.font = "12px Manrope, sans-serif";
+    ctx.fillText("Aucun RSVP reçu pour le moment", 16, h / 2 + 4);
+    return;
+  }
+
+  const monthMap = new Map();
+  for (const { date, status } of answered) {
+    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+    if (!monthMap.has(key)) monthMap.set(key, { yes: 0, no: 0 });
+    monthMap.get(key)[status === "yes" ? "yes" : "no"]++;
+  }
+
+  const labels  = [...monthMap.keys()].sort();
+  const yesData = labels.map(k => monthMap.get(k).yes);
+  const noData  = labels.map(k => monthMap.get(k).no);
+  const maxVal  = Math.max(...labels.map((_, i) => yesData[i] + noData[i]), 1);
+
+  const padL = 28, padR = 8, padT = 10, padB = 22;
+  const chartW = w - padL - padR;
+  const chartH = h - padT - padB;
+  const barSpacing = chartW / labels.length;
+  const barW = Math.min(26, barSpacing * 0.55);
+
+  for (let i = 0; i < labels.length; i++) {
+    const x = padL + i * barSpacing + barSpacing / 2;
+    const yH = (yesData[i] / maxVal) * chartH;
+    ctx.fillStyle = isDark ? "rgba(111, 207, 151, 0.75)" : "rgba(26, 122, 58, 0.72)";
+    ctx.beginPath();
+    ctx.roundRect(x - barW / 2, padT + chartH - yH, barW, yH, [3, 3, 0, 0]);
+    ctx.fill();
+
+    if (noData[i] > 0) {
+      const nH = (noData[i] / maxVal) * chartH;
+      ctx.fillStyle = isDark ? "rgba(240, 100, 120, 0.55)" : "rgba(224, 10, 38, 0.5)";
+      ctx.beginPath();
+      ctx.roundRect(x - barW / 2, padT + chartH - yH - nH, barW, nH, [3, 3, 0, 0]);
+      ctx.fill();
+    }
+
+    ctx.fillStyle = textColor;
+    ctx.font = "9px Manrope, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(labels[i].slice(5), x, h - padB + 12);
+  }
+
+  ctx.strokeStyle = isDark ? "rgba(200, 80, 100, 0.22)" : "rgba(240, 63, 89, 0.18)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(padL, padT);
+  ctx.lineTo(padL, padT + chartH);
+  ctx.lineTo(padL + chartW, padT + chartH);
+  ctx.stroke();
+
+  ctx.fillStyle = textColor;
+  ctx.font = "9px Manrope, sans-serif";
+  ctx.textAlign = "right";
+  ctx.fillText(String(maxVal), padL - 3, padT + 8);
+}
+
+// ── Graphique budget par catégorie ───────────────────────────────
+function renderBudgetBarChart() {
+  const canvas = document.getElementById("budgetBarCanvas");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+
+  const w = canvas.offsetWidth || 300;
+  const h = 130;
+  const pr = window.devicePixelRatio || 1;
+  canvas.width = Math.round(w * pr);
+  canvas.height = Math.round(h * pr);
+  canvas.style.width = w + "px";
+  canvas.style.height = h + "px";
+  ctx.setTransform(pr, 0, 0, pr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+
+  const isDark = document.body.classList.contains("dark-mode");
+  const textColor = isDark ? "rgba(240, 200, 200, 0.7)" : "rgba(90, 40, 55, 0.7)";
+
+  const categories = Array.isArray(state.budgetCategories) ? state.budgetCategories : [];
+  const catTotals = new Map();
+  const catPaid   = new Map();
+  for (const item of state.budgetItems) {
+    const cat = categories.find(c => c.id === item.categoryId);
+    const label = cat ? cat.name : "Autres";
+    catTotals.set(label, (catTotals.get(label) || 0) + Number(item.amountTotal || 0));
+    catPaid.set(label,   (catPaid.get(label)   || 0) + Number(item.amountPaid  || 0));
+  }
+
+  if (catTotals.size === 0) {
+    ctx.fillStyle = textColor;
+    ctx.font = "12px Manrope, sans-serif";
+    ctx.fillText("Aucune dépense enregistrée", 16, h / 2 + 4);
+    return;
+  }
+
+  const labels  = [...catTotals.keys()];
+  const totals  = labels.map(k => catTotals.get(k));
+  const paids   = labels.map(k => catPaid.get(k) || 0);
+  const maxVal  = Math.max(...totals, 1);
+
+  const padL = 8, padR = 8, padT = 8, padB = 34;
+  const chartW = w - padL - padR;
+  const chartH = h - padT - padB;
+  const groupW = chartW / labels.length;
+  const barW   = Math.min(12, groupW * 0.32);
+
+  for (let i = 0; i < labels.length; i++) {
+    const x = padL + i * groupW + groupW / 2;
+
+    const tH = (totals[i] / maxVal) * chartH;
+    ctx.fillStyle = isDark ? "rgba(224, 10, 38, 0.28)" : "rgba(224, 10, 38, 0.2)";
+    ctx.beginPath();
+    ctx.roundRect(x - barW - 1, padT + chartH - tH, barW, tH, [3, 3, 0, 0]);
+    ctx.fill();
+
+    const pH = (paids[i] / maxVal) * chartH;
+    if (pH > 0) {
+      ctx.fillStyle = isDark ? "rgba(111, 207, 151, 0.72)" : "rgba(26, 122, 58, 0.68)";
+      ctx.beginPath();
+      ctx.roundRect(x + 1, padT + chartH - pH, barW, pH, [3, 3, 0, 0]);
+      ctx.fill();
+    }
+
+    ctx.fillStyle = textColor;
+    ctx.font = "8px Manrope, sans-serif";
+    ctx.textAlign = "center";
+    const lbl = labels[i].length > 8 ? labels[i].slice(0, 7) + "…" : labels[i];
+    ctx.fillText(lbl, x, h - padB + 14);
+    ctx.fillText((totals[i] / 1000).toFixed(1) + "k", x, h - padB + 24);
+  }
+
+  ctx.strokeStyle = isDark ? "rgba(200, 80, 100, 0.15)" : "rgba(240, 63, 89, 0.14)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(padL, padT + chartH);
+  ctx.lineTo(padL + chartW, padT + chartH);
+  ctx.stroke();
 }
 
 void init();
