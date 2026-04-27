@@ -3461,6 +3461,14 @@ body.rsvp-page .kicker {
   color: #c8860a;
 }
 
+/* L'onglet invités contient deux panels : on passe en flex-col pour éviter
+   que les grid-area hérités (budget/tasks) fassent se superposer les panels */
+#adminTabGuests {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
 /* Colonne gauche plus étroite pour l'onglet invités */
 #adminTabGuests .panel-two-col {
   grid-template-columns: minmax(240px, 0.55fr) minmax(0, 1fr);
