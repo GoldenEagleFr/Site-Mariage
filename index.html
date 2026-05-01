@@ -203,7 +203,7 @@
         <p class="panel-kicker">Lieux</p>
         <h2>Nous retrouver</h2>
       </div>
-      <p>Cliquez sur les cartes pour ouvrir l'itinéraire dans Google Maps.</p>
+      <p>Cliquez sur « Afficher la carte » puis sur le lien pour ouvrir l'itinéraire dans Google Maps.</p>
       <div class="maps-grid">
 
         <div class="map-card">
@@ -212,12 +212,8 @@
             <p>Place Carpeaux, 27140 Gisors</p>
             <a href="https://maps.google.com/?q=Mairie+de+Gisors,+27140+Gisors" target="_blank" rel="noopener">Ouvrir dans Maps ↗</a>
           </div>
-          <div class="map-embed">
-            <iframe
-              src="https://maps.google.com/maps?q=Mairie+de+Gisors,+27140+Gisors,+France&output=embed&z=15"
-              loading="lazy"
-              allowfullscreen
-              title="Mairie de Gisors"></iframe>
+          <div class="map-embed" data-src="https://maps.google.com/maps?q=Mairie+de+Gisors,+27140+Gisors,+France&output=embed&z=15">
+            <button class="map-load-btn" type="button">📍 Afficher la carte</button>
           </div>
         </div>
 
@@ -225,14 +221,10 @@
           <div class="map-card-header">
             <h3>⛪ Église de Gisors</h3>
             <p>Parvis Saint-Gervais, 27140 Gisors</p>
-            <a href="https://maps.google.com/?q=Cathédrale+Saint-Gervais+Gisors" target="_blank" rel="noopener">Ouvrir dans Maps ↗</a>
+            <a href="https://maps.google.com/?q=Cath%C3%A9drale+Saint-Gervais+Gisors" target="_blank" rel="noopener">Ouvrir dans Maps ↗</a>
           </div>
-          <div class="map-embed">
-            <iframe
-              src="https://maps.google.com/maps?q=Cathédrale+Saint-Gervais+Saint-Protais+Gisors,+France&output=embed&z=15"
-              loading="lazy"
-              allowfullscreen
-              title="Église de Gisors"></iframe>
+          <div class="map-embed" data-src="https://maps.google.com/maps?q=Cath%C3%A9drale+Saint-Gervais+Saint-Protais+Gisors,+France&output=embed&z=15">
+            <button class="map-load-btn" type="button">📍 Afficher la carte</button>
           </div>
         </div>
 
@@ -242,12 +234,8 @@
             <p>Les Andelys, 27700</p>
             <a href="https://maps.google.com/?q=Les+Domaines+de+Gaston,+Les+Andelys" target="_blank" rel="noopener">Ouvrir dans Maps ↗</a>
           </div>
-          <div class="map-embed">
-            <iframe
-              src="https://maps.google.com/maps?q=Les+Domaines+de+Gaston,+27700+Les+Andelys,+France&output=embed&z=14"
-              loading="lazy"
-              allowfullscreen
-              title="Les Domaines de Gaston"></iframe>
+          <div class="map-embed" data-src="https://maps.google.com/maps?q=Les+Domaines+de+Gaston,+27700+Les+Andelys,+France&output=embed&z=14">
+            <button class="map-load-btn" type="button">📍 Afficher la carte</button>
           </div>
         </div>
 
@@ -298,18 +286,32 @@
 
   <script src="script.js"></script>
   <script>
+    // ── Cartes en lazy load (chargées au clic) ─────────────────────
+    document.querySelectorAll('.map-embed[data-src]').forEach(embed => {
+      embed.querySelector('.map-load-btn')?.addEventListener('click', () => {
+        const iframe = document.createElement('iframe');
+        iframe.src = embed.dataset.src;
+        iframe.allowFullscreen = true;
+        iframe.title = embed.closest('.map-card')?.querySelector('h3')?.textContent ?? 'Carte';
+        iframe.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;border:0;';
+        embed.replaceChildren(iframe);
+      });
+    });
+
+    // ── Compteur confirmations RSVP ────────────────────────────────
     (async () => {
       try {
         const res = await fetch("/api/stats", { cache: "no-store" });
         if (!res.ok) return;
-        const { total, confirmed } = await res.json();
+        const { total, confirmed, confirmedPersons } = await res.json();
         if (!total) return;
         const pct = Math.round((confirmed / total) * 100);
         const bar   = document.getElementById("rsvpCounterBar");
         const label = document.getElementById("rsvpCounterLabel");
         const fill  = document.getElementById("rsvpProgressFill");
         if (bar && label && fill) {
-          label.textContent = `${confirmed} confirmation${confirmed > 1 ? "s" : ""} reçue${confirmed > 1 ? "s" : ""} sur ${total} invitations`;
+          const persLabel = confirmedPersons ? ` (${confirmedPersons} pers.)` : "";
+          label.textContent = `${confirmed} confirmation${confirmed > 1 ? "s" : ""} reçue${confirmed > 1 ? "s" : ""}${persLabel} sur ${total} invitations`;
           fill.style.width = pct + "%";
           bar.classList.remove("is-hidden");
         }

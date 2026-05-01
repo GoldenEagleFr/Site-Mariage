@@ -18,6 +18,7 @@ from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 
 BASE_DIR = Path(__file__).resolve().parent
 DATA_FILE = BASE_DIR / "data.json"
+BACKUP_FILE = BASE_DIR / "data.backup.json"
 BUDGET_EXCEL_FILE = BASE_DIR / "budget_mariage.xlsx"
 DATA_LOCK = threading.Lock()
 ADMIN_PASSWORD = ""
@@ -267,6 +268,11 @@ def normalize_data(candidate: object) -> dict:
 
 def write_data_file(data: dict) -> None:
     payload = json.dumps(data, ensure_ascii=False, indent=2)
+    if DATA_FILE.exists():
+        try:
+            BACKUP_FILE.write_bytes(DATA_FILE.read_bytes())
+        except OSError:
+            pass
     DATA_FILE.write_text(payload, encoding="utf-8")
 
 
@@ -912,7 +918,18 @@ class PlannerHandler(SimpleHTTPRequestHandler):
             confirmed = sum(1 for g in guests_list if g.get("status") == "yes")
             declined  = sum(1 for g in guests_list if g.get("status") == "no")
             pending   = total - confirmed - declined
-            self._send_json({"total": total, "confirmed": confirmed, "declined": declined, "pending": pending})
+            def _party_size(g: dict) -> int:
+                gt = str(g.get("groupType", "single"))
+                if gt == "single": return 1
+                if gt == "couple": return 2
+                try: return max(1, int(g.get("partySize", 3)))
+                except (TypeError, ValueError): return 3
+            total_persons     = sum(_party_size(g) for g in guests_list)
+            confirmed_persons = sum(_party_size(g) for g in guests_list if g.get("status") == "yes")
+            self._send_json({
+                "total": total, "confirmed": confirmed, "declined": declined, "pending": pending,
+                "totalPersons": total_persons, "confirmedPersons": confirmed_persons,
+            })
             return
 
         if path == "/api/rsvp/search":
@@ -994,6 +1011,14 @@ class PlannerHandler(SimpleHTTPRequestHandler):
         except json.JSONDecodeError:
             self.send_error(HTTPStatus.BAD_REQUEST, "Invalid JSON")
             return
+
+        current = load_data_file()
+        payload_ts = payload.get("updatedAt", 0)
+        current_ts = current.get("updatedAt", 0)
+        if isinstance(payload_ts, (int, float)) and isinstance(current_ts, (int, float)):
+            if payload_ts > 0 and current_ts > 0 and current_ts > payload_ts:
+                self._send_json({"ok": False, "error": "conflict", "serverUpdatedAt": current_ts}, HTTPStatus.CONFLICT)
+                return
 
         try:
             save_data_file(payload)

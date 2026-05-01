@@ -137,6 +137,8 @@ const countdownNote = document.getElementById("countdownNote");
 let countdownTimerId = 0;
 let activeAdminTab = "dashboard";
 let budgetChartResizeTimerId = 0;
+let _persistDebounceTimer = 0;
+let _hasUnsavedChanges = false;
 const BUDGET_CHART_COLORS = [
   "#e00a26",
   "#f65d08",
@@ -383,6 +385,11 @@ function bindPlannerEvents() {
       refresh();
     });
   }
+
+  document.getElementById("btnExportGuestsCSV")?.addEventListener("click", () => {
+    if (!isAdminUnlocked) return;
+    exportGuestsCSV();
+  });
 }
 
 function bindAdminEvents() {
@@ -746,11 +753,12 @@ function refresh(options = {}) {
 
 function schedulePersist() {
   persistQueued = true;
-  if (persistInProgress) {
-    return;
-  }
-
-  void flushPersistQueue();
+  _hasUnsavedChanges = true;
+  if (_persistDebounceTimer) clearTimeout(_persistDebounceTimer);
+  _persistDebounceTimer = setTimeout(() => {
+    _persistDebounceTimer = 0;
+    if (!persistInProgress) void flushPersistQueue();
+  }, 1000);
 }
 
 async function flushPersistQueue() {
@@ -1319,14 +1327,15 @@ function renderGuests() {
     guestCategoryStats.textContent = `Adultes: ${adults} — Enfants: ${children}`;
   }
   if (guestVinStats) {
-    const total = state.guests.length;
-    const confirmed = state.guests.filter((g) => g.status === "yes").length;
-    guestVinStats.textContent = `Vin d'honneur: ${total} invités — ${confirmed} confirmés`;
+    const totalPersons = state.guests.reduce((s, g) => s + normalizeGuestPartySize(g.partySize, g.groupType), 0);
+    const confirmedPersons = state.guests.filter((g) => g.status === "yes").reduce((s, g) => s + normalizeGuestPartySize(g.partySize, g.groupType), 0);
+    guestVinStats.textContent = `Vin d'honneur: ${state.guests.length} invitations (${totalPersons} pers.) — ${confirmedPersons} pers. confirmées`;
   }
   if (guestMealStats) {
     const meal = state.guests.filter((g) => normalizeGuestAttendanceType(g.attendanceType) === "vin_repas");
-    const mealConfirmed = meal.filter((g) => g.status === "yes").length;
-    guestMealStats.textContent = `Repas: ${meal.length} invités — ${mealConfirmed} confirmés`;
+    const mealPersons = meal.reduce((s, g) => s + normalizeGuestPartySize(g.partySize, g.groupType), 0);
+    const mealConfirmedPersons = meal.filter((g) => g.status === "yes").reduce((s, g) => s + normalizeGuestPartySize(g.partySize, g.groupType), 0);
+    guestMealStats.textContent = `Repas: ${meal.length} invitations (${mealPersons} pers.) — ${mealConfirmedPersons} pers. confirmées`;
   }
   if (guestHebergStats) {
     const hebergGuests = state.guests.filter((g) => g.hebergement && g.status === "yes");
@@ -1878,7 +1887,7 @@ async function verifyAdminToken(token) {
   }
 
   try {
-    const response = await fetch(ADMIN_CHECK_ENDPOINT, {
+    const response = await fetchWithTimeout(ADMIN_CHECK_ENDPOINT, {
       method: "GET",
       cache: "no-store",
       headers: {
@@ -1910,7 +1919,7 @@ async function loadState() {
   }
 
   try {
-    const response = await fetch(SERVER_ENDPOINT, {
+    const response = await fetchWithTimeout(SERVER_ENDPOINT, {
       method: "GET",
       cache: "no-store",
       headers: getAuthHeaders(),
@@ -1943,7 +1952,7 @@ async function loadState() {
 }
 
 async function pushStateToServer(payload) {
-  const response = await fetch(SERVER_ENDPOINT, {
+  const response = await fetchWithTimeout(SERVER_ENDPOINT, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -1951,6 +1960,11 @@ async function pushStateToServer(payload) {
     },
     body: JSON.stringify(payload),
   });
+
+  if (response.status === 409) {
+    setSyncStatus("⚠ Conflit : données modifiées par un autre onglet. Rechargez la page.", true);
+    throw new Error("conflict");
+  }
 
   if (!response.ok) {
     let detail = `HTTP ${response.status}`;
@@ -1979,6 +1993,7 @@ async function persistState() {
   try {
     await pushStateToServer(payload);
     serverSyncAvailable = true;
+    _hasUnsavedChanges = false;
     setSyncStatus("Sauvegarde activée : data.json + budget_mariage.xlsx", false);
   } catch (error) {
     serverSyncAvailable = false;
@@ -2139,6 +2154,41 @@ async function init() {
   await unlockAdmin(savedToken);
 }
 
+// ── Export CSV invités ───────────────────────────────────────────
+function exportGuestsCSV() {
+  const statusLabel = { pending: "En attente", yes: "Confirmé", no: "Décliné" };
+  const rows = [["Nom", "Statut", "Catégorie", "Type", "Nb pers.", "Hébergement", "Allergies", "Suggestion musicale", "Question"]];
+  for (const g of state.guests) {
+    rows.push([
+      g.name,
+      statusLabel[g.status] ?? g.status,
+      g.guestCategory === "child" ? "Enfant" : "Adulte",
+      getGuestAttendanceTypeLabel(g.attendanceType),
+      String(normalizeGuestPartySize(g.partySize, g.groupType)),
+      g.hebergement ? "Oui" : "",
+      g.allergies ?? "",
+      g.musicSuggestion ?? "",
+      g.otherQuestion ?? "",
+    ]);
+  }
+  const bom = "﻿";
+  const csv = bom + rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(";")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `invites_${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// ── Avertissement modifications non sauvegardées ─────────────────
+window.addEventListener("beforeunload", (e) => {
+  if (_hasUnsavedChanges && isAdminUnlocked) {
+    e.preventDefault();
+    e.returnValue = "";
+  }
+});
+
 // ── Dark mode ────────────────────────────────────────────────────
 function initDarkMode() {
   const isDark = localStorage.getItem("dark-mode") === "true";
@@ -2162,6 +2212,13 @@ function updateDarkModeBtnLabels() {
   document.querySelectorAll(".dark-mode-toggle-btn").forEach(btn => {
     btn.textContent = label;
   });
+}
+
+// ── Fetch avec timeout ───────────────────────────────────────────
+function fetchWithTimeout(url, options = {}, timeoutMs = 8000) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  return fetch(url, { ...options, signal: ctrl.signal }).finally(() => clearTimeout(timer));
 }
 
 // ── Sticky nav ───────────────────────────────────────────────────

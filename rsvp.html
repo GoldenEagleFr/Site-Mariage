@@ -142,6 +142,10 @@
         <div class="rsvp-confirm-icon rsvp-confirm-icon-yes">✓</div>
         <h2>À très bientôt !</h2>
         <p id="rsvpConfirmYesText"></p>
+        <p class="rsvp-confirm-date">📅 Le 17 avril 2027 — Gisors puis Les Domaines de Gaston, Les Andelys</p>
+        <a id="rsvpCalendarLink" class="cta cta-secondary rsvp-calendar-btn" download="mariage-florence-antoine.ics">
+          📆 Ajouter à mon agenda
+        </a>
       </div>
       <div id="rsvpConfirmNo" class="is-hidden">
         <div class="rsvp-confirm-icon rsvp-confirm-icon-no">♡</div>
@@ -429,6 +433,29 @@
       stepDone.classList.remove("is-celebrating");
       goToStep(stepSearch);
     });
+
+    // Génère un lien .ics pour ajouter au calendrier
+    function buildIcsDataUrl() {
+      const ics = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//Florence & Antoine//Mariage//FR",
+        "BEGIN:VEVENT",
+        "DTSTART:20270417T143000Z",
+        "DTEND:20270418T000000Z",
+        "SUMMARY:Mariage de Florence & Antoine",
+        "DESCRIPTION:Cérémonie à Gisors, réception aux Domaines de Gaston (Les Andelys)",
+        "LOCATION:Les Domaines de Gaston\\, Les Andelys\\, 27700",
+        "STATUS:CONFIRMED",
+        "END:VEVENT",
+        "END:VCALENDAR",
+      ].join("\r\n");
+      const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+      return URL.createObjectURL(blob);
+    }
+
+    const calLink = document.getElementById("rsvpCalendarLink");
+    if (calLink) calLink.href = buildIcsDataUrl();
 
     // Init
     setProgress(1);
