@@ -230,7 +230,8 @@ def normalize_data(candidate: object) -> dict:
                     "groupType": group_type,
                     "attendanceType": attendance_type,
                     "partySize": normalize_guest_party_size(group_type, guest.get("partySize")),
-                    "status": status if status in VALID_GUEST_STATUS else "pending",
+                    "isHost": bool(guest.get("isHost", False)),
+                    "status": "yes" if bool(guest.get("isHost", False)) else (status if status in VALID_GUEST_STATUS else "pending"),
                     "rsvpToken": str(guest.get("rsvpToken", "")).strip(),
                     "hebergement": bool(guest.get("hebergement", False)),
                     "hebergementInfo": bool(guest.get("hebergementInfo", False)),
@@ -940,6 +941,8 @@ class PlannerHandler(SimpleHTTPRequestHandler):
             data = load_data_file()
             results = []
             for g in data.get("guests", []):
+                if g.get("isHost"):
+                    continue
                 if q in str(g.get("name", "")).lower():
                     results.append({
                         "id": g["id"],

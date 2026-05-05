@@ -390,6 +390,16 @@ function bindPlannerEvents() {
     if (!isAdminUnlocked) return;
     exportGuestsCSV();
   });
+
+  document.getElementById("btnAddHosts")?.addEventListener("click", () => {
+    if (!isAdminUnlocked) return;
+    const alreadyHasHosts = state.guests.some((g) => g.isHost);
+    if (alreadyHasHosts) return;
+    const hostBase = { groupType: "single", attendanceType: "vin_repas", partySize: 1, status: "yes", isHost: true, hebergement: false, hebergementInfo: false, rsvpSubmittedAt: 0, guestCategory: "adult", musicSuggestion: "", allergies: "", otherQuestion: "", colorGroupId: null };
+    state.guests.unshift({ ...hostBase, id: createId(), name: "Le marié", rsvpToken: createGuestToken() });
+    state.guests.unshift({ ...hostBase, id: createId(), name: "La mariée", rsvpToken: createGuestToken() });
+    refresh();
+  });
 }
 
 function bindAdminEvents() {
@@ -1298,6 +1308,9 @@ function renderGuests() {
   const attendanceMode = guestAttendanceFilter?.value ?? "all";
   const statusRank = { pending: 0, yes: 1, no: 2 };
   const orderedGuests = [...state.guests].sort((a, b) => {
+    // Les mariés toujours en tête
+    if (a.isHost && !b.isHost) return -1;
+    if (!a.isHost && b.isHost) return 1;
     const rankDiff = (statusRank[a.status] ?? 99) - (statusRank[b.status] ?? 99);
     if (rankDiff !== 0) {
       return rankDiff;
@@ -1317,9 +1330,10 @@ function renderGuests() {
   });
 
   if (guestStats) {
-    const pending = state.guests.filter((g) => g.status === "pending").length;
-    const confirmed = state.guests.filter((g) => g.status === "yes").length;
-    guestStats.textContent = `${filteredGuests.length}/${state.guests.length} invités affichés — ${confirmed} oui — ${pending} en attente`;
+    const invites = state.guests.filter((g) => !g.isHost);
+    const pending = invites.filter((g) => g.status === "pending").length;
+    const confirmed = invites.filter((g) => g.status === "yes").length;
+    guestStats.textContent = `${filteredGuests.length}/${state.guests.length} affichés — ${confirmed} oui — ${pending} en attente (${invites.length} invités + ${state.guests.length - invites.length} marié${state.guests.length - invites.length > 1 ? "s" : ""})`;
   }
   if (guestCategoryStats) {
     const adults = state.guests.filter((g) => g.guestCategory !== "child").length;
@@ -1384,12 +1398,27 @@ function renderGuests() {
       });
     }
 
+    if (guest.isHost) {
+      node.classList.add("guest-item-host");
+      const hostBadge = document.createElement("span");
+      hostBadge.className = "guest-host-badge";
+      hostBadge.textContent = "💍 Marié(e)";
+      node.querySelector(".guest-main")?.appendChild(hostBadge);
+    }
+
     const statusSelect = node.querySelector("select.inline-status");
-    statusSelect.value = VALID_GUEST_STATUS.has(guest.status) ? guest.status : "pending";
-    statusSelect.addEventListener("change", () => {
-      guest.status = statusSelect.value;
-      refresh();
-    });
+    if (guest.isHost) {
+      statusSelect.replaceWith(Object.assign(document.createElement("span"), {
+        className: "guest-host-status",
+        textContent: "✓ Confirmé",
+      }));
+    } else {
+      statusSelect.value = VALID_GUEST_STATUS.has(guest.status) ? guest.status : "pending";
+      statusSelect.addEventListener("change", () => {
+        guest.status = statusSelect.value;
+        refresh();
+      });
+    }
 
     // Badge / sélecteur groupe couleur
     const groupBadgeWrap = node.querySelector(".guest-color-group-wrap");
@@ -1462,10 +1491,11 @@ function renderMetrics() {
   const taskDone = state.tasks.filter((task) => task.done).length;
   const tasksPercent = state.tasks.length ? Math.round((taskDone / state.tasks.length) * 100) : 0;
 
-  const replied = state.guests
+  const inviteGuests = state.guests.filter((g) => !g.isHost);
+  const replied = inviteGuests
     .filter((guest) => guest.status !== "pending")
     .reduce((sum, guest) => sum + normalizeGuestPartySize(guest.partySize, guest.groupType), 0);
-  const totalGuests = state.guests.reduce(
+  const totalGuests = inviteGuests.reduce(
     (sum, guest) => sum + normalizeGuestPartySize(guest.partySize, guest.groupType),
     0
   );
@@ -1831,7 +1861,8 @@ function normalizeState(candidate) {
           groupType,
           attendanceType: normalizeGuestAttendanceType(guest.attendanceType),
           partySize: normalizeGuestPartySize(guest.partySize, groupType),
-          status: VALID_GUEST_STATUS.has(guest.status) ? guest.status : "pending",
+          status: Boolean(guest.isHost) ? "yes" : (VALID_GUEST_STATUS.has(guest.status) ? guest.status : "pending"),
+          isHost: Boolean(guest.isHost),
           rsvpToken: typeof guest.rsvpToken === "string" && guest.rsvpToken.trim() ? guest.rsvpToken.trim() : createGuestToken(),
           hebergement: Boolean(guest.hebergement),
           hebergementInfo: Boolean(guest.hebergementInfo),

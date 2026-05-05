@@ -4403,6 +4403,44 @@ body.dark-mode .table-violation-warning {
   min-width: 4px;
 }
 
+/* ── Mariés dans la liste invités ─────────────────────────────── */
+.guest-item-host {
+  background: linear-gradient(135deg, rgba(255, 220, 180, 0.35), rgba(255, 200, 160, 0.18));
+  border-color: rgba(200, 100, 20, 0.35);
+}
+
+body.dark-mode .guest-item-host {
+  background: rgba(80, 40, 0, 0.3);
+  border-color: rgba(200, 120, 30, 0.4);
+}
+
+.guest-host-badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #8a4800;
+  background: rgba(255, 180, 60, 0.22);
+  border: 1px solid rgba(200, 120, 20, 0.3);
+  border-radius: 6px;
+  padding: 1px 6px;
+  margin-top: 2px;
+}
+
+body.dark-mode .guest-host-badge {
+  color: #ffc060;
+  background: rgba(200, 120, 20, 0.2);
+}
+
+.guest-host-status {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #2f7d4e;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+body.dark-mode .guest-host-status { color: #6fcf97; }
+
 /* ── Focus ring : bouton mode sombre ──────────────────────────── */
 .dark-mode-toggle-btn:focus-visible {
   outline: 2px solid var(--accent, #e00a26);
