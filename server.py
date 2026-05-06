@@ -240,7 +240,7 @@ def normalize_data(candidate: object) -> dict:
                     "musicSuggestion": str(guest.get("musicSuggestion", "")).strip(),
                     "allergies": str(guest.get("allergies", "")).strip(),
                     "otherQuestion": str(guest.get("otherQuestion", "")).strip(),
-                    "colorGroupId": str(guest.get("colorGroupId", "")).strip() or None,
+                    "colorGroupId": (lambda v: str(v).strip() or None if isinstance(v, str) else None)(guest.get("colorGroupId")),
                 }
             )
         normalized["guests"] = cleaned_guests

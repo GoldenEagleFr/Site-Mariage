@@ -1688,6 +1688,11 @@ button:hover {
   flex: 1 1 100%;
 }
 
+.guest-item-child {
+  border-left: 3px solid #7db9e8;
+  background: color-mix(in srgb, #7db9e8 6%, transparent);
+}
+
 .guest-meta {
   font-size: 0.72rem;
 }

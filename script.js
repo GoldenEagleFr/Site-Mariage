@@ -1369,11 +1369,12 @@ function renderGuests() {
   for (const [index, guest] of filteredGuests.entries()) {
     const node = guestTemplate.content.firstElementChild.cloneNode(true);
     node.style.setProperty("--stagger", String(index));
+    if (guest.guestCategory === "child") node.classList.add("guest-item-child");
     node.querySelector(".main-text").textContent = guest.name;
     const attendanceType = normalizeGuestAttendanceType(guest.attendanceType);
     const groupMeta = node.querySelector(".guest-meta");
     if (groupMeta) {
-      const catLabel = guest.guestCategory === "child" ? "Enfant" : "Adulte";
+      const catLabel = guest.guestCategory === "child" ? "👶 Enfant" : "Adulte";
       const submittedPart = guest.rsvpSubmittedAt > 0
         ? ` — RSVP le ${new Date(guest.rsvpSubmittedAt).toLocaleDateString("fr-FR")}`
         : "";
@@ -1871,7 +1872,7 @@ function normalizeState(candidate) {
           musicSuggestion: String(guest.musicSuggestion ?? "").trim(),
           allergies: String(guest.allergies ?? "").trim(),
           otherQuestion: String(guest.otherQuestion ?? "").trim(),
-          colorGroupId: typeof guest.colorGroupId === "string" && guest.colorGroupId ? guest.colorGroupId : null,
+          colorGroupId: (typeof guest.colorGroupId === "string" && guest.colorGroupId && guest.colorGroupId !== "None") ? guest.colorGroupId : null,
         };
       })
       .filter((guest) => guest.name);
