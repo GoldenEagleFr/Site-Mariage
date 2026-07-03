@@ -24,6 +24,32 @@ DATA_LOCK = threading.Lock()
 ADMIN_PASSWORD = ""
 DEFAULT_ADMIN_PASSWORD = "mariage2026"
 
+_RATE_LIMIT: defaultdict = defaultdict(list)
+_RATE_LIMIT_LOCK = threading.Lock()
+
+_404_PAGE = """\
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Page introuvable — Florence &amp; Antoine</title>
+  <style>
+    body{font-family:Manrope,sans-serif;background:#faf9f7;color:#333;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;margin:0;text-align:center;padding:2rem;box-sizing:border-box}
+    h1{font-size:4rem;margin:0 0 .5rem}
+    p{margin:.4rem 0;color:#666}
+    a{color:#c0392b;font-weight:600;text-decoration:none}
+    a:hover{text-decoration:underline}
+  </style>
+</head>
+<body>
+  <h1>\U0001f48d</h1>
+  <p style="font-size:1.4rem;font-weight:700;color:#333">Page introuvable</p>
+  <p>Cette page n’existe pas ou a été déplacée.</p>
+  <p style="margin-top:1rem"><a href="/">← Retour au site</a></p>
+</body>
+</html>"""
+
 DEFAULT_DATA = {
     "budgetGoal": 15000,
     "budgetGuestCount": 150,
@@ -769,11 +795,34 @@ class PlannerHandler(SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def end_headers(self) -> None:
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("X-Frame-Options", "SAMEORIGIN")
+        self.send_header("Referrer-Policy", "strict-origin-when-cross-origin")
+        super().end_headers()
+
+    def send_error(self, code, message=None, explain=None) -> None:
+        if int(code) == 404:
+            self._send_html(_404_PAGE, HTTPStatus.NOT_FOUND)
+            return
+        super().send_error(code, message, explain)
+
     def _is_admin_authorized(self) -> bool:
         if not ADMIN_PASSWORD:
             return False
         provided = self.headers.get("X-Admin-Key", "")
         return bool(provided) and provided == ADMIN_PASSWORD
+
+    def _check_rsvp_rate_limit(self) -> bool:
+        ip = self.client_address[0]
+        now = time.time()
+        with _RATE_LIMIT_LOCK:
+            calls = _RATE_LIMIT[ip]
+            calls[:] = [t for t in calls if now - t < 3600]
+            if len(calls) >= 10:
+                return False
+            calls.append(now)
+            return True
 
     def _send_html(self, html_body: str, status: HTTPStatus = HTTPStatus.OK) -> None:
         body = html_body.encode("utf-8")
@@ -971,6 +1020,9 @@ class PlannerHandler(SimpleHTTPRequestHandler):
 
     def do_POST(self) -> None:
         if self.path == "/api/rsvp/submit":
+            if not self._check_rsvp_rate_limit():
+                self._send_json({"ok": False, "error": "rate_limit"}, HTTPStatus.TOO_MANY_REQUESTS)
+                return
             content_length = int(self.headers.get("Content-Length", "0"))
             raw_body = self.rfile.read(content_length)
             try:

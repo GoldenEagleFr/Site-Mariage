@@ -4568,3 +4568,22 @@ body.dark-mode .guest-host-status { color: #6fcf97; }
     min-width: 480px;
   }
 }
+
+/* ── RSVP : spinner de recherche ─────────────────────────────── */
+.rsvp-spinner {
+  display: flex;
+  justify-content: center;
+  padding: 1.4rem 0;
+}
+.rsvp-spinner::after {
+  content: "";
+  width: 30px;
+  height: 30px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: rsvp-spin 0.7s linear infinite;
+}
+@keyframes rsvp-spin {
+  to { transform: rotate(360deg); }
+}
