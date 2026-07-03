@@ -727,7 +727,7 @@ function updateCountdown(target) {
   countdownHours.textContent = String(hours).padStart(2, "0");
   countdownMinutes.textContent = String(minutes).padStart(2, "0");
   countdownSeconds.textContent = String(seconds).padStart(2, "0");
-  countdownNote.textContent = "Avant de celebrer ensemble.";
+  countdownNote.textContent = "Avant de célébrer ensemble.";
 }
 
 function refresh(options = {}) {

@@ -960,6 +960,13 @@ class PlannerHandler(SimpleHTTPRequestHandler):
             self._send_json({"ok": True, "results": results})
             return
 
+        # Bloquer l'accès direct aux fichiers sensibles sans auth admin
+        BLOCKED_PATHS = {"/data.json", "/data.backup.json", "/budget_mariage.xlsx", "/plan_table.html"}
+        if path in BLOCKED_PATHS:
+            if not self._is_admin_authorized():
+                self.send_error(HTTPStatus.FORBIDDEN, "Accès refusé")
+                return
+
         super().do_GET()
 
     def do_POST(self) -> None:
@@ -1039,8 +1046,10 @@ def main() -> None:
     data = load_data_file()
     write_budget_excel(data)
     handler = partial(PlannerHandler, directory=str(BASE_DIR))
-    server = ThreadingHTTPServer(("127.0.0.1", 8000), handler)
-    print("Serveur actif sur http://127.0.0.1:8000")
+    host = os.environ.get("MARIAGE_HOST", "0.0.0.0")
+    port = int(os.environ.get("MARIAGE_PORT", "8000"))
+    server = ThreadingHTTPServer((host, port), handler)
+    print(f"Serveur actif sur http://{host}:{port}")
     print(f"Fichier de données: {DATA_FILE}")
     print(f"Fichier budget Excel: {BUDGET_EXCEL_FILE}")
     server.serve_forever()

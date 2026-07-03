@@ -3916,6 +3916,41 @@ body.dark-mode .table-violation-warning {
   text-align: center;
 }
 
+/* ── Disposition dropdown ──────────────────────────────── */
+.room-layout-wrap {
+  position: relative;
+}
+.room-layout-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 200;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.12);
+  min-width: 220px;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.layout-menu-item {
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 8px 12px;
+  font-size: 0.82rem;
+  font-family: var(--font-ui);
+  color: var(--ink);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.layout-menu-item:hover {
+  background: var(--surface-alt);
+}
+
 /* ═══════════════════════════════════════════════════════════
    CONFIG SALLE
    ═══════════════════════════════════════════════════════════ */
@@ -4149,6 +4184,55 @@ body.dark-mode .table-violation-warning {
 }
 .tms-add-row select { flex: 1; font-size: 0.78rem; }
 .tms-add-row button { font-size: 0.78rem; padding: 3px 10px; }
+.tms-merge-row { margin-bottom: 8px; }
+.tms-merge-btn {
+  width: 100%;
+  padding: 7px 10px;
+  font-size: 0.78rem;
+  font-family: var(--font-ui);
+  background: var(--accent-pale, #fdf0ec);
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  color: var(--accent);
+  cursor: pointer;
+  font-weight: 600;
+  transition: background .15s;
+}
+.tms-merge-btn:hover { background: var(--accent); color: #fff; }
+.tms-split-btn {
+  width: 100%;
+  padding: 7px 10px;
+  font-size: 0.78rem;
+  font-family: var(--font-ui);
+  background: #f0f4fd;
+  border: 1px solid #7090cc;
+  border-radius: 6px;
+  color: #3a5fa0;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background .15s;
+}
+.tms-split-btn:hover { background: #3a5fa0; color: #fff; }
+.tms-trim-row { margin-top: 4px; }
+.tms-trim-btn {
+  width: 100%;
+  padding: 6px 10px;
+  font-size: 0.78rem;
+  font-family: var(--font-ui);
+  background: var(--bg);
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  text-align: left;
+  transition: border-color .15s, color .15s;
+}
+.tms-trim-btn:hover { border-color: var(--accent); color: var(--accent); }
+.tms-trim-hint { font-size: 0.7rem; color: var(--ink-soft); }
 
 /* ═══════════════════════════════════════════════════════════
    FORMULAIRE D'ÉDITION DE TABLE (VUE LISTE)

@@ -68,12 +68,13 @@
                   <h2>Créer une table</h2>
                 </div>
                 <form id="tableForm" class="row-form">
-                  <input id="tableName" type="text" placeholder="Nom de la table (ex : Table 1)" required>
+                  <input id="tableName" type="text" placeholder="Nom auto si vide (ex : Table 3)">
                   <input id="tableCapacity" type="number" min="1" max="30" step="1" placeholder="Capacité (pers.)" required>
                   <select id="tableShape">
                     <option value="round">⭕ Ronde (⌀152cm)</option>
                     <option value="rect">▭ Rectangulaire (183×76cm)</option>
                   </select>
+                  <input id="tableCount" type="number" min="1" max="50" step="1" value="1" placeholder="Qté" title="Nombre de tables à créer">
                   <button type="submit">Créer</button>
                 </form>
                 <div id="tableListGrid" class="plan-table-grid"></div>
@@ -131,12 +132,23 @@
             <span class="room-toolbar-sep"></span>
             <button id="btnSnapGrid" class="room-tool-btn" type="button" title="Aligner les tables sur une grille de 0,5 m">⊞ Grille</button>
             <span class="room-toolbar-sep"></span>
+            <div class="room-layout-wrap">
+              <button id="btnLayout" class="room-tool-btn" type="button" title="Appliquer une disposition prédéfinie">⊟ Disposition</button>
+              <div id="layoutMenu" class="room-layout-menu is-hidden">
+                <button class="layout-menu-item" data-layout="grid">⬛ Grille — rangées régulières</button>
+                <button class="layout-menu-item" data-layout="quinconce">⬛ Quinconce — rangées décalées</button>
+                <button class="layout-menu-item" data-layout="u">⬛ En U — périmètre, centre libre</button>
+                <button class="layout-menu-item" data-layout="banquet">⬛ Banquet — longues rangées</button>
+              </div>
+            </div>
+            <span class="room-toolbar-sep"></span>
             <button id="btnConfigRoom" class="room-tool-btn" type="button" title="Configurer la salle et ses éléments">⚙️ Salle</button>
             <button id="btnLegend" class="room-tool-btn" type="button" title="Afficher la légende des couleurs">📌 Légende</button>
             <span class="room-toolbar-sep"></span>
             <button id="btnExportCSV" class="room-tool-btn" type="button" title="Télécharger la liste des placements (CSV)">⬇ CSV</button>
             <button id="btnExportHD" class="room-tool-btn" type="button" title="Exporter le plan en image haute résolution">🖼 Plan HD</button>
             <button id="btnPrintRoom" class="room-tool-btn" type="button" title="Imprimer le plan de salle">🖨️ Imprimer</button>
+            <button id="btnPrintSheets" class="room-tool-btn" type="button" title="Imprimer une fiche par table (avec invités)">🗒️ Fiches</button>
           </div>
           <div class="room-search-bar">
             <input id="roomGuestSearch" type="text" class="room-guest-search-input" placeholder="🔍 Rechercher un invité dans la salle…" autocomplete="off">
@@ -218,6 +230,7 @@
     let roomPanX  = 0, roomPanY = 0;
     let selectedTableId = null;
     let editingTableId  = null;
+    let globalChairR    = 5;
     let lastKnownUpdatedAt = 0;
     let syncPollTimer = null;
 
@@ -421,14 +434,33 @@
     }
 
     // ── Créer une table ───────────────────────────────────────
+    function nextTableNumber() {
+      const nums = tables.map(t => {
+        const m = t.name.match(/^Table\s+(\d+)$/i);
+        return m ? parseInt(m[1]) : 0;
+      });
+      let n = (nums.length ? Math.max(...nums) : 0) + 1;
+      return n;
+    }
+
     tableForm.addEventListener("submit", (e) => {
       e.preventDefault();
-      const name  = tableName.value.trim();
+      const rawName = tableName.value.trim();
       const cap   = Math.max(1, parseInt(tableCapacity.value) || 8);
       const shape = tableShape.value || "round";
-      if (!name) return;
-      tables.push({ id: createId(), name, capacity: cap, shape });
+      const count = Math.max(1, Math.min(50, parseInt(tableCount.value) || 1));
+      if (count === 1) {
+        const name = rawName || `Table ${nextTableNumber()}`;
+        tables.push({ id: createId(), name, capacity: cap, shape });
+      } else {
+        const base = rawName || "Table";
+        let n = nextTableNumber();
+        for (let i = 0; i < count; i++) {
+          tables.push({ id: createId(), name: `${base} ${n++}`, capacity: cap, shape });
+        }
+      }
       tableForm.reset();
+      tableCount.value = 1;
       saveTables();
       render();
     });
@@ -467,6 +499,203 @@
       if (selectedTableId === tableId) closeTableManagePanel();
       saveTables();
       render();
+    }
+
+    function trimEmptySeats(tableId) {
+      const table = tables.find(t => t.id === tableId);
+      if (!table) return;
+      // Récupère les sièges occupés, triés par index
+      const occupied = Object.entries(seatMap)
+        .filter(([k]) => k.startsWith(tableId + ":"))
+        .map(([k, v]) => ({ idx: parseInt(k.split(":")[1]), gId: v }))
+        .sort((a, b) => a.idx - b.idx);
+      // Supprime les anciennes entrées
+      Object.keys(seatMap)
+        .filter(k => k.startsWith(tableId + ":"))
+        .forEach(k => delete seatMap[k]);
+      // Réindexe de 0 à n-1
+      occupied.forEach(({ gId }, newIdx) => {
+        seatMap[`${tableId}:${newIdx}`] = gId;
+      });
+      // Capacité = nombre total d'invités assignés à cette table
+      const total = guests.filter(g => assignments[g.id] === tableId).length;
+      table.capacity = Math.max(1, total);
+      saveTables();
+      render();
+      renderTableManagePanel();
+    }
+
+    function findAdjacentTable(tableId) {
+      const t = tables.find(x => x.id === tableId);
+      if (!t || t.x == null || t.y == null) return null;
+      const d = getTableDims(t);
+      for (const other of tables) {
+        if (other.id === tableId || other.x == null || other.y == null) continue;
+        const od = getTableDims(other);
+        const gapX = Math.abs(Math.abs(t.x - other.x) - (d.rx + od.rx));
+        const gapY = Math.abs(Math.abs(t.y - other.y) - (d.ry + od.ry));
+        const alignY = Math.abs(t.y - other.y) < d.ry + od.ry;
+        const alignX = Math.abs(t.x - other.x) < d.rx + od.rx;
+        if (gapX <= 2 && alignY) return { table: other, dir: "h" };
+        if (gapY <= 2 && alignX) return { table: other, dir: "v" };
+      }
+      return null;
+    }
+
+    function mergeTables(t1Id, t2Id) {
+      const t1 = tables.find(t => t.id === t1Id);
+      const t2 = tables.find(t => t.id === t2Id);
+      if (!t1 || !t2) return;
+
+      const d1 = getTableDims(t1), d2 = getTableDims(t2);
+      const isH = Math.abs(t1.x - t2.x) >= Math.abs(t1.y - t2.y);
+
+      // t1 = gauche/haut, t2 = droite/bas
+      const [left, right] = isH
+        ? (t1.x < t2.x ? [t1, t2] : [t2, t1])
+        : (t1.y < t2.y ? [t1, t2] : [t2, t1]);
+      const dl = getTableDims(left), dr = getTableDims(right);
+
+      const newId  = createId();
+      const newRx  = isH ? dl.rx + dr.rx : Math.max(dl.rx, dr.rx);
+      const newRy  = isH ? Math.max(dl.ry, dr.ry) : dl.ry + dr.ry;
+      const newX   = isH ? (left.x - dl.rx + right.x + dr.rx) / 2 : (left.x + right.x) / 2;
+      const newY   = isH ? (left.y + right.y) / 2 : (left.y - dl.ry + right.y + dr.ry) / 2;
+
+      const newTable = {
+        id: newId, name: left.name, shape: left.shape || "rect",
+        capacity: left.capacity + right.capacity,
+        x: newX, y: newY, rx: newRx, ry: newRy,
+        rotation: left.rotation ?? 0,
+        _splitInfo: {
+          dir: isH ? "h" : "v",
+          leftCap: left.capacity, rightCap: right.capacity,
+          leftRx: dl.rx, leftRy: dl.ry,
+          rightRx: dr.rx, rightRy: dr.ry,
+          leftName: left.name, rightName: right.name,
+        },
+      };
+
+      // Transfert des invités
+      guests.filter(g => assignments[g.id] === left.id || assignments[g.id] === right.id)
+            .forEach(g => { assignments[g.id] = newId; });
+
+      // Transfert du seatMap avec ré-indexation
+      const nTopL = Math.ceil(left.capacity / 2),  nBotL = left.capacity - nTopL;
+      const nTopR = Math.ceil(right.capacity / 2);
+      const nTopNew = Math.ceil(newTable.capacity / 2);
+
+      const remapSeat = (srcId, srcIdx, isRight) => {
+        const key = `${srcId}:${srcIdx}`;
+        if (!seatMap[key]) return;
+        let newIdx;
+        if (isH) {
+          const nTopSrc = isRight ? nTopR : nTopL;
+          if (srcIdx < nTopSrc) {
+            newIdx = (isRight ? nTopL : 0) + srcIdx;
+          } else {
+            const botIdx = srcIdx - nTopSrc;
+            newIdx = nTopNew + (isRight ? nBotL : 0) + botIdx;
+          }
+        } else {
+          newIdx = isRight ? left.capacity + srcIdx : srcIdx;
+        }
+        seatMap[`${newId}:${newIdx}`] = seatMap[key];
+        delete seatMap[key];
+      };
+
+      for (let i = 0; i < left.capacity;  i++) remapSeat(left.id,  i, false);
+      for (let i = 0; i < right.capacity; i++) remapSeat(right.id, i, true);
+
+      // Nettoyage résiduel
+      [left.id, right.id].forEach(id => {
+        Object.keys(seatMap).filter(k => k.startsWith(id + ":")).forEach(k => delete seatMap[k]);
+      });
+
+      tables = tables.filter(t => t.id !== t1Id && t.id !== t2Id);
+      tables.push(newTable);
+
+      if (selectedTableId === t1Id || selectedTableId === t2Id) selectedTableId = newId;
+      saveTables();
+      render();
+      if (selectedTableId === newId) openTableManagePanel(newId);
+    }
+
+    function splitTable(tableId) {
+      const merged = tables.find(t => t.id === tableId);
+      if (!merged || !merged._splitInfo) return;
+      const si  = merged._splitInfo;
+      const isH = si.dir === "h";
+      const dm  = getTableDims(merged);
+
+      const leftId  = createId();
+      const rightId = createId();
+
+      let leftX, leftY, rightX, rightY;
+      if (isH) {
+        leftX  = merged.x - dm.rx + si.leftRx;
+        rightX = merged.x + dm.rx - si.rightRx;
+        leftY  = merged.y;
+        rightY = merged.y;
+      } else {
+        leftX  = merged.x;
+        rightX = merged.x;
+        leftY  = merged.y - dm.ry + si.leftRy;
+        rightY = merged.y + dm.ry - si.rightRy;
+      }
+
+      const leftTable = {
+        id: leftId, name: si.leftName, shape: merged.shape,
+        capacity: si.leftCap, x: leftX, y: leftY,
+        rx: si.leftRx, ry: si.leftRy, rotation: merged.rotation ?? 0,
+      };
+      const rightTable = {
+        id: rightId, name: si.rightName, shape: merged.shape,
+        capacity: si.rightCap, x: rightX, y: rightY,
+        rx: si.rightRx, ry: si.rightRy, rotation: merged.rotation ?? 0,
+      };
+
+      // Inverse seatMap remap
+      const nTopL   = Math.ceil(si.leftCap  / 2);
+      const nBotL   = si.leftCap - nTopL;
+      const nTopR   = Math.ceil(si.rightCap / 2);
+      const nTopNew = Math.ceil(merged.capacity / 2);
+
+      const guestsInRight = new Set();
+
+      for (let i = 0; i < merged.capacity; i++) {
+        const key = `${tableId}:${i}`;
+        if (!seatMap[key]) continue;
+        const gId = seatMap[key];
+        let dstId, dstIdx;
+        if (isH) {
+          if      (i < nTopL)             { dstId = leftId;  dstIdx = i; }
+          else if (i < nTopNew)           { dstId = rightId; dstIdx = i - nTopL; }
+          else if (i < nTopNew + nBotL)   { dstId = leftId;  dstIdx = nTopL + (i - nTopNew); }
+          else                            { dstId = rightId; dstIdx = nTopR  + (i - nTopNew - nBotL); }
+        } else {
+          if (i < si.leftCap) { dstId = leftId;  dstIdx = i; }
+          else                { dstId = rightId; dstIdx = i - si.leftCap; }
+        }
+        seatMap[`${dstId}:${dstIdx}`] = gId;
+        delete seatMap[key];
+        if (dstId === rightId) guestsInRight.add(gId);
+      }
+      Object.keys(seatMap).filter(k => k.startsWith(tableId + ":")).forEach(k => delete seatMap[k]);
+
+      // Reroute assignments
+      guests.forEach(g => {
+        if (assignments[g.id] === tableId)
+          assignments[g.id] = guestsInRight.has(g.id) ? rightId : leftId;
+      });
+
+      tables = tables.filter(t => t.id !== tableId);
+      tables.push(leftTable, rightTable);
+
+      if (selectedTableId === tableId) selectedTableId = leftId;
+      saveTables();
+      render();
+      if (selectedTableId === leftId) openTableManagePanel(leftId);
     }
 
     function updateTable(tableId, name, capacity, shape) {
@@ -703,6 +932,11 @@
       oval:   { rx: 30, ry: 15 },   // rétrocompat
     };
 
+    function getTableDims(table) {
+      const base = SHAPE_DIMS[table.shape || "round"] || SHAPE_DIMS.round;
+      return { rx: table.rx ?? base.rx, ry: table.ry ?? base.ry };
+    }
+
     // Coordonnées fixes du monde (indépendantes du zoom)
     const ROOM_WORLD_X = 30;   // marge gauche/droite en px monde
     const ROOM_WORLD_Y = 55;   // marge haute (bord haut de la salle)
@@ -733,6 +967,36 @@
       return Math.round(v / gp) * gp;
     }
 
+    const TABLE_SNAP_THRESHOLD = 20; // px monde
+
+    function snapToOtherTables(x, y, dragDims, excludeId) {
+      let snapX = x, snapY = y;
+      let minDX = TABLE_SNAP_THRESHOLD, minDY = TABLE_SNAP_THRESHOLD;
+      for (const t of tables) {
+        if (t.id === excludeId || t.x == null || t.y == null) continue;
+        const td = getTableDims(t);
+        // Aimantage bord-à-bord en X
+        const cands = [
+          t.x - td.rx - dragDims.rx,  // bord gauche de t ← bord droit du drag
+          t.x + td.rx + dragDims.rx,  // bord droit de t → bord gauche du drag
+        ];
+        for (const cx of cands) {
+          const d = Math.abs(x - cx);
+          if (d < minDX) { minDX = d; snapX = cx; }
+        }
+        // Aimantage bord-à-bord en Y
+        const candsY = [
+          t.y - td.ry - dragDims.ry,
+          t.y + td.ry + dragDims.ry,
+        ];
+        for (const cy of candsY) {
+          const d = Math.abs(y - cy);
+          if (d < minDY) { minDY = d; snapY = cy; }
+        }
+      }
+      return { x: snapX, y: snapY };
+    }
+
     // Couleur du groupe d'un invité (pour les chaises)
     function getGroupColor(guestId) {
       if (!guestGroups.length) return null;
@@ -761,27 +1025,37 @@
       ];
     }
 
+    function updateGlobalChairR() {
+      const CHAIR_GAP = 6;
+      let minR = 8;
+      for (const t of tables) {
+        if (t.capacity <= 0) continue;
+        const shape = t.shape || "round";
+        const dims  = getTableDims(t);
+        let refPerim;
+        if (shape === "rect")        refPerim = dims.rx * 2 * 2;
+        else if (shape === "square") refPerim = dims.rx * 2 * 4;
+        else {
+          const oRx = dims.rx + CHAIR_GAP, oRy = dims.ry + CHAIR_GAP;
+          refPerim = 2 * Math.PI * Math.sqrt((oRx * oRx + oRy * oRy) / 2);
+        }
+        const r = Math.max(3, Math.min(4, refPerim / t.capacity / 2 - 1));
+        minR = Math.min(minR, r);
+      }
+      globalChairR = tables.length ? minR : 5;
+    }
+
     function computeSeatPositions(table) {
       const x     = table.x ?? 100;
       const y     = table.y ?? 100;
       const shape = table.shape || "round";
-      const dims  = SHAPE_DIMS[shape] || SHAPE_DIMS.round;
+      const dims  = getTableDims(table);
       const n     = table.capacity;
       if (n <= 0) return [];
 
       const CHAIR_GAP = 6;
       const MARGIN    = Math.min(14, dims.rx * 0.18);
-
-      let refPerim;
-      if (shape === "rect") {
-        refPerim = dims.rx * 2 * 2;
-      } else if (shape === "square") {
-        refPerim = dims.rx * 2 * 4;
-      } else {
-        const oRx = dims.rx + CHAIR_GAP, oRy = dims.ry + CHAIR_GAP;
-        refPerim = 2 * Math.PI * Math.sqrt((oRx * oRx + oRy * oRy) / 2);
-      }
-      const CHAIR_R = Math.max(3, Math.min(8, refPerim / n / 2 - 1));
+      const CHAIR_R   = globalChairR;
 
       const pos = [];
 
@@ -1001,7 +1275,7 @@
       const y     = table.y ?? 100;
       const rot   = (table.rotation ?? 0) * Math.PI / 180;
       const shape = table.shape || "round";
-      const dims  = SHAPE_DIMS[shape] || SHAPE_DIMS.round;
+      const dims  = getTableDims(table);
       const tableGuests = guests.filter(g => assignments[g.id] === table.id);
       const isFull      = tableGuests.length >= table.capacity;
       const hasViol     = getTableViolations(table.id).length > 0;
@@ -1074,7 +1348,7 @@
     function isPointInTable(wx, wy, table) {
       const x    = table.x ?? 100;
       const y    = table.y ?? 100;
-      const dims = SHAPE_DIMS[table.shape || "round"] || SHAPE_DIMS.round;
+      const dims = getTableDims(table);
       // Transforme le point dans le repère local (sans rotation)
       const rot = (table.rotation ?? 0) * Math.PI / 180;
       let dx = wx - x, dy = wy - y;
@@ -1132,6 +1406,7 @@
 
     function renderRoom() {
       if (!roomCtx) return;
+      updateGlobalChairR();
       initTablePositions();
       const container = roomCanvas.parentElement;
       roomCanvas.width = container.clientWidth || 800;
@@ -1297,6 +1572,274 @@
       if (!roomConfigPanel.classList.contains("is-hidden")) renderRoomConfig();
     });
 
+    // ── Fiches tables (1 page par table) ─────────────────────
+    document.getElementById("btnPrintSheets")?.addEventListener("click", () => {
+      const tablesToPrint = tables.filter(t => guests.some(g => assignments[g.id] === t.id));
+      if (!tablesToPrint.length) {
+        alert("Aucune table n'a d'invités assignés.");
+        return;
+      }
+
+      const printData = tablesToPrint.map(t => {
+        const specificIds = new Set(
+          Object.entries(seatMap)
+            .filter(([k]) => k.startsWith(t.id + ":"))
+            .map(([, v]) => v)
+        );
+        const seats = [];
+        for (let i = 0; i < t.capacity; i++) {
+          const gId = seatMap[`${t.id}:${i}`];
+          const g = gId ? guests.find(x => x.id === gId) : null;
+          seats.push(g ? g.name : null);
+        }
+        const unspecific = guests
+          .filter(g => assignments[g.id] === t.id && !specificIds.has(g.id))
+          .map(g => g.name);
+        return { name: t.name, shape: t.shape || "round", capacity: t.capacity, rotation: t.rotation ?? 0, seats, unspecific };
+      });
+
+      const w = window.open("", "_blank");
+      if (!w) return;
+      const safeJSON = JSON.stringify(printData).replace(/</g, "\\u003c").replace(/>/g, "\\u003e");
+
+      w.document.write(`<!DOCTYPE html><html lang="fr"><head>
+        <meta charset="UTF-8">
+        <title>Fiches tables — Florence &amp; Antoine</title>
+        <style>
+          * { margin:0; padding:0; box-sizing:border-box; }
+          body { font-family:'Helvetica Neue',Arial,sans-serif; background:#fff; color:#222; }
+          .page {
+            width:210mm; min-height:270mm; padding:16mm 20mm;
+            display:flex; flex-direction:column; align-items:center;
+            page-break-after:always;
+          }
+          .page:last-child { page-break-after:auto; }
+          .kicker { font-size:.68rem; color:#ccc; letter-spacing:.1em; text-transform:uppercase; margin-bottom:8px; }
+          .table-name { font-size:2.2rem; font-weight:700; color:#1a1a1a; text-align:center; margin-bottom:4px; }
+          .table-meta { font-size:.82rem; color:#aaa; margin-bottom:10px; }
+          canvas { display:block; }
+          hr { width:60%; border:none; border-top:1px solid #eee; margin:16px 0; }
+          .recap-title { font-size:.65rem; text-transform:uppercase; letter-spacing:.08em; color:#bbb; align-self:flex-start; margin-left:max(0px,calc(50% - 160px)); margin-bottom:8px; }
+          .recap { width:100%; max-width:320px; }
+          .recap-item { display:flex; gap:10px; align-items:baseline; padding:5px 0; border-bottom:1px dotted #f0f0f0; font-size:.88rem; }
+          .recap-item:last-child { border-bottom:none; }
+          .seat-num { font-size:.7rem; color:#ccc; width:20px; text-align:right; flex-shrink:0; }
+          @media print { body { -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
+        </style>
+      </head><body><script>
+        const DATA = ${safeJSON};
+        const SX = { round:{rx:25,ry:25}, rect:{rx:30,ry:13}, square:{rx:15,ry:15}, oval:{rx:30,ry:15} };
+        const SHAPE_LABELS = { round:"Ronde", rect:"Rectangulaire", square:"Carrée", oval:"Ovale" };
+
+        function drawTableCanvas(canvas, td) {
+          const W = canvas.width, H = canvas.height;
+          const cx = W/2, cy = H/2;
+          const ctx = canvas.getContext("2d");
+          const S = 3.0;
+          const shape = td.shape;
+          const dims = SX[shape] || SX.round;
+          const rx = dims.rx * S, ry = dims.ry * S;
+          const n = td.capacity;
+          const rot = (td.rotation ?? 0) * Math.PI / 180;
+          const fontSize = n > 16 ? 7 : n > 12 ? 8 : 9;
+
+          // map seat index → name (fill unspecific into empty slots)
+          const guestAtSeat = Array(n).fill(null);
+          td.seats.forEach((name, i) => { if (name) guestAtSeat[i] = name; });
+          let uIdx = 0;
+          for (let i = 0; i < n && uIdx < td.unspecific.length; i++) {
+            if (!guestAtSeat[i]) guestAtSeat[i] = td.unspecific[uIdx++];
+          }
+
+          // chair geometry
+          const CHAIR_GAP = 6 * S;
+          const MARGIN = Math.min(14 * S, rx * 0.18);
+          const outerRx = rx + CHAIR_GAP, outerRy = ry + CHAIR_GAP;
+          const refPerim = (shape === "rect" || shape === "square")
+            ? 2 * (outerRx * 2 + outerRy * 2)
+            : 2 * Math.PI * Math.sqrt((outerRx**2 + outerRy**2) / 2);
+          const CHAIR_R = Math.max(5, Math.min(12, refPerim / n / 2 - 2));
+
+          // compute raw positions (no rotation)
+          const seatPos = [];
+          if (shape === "round") {
+            for (let i = 0; i < n; i++) {
+              const angle = (2 * Math.PI * i) / n - Math.PI / 2;
+              const dist = rx + CHAIR_GAP + CHAIR_R;
+              seatPos.push({ px: cx + dist * Math.cos(angle), py: cy + dist * Math.sin(angle), r: CHAIR_R, outAngle: angle });
+            }
+          } else if (shape === "oval") {
+            for (let i = 0; i < n; i++) {
+              const angle = (2 * Math.PI * i) / n - Math.PI / 2;
+              const ex = rx * Math.cos(angle), ey = ry * Math.sin(angle);
+              const nx = ex/(rx*rx), ny = ey/(ry*ry);
+              const len = Math.sqrt(nx*nx + ny*ny);
+              seatPos.push({ px: cx + ex + (nx/len)*(CHAIR_GAP+CHAIR_R), py: cy + ey + (ny/len)*(CHAIR_GAP+CHAIR_R), r: CHAIR_R, outAngle: Math.atan2(ey, ex) });
+            }
+          } else if (shape === "rect") {
+            const nTop = Math.ceil(n/2), nBot = n - nTop;
+            for (let j = 0; j < nTop; j++) {
+              const frac = nTop > 1 ? j/(nTop-1) : 0.5;
+              seatPos.push({ px: cx - rx + MARGIN + frac*(rx*2-2*MARGIN), py: cy - ry - CHAIR_GAP - CHAIR_R, r: CHAIR_R, outAngle: -Math.PI/2 });
+            }
+            for (let j = 0; j < nBot; j++) {
+              const frac = nBot > 1 ? j/(nBot-1) : 0.5;
+              seatPos.push({ px: cx - rx + MARGIN + frac*(rx*2-2*MARGIN), py: cy + ry + CHAIR_GAP + CHAIR_R, r: CHAIR_R, outAngle: Math.PI/2 });
+            }
+          } else {
+            const base = Math.floor(n/4), rem = n%4;
+            const sides = [base+(rem>0?1:0), base+(rem>1?1:0), base+(rem>2?1:0), base];
+            for (let side = 0; side < 4; side++) {
+              const ns = sides[side];
+              for (let j = 0; j < ns; j++) {
+                const frac = ns > 1 ? j/(ns-1) : 0.5;
+                let px, py, outAngle;
+                switch (side) {
+                  case 0: px=cx-rx+MARGIN+frac*(rx*2-2*MARGIN); py=cy-ry-CHAIR_GAP-CHAIR_R; outAngle=-Math.PI/2; break;
+                  case 1: px=cx+rx+CHAIR_GAP+CHAIR_R; py=cy-ry+MARGIN+frac*(ry*2-2*MARGIN); outAngle=0; break;
+                  case 2: px=cx+rx-MARGIN-frac*(rx*2-2*MARGIN); py=cy+ry+CHAIR_GAP+CHAIR_R; outAngle=Math.PI/2; break;
+                  case 3: px=cx-rx-CHAIR_GAP-CHAIR_R; py=cy+ry-MARGIN-frac*(ry*2-2*MARGIN); outAngle=Math.PI; break;
+                }
+                seatPos.push({ px, py, r: CHAIR_R, outAngle });
+              }
+            }
+          }
+
+          // apply table rotation to all seat positions
+          if (rot !== 0) {
+            const cos = Math.cos(rot), sin = Math.sin(rot);
+            seatPos.forEach(sp => {
+              const dx = sp.px - cx, dy = sp.py - cy;
+              sp.px = cx + dx*cos - dy*sin;
+              sp.py = cy + dx*sin + dy*cos;
+              sp.outAngle += rot;
+            });
+          }
+
+          // draw table shape
+          ctx.save();
+          ctx.translate(cx, cy);
+          ctx.rotate(rot);
+          ctx.beginPath();
+          if (shape === "round") ctx.arc(0, 0, rx, 0, Math.PI*2);
+          else if (shape === "oval") ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI*2);
+          else if (shape === "rect") ctx.rect(-rx, -ry, rx*2, ry*2);
+          else { if (ctx.roundRect) ctx.roundRect(-rx,-ry,rx*2,ry*2,8); else ctx.rect(-rx,-ry,rx*2,ry*2); }
+          ctx.fillStyle = "#fdf6f0";
+          ctx.fill();
+          ctx.strokeStyle = "#c8a488";
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          // table label inside
+          ctx.rotate(-rot);
+          ctx.textAlign = "center"; ctx.textBaseline = "middle";
+          ctx.fillStyle = "#8a6048";
+          const maxChars = Math.max(4, Math.floor(rx / (S*3)));
+          const shortName = td.name.length > maxChars ? td.name.slice(0, maxChars-1)+"…" : td.name;
+          ctx.font = "bold " + Math.max(10, Math.min(15, Math.floor(rx/5))) + "px 'Helvetica Neue',Arial,sans-serif";
+          ctx.fillText(shortName, 0, 0);
+          ctx.restore();
+
+          // draw chairs + names
+          seatPos.forEach(({px, py, r, outAngle}, i) => {
+            const name = guestAtSeat[i];
+            const isOcc = name != null;
+            ctx.save();
+            // chair circle
+            ctx.beginPath();
+            ctx.arc(px, py, r, 0, Math.PI*2);
+            ctx.fillStyle = isOcc ? "#e8c49a" : "#f0ece5";
+            ctx.fill();
+            ctx.strokeStyle = "#b89070";
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+            // seat number
+            ctx.textAlign = "center"; ctx.textBaseline = "middle";
+            ctx.fillStyle = isOcc ? "#5a3010" : "#bbb";
+            ctx.font = "bold " + Math.max(5, Math.floor(r*0.85)) + "px 'Helvetica Neue',Arial,sans-serif";
+            ctx.fillText(String(i+1), px, py);
+            // name radiating outward
+            if (name) {
+              const lbl = name.length > 18 ? name.slice(0, 17)+"." : name;
+              ctx.translate(px, py);
+              ctx.font = fontSize + "px 'Helvetica Neue',Arial,sans-serif";
+              ctx.fillStyle = "#2a1a10";
+              ctx.textBaseline = "middle";
+              if (Math.cos(outAngle) >= 0) {
+                ctx.rotate(outAngle); ctx.textAlign = "left";
+                ctx.fillText(lbl, r+4, 0);
+              } else {
+                ctx.rotate(outAngle + Math.PI); ctx.textAlign = "right";
+                ctx.fillText(lbl, -(r+4), 0);
+              }
+            }
+            ctx.restore();
+          });
+        }
+
+        function buildPage(td) {
+          const page = document.createElement("div");
+          page.className = "page";
+
+          const kicker = document.createElement("p");
+          kicker.className = "kicker";
+          kicker.textContent = "Florence & Antoine · Mise en place";
+          page.appendChild(kicker);
+
+          const h1 = document.createElement("h1");
+          h1.className = "table-name";
+          h1.textContent = td.name;
+          page.appendChild(h1);
+
+          const meta = document.createElement("p");
+          meta.className = "table-meta";
+          const assigned = td.seats.filter(Boolean).length + td.unspecific.length;
+          meta.textContent = (SHAPE_LABELS[td.shape]||td.shape) + " · " + assigned + " / " + td.capacity + " places";
+          page.appendChild(meta);
+
+          const canvas = document.createElement("canvas");
+          canvas.width = 440; canvas.height = 440;
+          page.appendChild(canvas);
+          drawTableCanvas(canvas, td);
+
+          const hr = document.createElement("hr");
+          page.appendChild(hr);
+
+          const recapTitle = document.createElement("p");
+          recapTitle.className = "recap-title";
+          recapTitle.textContent = "Invités";
+          page.appendChild(recapTitle);
+
+          const recap = document.createElement("div");
+          recap.className = "recap";
+
+          // seats with index first, then unspecific
+          const allItems = [];
+          td.seats.forEach((name, i) => { if (name) allItems.push({ num: i+1, name }); });
+          td.unspecific.forEach(name => allItems.push({ num: null, name }));
+
+          allItems.forEach(({ num, name }) => {
+            const item = document.createElement("div");
+            item.className = "recap-item";
+            const numEl = document.createElement("span");
+            numEl.className = "seat-num";
+            numEl.textContent = num != null ? num : "—";
+            const nameEl = document.createElement("span");
+            nameEl.textContent = name;
+            item.appendChild(numEl);
+            item.appendChild(nameEl);
+            recap.appendChild(item);
+          });
+          page.appendChild(recap);
+          return page;
+        }
+
+        DATA.forEach(td => document.body.appendChild(buildPage(td)));
+        window.addEventListener("load", () => setTimeout(() => window.print(), 400));
+      <\/script></body></html>`);
+      w.document.close();
+    });
+
     document.getElementById("btnPrintRoom")?.addEventListener("click", () => {
       // Capture le canvas au zoom minimum (salle entière visible)
       const savedZoom = roomZoom, savedPanX = roomPanX, savedPanY = roomPanY;
@@ -1372,8 +1915,27 @@
       const unspecific = tableGuests.filter(g => !specificGuestIds.has(g.id));
       let uIdx = 0;
 
+      const adjacent = findAdjacentTable(table.id);
       const unassigned = guests.filter(g => !assignments[g.id]);
-      let html = `<div class="tms-seats-list">`;
+      let html = "";
+
+      if (adjacent) {
+        html += `<div class="tms-merge-row">
+          <button id="tmsMergeBtn" class="tms-merge-btn" data-other="${adjacent.table.id}">
+            ⊞ Fusionner avec « ${adjacent.table.name} »
+          </button>
+        </div>`;
+      }
+
+      if (table._splitInfo) {
+        html += `<div class="tms-merge-row">
+          <button id="tmsSplitBtn" class="tms-split-btn">
+            ✂ Scinder en « ${table._splitInfo.leftName} » + « ${table._splitInfo.rightName} »
+          </button>
+        </div>`;
+      }
+
+      html += `<div class="tms-seats-list">`;
 
       for (let i = 0; i < table.capacity; i++) {
         const key    = `${table.id}:${i}`;
@@ -1439,6 +2001,17 @@
           <button class="tms-rot-reset" title="Remettre à 0°">↺</button>
         </div>`;
 
+      const emptySeats = table.capacity - tableGuests.length;
+      if (emptySeats > 0) {
+        html += `<div class="tms-section">Sièges</div>
+          <div class="tms-trim-row">
+            <button id="tmsTrimSeats" type="button" class="tms-trim-btn">
+              Ajuster à l'effectif
+              <span class="tms-trim-hint">${emptySeats} siège${emptySeats > 1 ? "s" : ""} vide${emptySeats > 1 ? "s" : ""} supprimé${emptySeats > 1 ? "s" : ""}</span>
+            </button>
+          </div>`;
+      }
+
       tableManageContent.innerHTML = html;
 
       tableManageContent.querySelectorAll(".tms-remove").forEach(btn => {
@@ -1490,6 +2063,19 @@
         table.rotation = 0;
         saveTables(); renderRoom(); renderTableManagePanel();
       });
+
+      document.getElementById("tmsMergeBtn")?.addEventListener("click", (e) => {
+        const otherId = e.currentTarget.dataset.other;
+        mergeTables(table.id, otherId);
+      });
+
+      document.getElementById("tmsSplitBtn")?.addEventListener("click", () => {
+        splitTable(table.id);
+      });
+
+      document.getElementById("tmsTrimSeats")?.addEventListener("click", () => {
+        trimEmptySeats(table.id);
+      });
     }
 
     // ── Zoom ──────────────────────────────────────────────────
@@ -1535,6 +2121,121 @@
       showSeatNums = !showSeatNums;
       this.classList.toggle("is-active", showSeatNums);
       renderRoom();
+    });
+
+    // ── Dispositions prédéfinies ──────────────────────────────
+    const btnLayout  = document.getElementById("btnLayout");
+    const layoutMenu = document.getElementById("layoutMenu");
+
+    btnLayout.addEventListener("click", (e) => {
+      e.stopPropagation();
+      layoutMenu.classList.toggle("is-hidden");
+    });
+    document.addEventListener("click", () => layoutMenu.classList.add("is-hidden"));
+
+    function applyLayout(type) {
+      if (!tables.length) return;
+      const n   = tables.length;
+      const RH  = getRoomWorldH();
+      const PAD = ROOM_PAD + 10;
+
+      // Zone utile à l'intérieur de la salle (sans la scène, sans DJ coin)
+      const areaX = ROOM_WORLD_X + PAD;
+      const areaY = ROOM_WORLD_Y + PAD;
+      const areaW = ROOM_WORLD_W - PAD * 2;
+      const areaH = RH - PAD * 2;
+
+      // Espacement minimal entre tables (rayon max + marge)
+      const spX = 80, spY = 90;
+
+      const positions = [];
+
+      if (type === "grid") {
+        const cols = Math.ceil(Math.sqrt(n * areaW / areaH));
+        const rows = Math.ceil(n / cols);
+        const stepX = areaW / cols;
+        const stepY = areaH / rows;
+        for (let i = 0; i < n; i++) {
+          const col = i % cols;
+          const row = Math.floor(i / cols);
+          positions.push({
+            x: areaX + stepX * col + stepX / 2,
+            y: areaY + stepY * row + stepY / 2,
+          });
+        }
+
+      } else if (type === "quinconce") {
+        const cols = Math.ceil(Math.sqrt(n * areaW / areaH));
+        const rows = Math.ceil(n / cols);
+        const stepX = areaW / cols;
+        const stepY = areaH / rows;
+        for (let i = 0; i < n; i++) {
+          const col = i % cols;
+          const row = Math.floor(i / cols);
+          const offset = (row % 2 === 1) ? stepX / 2 : 0;
+          positions.push({
+            x: areaX + stepX * col + stepX / 2 + offset,
+            y: areaY + stepY * row + stepY / 2,
+          });
+        }
+
+      } else if (type === "u") {
+        // Répartition : haut, bas, gauche (en remplissant dans cet ordre)
+        const cols    = Math.max(2, Math.ceil(areaW / spX));
+        const sideRows = Math.max(1, Math.ceil(areaH / spY) - 2);
+        const topBot  = cols;
+        const left    = sideRows;
+        let slots = [];
+        const stepX = areaW / (cols - 1 || 1);
+        const stepY = areaH / (sideRows + 1);
+        // Rangée haute
+        for (let c = 0; c < cols; c++)
+          slots.push({ x: areaX + stepX * c, y: areaY });
+        // Rangée basse
+        for (let c = 0; c < cols; c++)
+          slots.push({ x: areaX + stepX * c, y: areaY + areaH });
+        // Côté gauche (sans coins)
+        for (let r = 1; r <= sideRows; r++)
+          slots.push({ x: areaX, y: areaY + stepY * r });
+        // Si encore des tables, côté droit
+        for (let r = 1; r <= sideRows; r++)
+          slots.push({ x: areaX + areaW, y: areaY + stepY * r });
+        for (let i = 0; i < n; i++)
+          positions.push(slots[i] ?? slots[slots.length - 1]);
+
+      } else if (type === "banquet") {
+        // Longues rangées horizontales, tables bien espacées
+        const cols = Math.ceil(areaW / spX);
+        const rows = Math.ceil(n / cols);
+        const stepX = areaW / (cols - 1 || 1);
+        const stepY = rows > 1 ? areaH / (rows - 1) : areaH / 2;
+        for (let i = 0; i < n; i++) {
+          const col = i % cols;
+          const row = Math.floor(i / cols);
+          positions.push({
+            x: areaX + stepX * col,
+            y: areaY + (rows > 1 ? stepY * row : areaH / 2),
+          });
+        }
+      }
+
+      const label = { grid: "Grille", quinconce: "Quinconce", u: "En U", banquet: "Banquet" }[type];
+      if (!confirm(`Appliquer la disposition "${label}" aux ${n} tables ?\nLes positions actuelles seront réinitialisées.`)) return;
+
+      tables.forEach((t, i) => {
+        t.x = Math.round(positions[i].x);
+        t.y = Math.round(positions[i].y);
+      });
+      saveTables();
+      renderRoom();
+    }
+
+    document.querySelectorAll(".layout-menu-item").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        layoutMenu.classList.add("is-hidden");
+        applyLayout(btn.dataset.layout);
+      });
     });
 
     // ── Drag canvas ───────────────────────────────────────────
@@ -1629,10 +2330,11 @@
         roomDragMoved = true;
         const pos  = getRoomPos(e);
         const { wx, wy } = screenToWorld(pos.x, pos.y);
-        const dims = SHAPE_DIMS[roomDragTable.shape || "round"] || SHAPE_DIMS.round;
+        const dims = getTableDims(roomDragTable);
         const RH   = getRoomWorldH();
-        roomDragTable.x = Math.max(ROOM_WORLD_X + dims.rx + ROOM_PAD, Math.min(ROOM_WORLD_X + ROOM_WORLD_W - dims.rx - ROOM_PAD, snapVal(wx - roomDragOffX)));
-        roomDragTable.y = Math.max(ROOM_WORLD_Y + dims.ry + ROOM_PAD, Math.min(ROOM_WORLD_Y + RH - dims.ry - ROOM_PAD, snapVal(wy - roomDragOffY)));
+        const snapped = snapToOtherTables(snapVal(wx - roomDragOffX), snapVal(wy - roomDragOffY), dims, roomDragTable.id);
+        roomDragTable.x = Math.max(ROOM_WORLD_X + dims.rx + ROOM_PAD, Math.min(ROOM_WORLD_X + ROOM_WORLD_W - dims.rx - ROOM_PAD, snapped.x));
+        roomDragTable.y = Math.max(ROOM_WORLD_Y + dims.ry + ROOM_PAD, Math.min(ROOM_WORLD_Y + RH - dims.ry - ROOM_PAD, snapped.y));
         renderRoom();
       } else if (roomIsPanning) {
         const rect   = roomCanvas.getBoundingClientRect();
@@ -1698,10 +2400,11 @@
       roomDragMoved = true;
       const pos  = getRoomPosTouch(e);
       const { wx, wy } = screenToWorld(pos.x, pos.y);
-      const dims = SHAPE_DIMS[roomDragTable.shape || "round"] || SHAPE_DIMS.round;
+      const dims = getTableDims(roomDragTable);
       const RH   = getRoomWorldH();
-      roomDragTable.x = Math.max(ROOM_WORLD_X + dims.rx + ROOM_PAD, Math.min(ROOM_WORLD_X + ROOM_WORLD_W - dims.rx - ROOM_PAD, wx - roomDragOffX));
-      roomDragTable.y = Math.max(ROOM_WORLD_Y + dims.ry + ROOM_PAD, Math.min(ROOM_WORLD_Y + RH - dims.ry - ROOM_PAD, wy - roomDragOffY));
+      const snappedT = snapToOtherTables(wx - roomDragOffX, wy - roomDragOffY, dims, roomDragTable.id);
+      roomDragTable.x = Math.max(ROOM_WORLD_X + dims.rx + ROOM_PAD, Math.min(ROOM_WORLD_X + ROOM_WORLD_W - dims.rx - ROOM_PAD, snappedT.x));
+      roomDragTable.y = Math.max(ROOM_WORLD_Y + dims.ry + ROOM_PAD, Math.min(ROOM_WORLD_Y + RH - dims.ry - ROOM_PAD, snappedT.y));
       renderRoom();
     }, { passive: false });
 
