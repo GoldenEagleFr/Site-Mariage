@@ -1,3 +1,14 @@
 __pycache__/
 *.py[cod]
 data.tmp
+
+# Données personnelles des invités — ne jamais committer
+data.json
+data.backup.json
+
+# Fichier financier
+budget_mariage.xlsx
+
+# Environnement et secrets
+.env
+*.env
