@@ -1010,7 +1010,7 @@ class PlannerHandler(SimpleHTTPRequestHandler):
             return
 
         # Bloquer l'accès direct aux fichiers sensibles sans auth admin
-        BLOCKED_PATHS = {"/data.json", "/data.backup.json", "/budget_mariage.xlsx", "/plan_table.html"}
+        BLOCKED_PATHS = {"/data.json", "/data.backup.json", "/budget_mariage.xlsx"}
         if path in BLOCKED_PATHS:
             if not self._is_admin_authorized():
                 self.send_error(HTTPStatus.FORBIDDEN, "Accès refusé")
