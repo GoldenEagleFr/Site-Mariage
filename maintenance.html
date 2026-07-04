@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maintenance — Florence &amp; Antoine</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💍</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #faf9f7;
+      --card-bg:  #ffffff;
+      --ink:      #2c2320;
+      --ink-soft: #7a6a5a;
+      --accent:   #e00a26;
+      --border:   rgba(0,0,0,0.08);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg:       #1a1612;
+        --card-bg:  #242018;
+        --ink:      #f0e8e0;
+        --ink-soft: #9a8a7a;
+        --border:   rgba(255,255,255,0.08);
+      }
+    }
+
+    body {
+      font-family: 'Manrope', sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1.5rem;
+      text-align: center;
+    }
+
+    .maintenance-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 3rem 2.5rem;
+      max-width: 480px;
+      width: 100%;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.07);
+    }
+
+    .maintenance-emoji {
+      font-size: 3.5rem;
+      margin-bottom: 1.2rem;
+      display: block;
+      animation: pulse 2.4s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50%       { transform: scale(1.08); }
+    }
+
+    h1 {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: 0.8rem;
+      line-height: 1.2;
+    }
+
+    .subtitle {
+      font-size: 1rem;
+      color: var(--ink-soft);
+      line-height: 1.6;
+      max-width: 360px;
+      margin: 0 auto;
+    }
+
+    .divider {
+      width: 48px;
+      height: 3px;
+      background: var(--accent);
+      border-radius: 3px;
+      margin: 1.5rem auto;
+      opacity: 0.6;
+    }
+
+    .kicker {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.6rem;
+    }
+
+    @media (max-width: 480px) {
+      .maintenance-card { padding: 2rem 1.25rem; }
+      h1 { font-size: 1.6rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="maintenance-card">
+    <span class="maintenance-emoji">💍</span>
+    <p class="kicker">Florence &amp; Antoine — 17 avril 2027</p>
+    <h1>Nous revenons bientôt</h1>
+    <div class="divider"></div>
+    <p class="subtitle">Le site est en cours de mise à jour. Revenez dans quelques instants.</p>
+  </div>
+</body>
+</html>

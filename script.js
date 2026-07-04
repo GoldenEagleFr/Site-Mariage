@@ -106,6 +106,10 @@ const metricBudgetDue = document.getElementById("metricBudgetDue");
 const metricBudgetDueSub = document.getElementById("metricBudgetDueSub");
 const metricTasks = document.getElementById("metricTasks");
 const metricRsvp = document.getElementById("metricRsvp");
+const metricRsvpBreakdown = document.getElementById("metricRsvpBreakdown");
+const metricRsvpBreakdownPct = document.getElementById("metricRsvpBreakdownPct");
+const metricAllergies = document.getElementById("metricAllergies");
+const metricHebergements = document.getElementById("metricHebergements");
 const syncStatus = document.getElementById("syncStatus");
 const budgetChartCanvas = document.getElementById("budgetChartCanvas");
 const budgetChartLegend = document.getElementById("budgetChartLegend");
@@ -467,6 +471,7 @@ function bindAdminEvents() {
 
   bindAdminTabs();
   bindMetricCardNavigation();
+  bindDownloadBackup();
 }
 
 function bindBudgetChartResize() {
@@ -502,6 +507,7 @@ function bindAdminTabs() {
         return;
       }
       setActiveAdminTab(tabId);
+      if (tabId === "traiteur") renderTraiteur();
     });
   }
 
@@ -755,6 +761,7 @@ function refresh(options = {}) {
   renderUpcomingPayments();
   renderRsvpChart();
   renderBudgetBarChart();
+  renderTraiteur();
 
   if (persist) {
     schedulePersist();
@@ -1539,6 +1546,39 @@ function renderMetrics() {
   if (metricRsvp) {
     metricRsvp.textContent = `${rsvpPercent}%`;
   }
+
+  // Répartition statut invités
+  const allGuests = state.guests.filter((g) => !g.isHost);
+  const confirmedCount = allGuests.filter((g) => g.status === "yes").length;
+  const declinedCount  = allGuests.filter((g) => g.status === "no").length;
+  const pendingCount   = allGuests.filter((g) => g.status === "pending").length;
+  const total = allGuests.length;
+  if (metricRsvpBreakdown) {
+    metricRsvpBreakdown.textContent = `${confirmedCount} / ${declinedCount} / ${pendingCount}`;
+  }
+  if (metricRsvpBreakdownPct && total > 0) {
+    const cp = Math.round((confirmedCount / total) * 100);
+    const dp = Math.round((declinedCount  / total) * 100);
+    const pp = Math.round((pendingCount   / total) * 100);
+    metricRsvpBreakdownPct.textContent = `${cp}% oui — ${dp}% non — ${pp}% en attente`;
+  }
+
+  // Allergies / régimes
+  const allergyCount = allGuests.filter((g) => g.status === "yes" && g.allergies?.trim()).length;
+  if (metricAllergies) {
+    metricAllergies.textContent = String(allergyCount);
+  }
+
+  // Hébergements
+  const hebergCount = allGuests.filter((g) => g.status === "yes" && g.hebergement).length;
+  if (metricHebergements) {
+    metricHebergements.textContent = String(hebergCount);
+  }
+
+  // Rendu traiteur si tab actif
+  if (activeAdminTab === "traiteur") {
+    renderTraiteur();
+  }
 }
 
 function clearPrivateUi() {
@@ -1627,6 +1667,24 @@ function clearPrivateUi() {
   if (metricRsvp) {
     metricRsvp.textContent = "0%";
   }
+  if (metricRsvpBreakdown) {
+    metricRsvpBreakdown.textContent = "0 / 0 / 0";
+  }
+  if (metricRsvpBreakdownPct) {
+    metricRsvpBreakdownPct.textContent = "";
+  }
+  if (metricAllergies) {
+    metricAllergies.textContent = "0";
+  }
+  if (metricHebergements) {
+    metricHebergements.textContent = "0";
+  }
+  const traiteurBody = document.getElementById("traiteurTableBody");
+  if (traiteurBody) {
+    traiteurBody.innerHTML = '<tr><td colspan="4" style="padding:12px;color:var(--ink-soft,#888);font-style:italic;">Aucune allergie renseignée.</td></tr>';
+  }
+  const traiteurSummary = document.getElementById("traiteurSummary");
+  if (traiteurSummary) traiteurSummary.textContent = "";
   renderBudgetChart();
 }
 
@@ -2565,6 +2623,90 @@ function renderBudgetBarChart() {
   ctx.moveTo(padL, padT + chartH);
   ctx.lineTo(padL + chartW, padT + chartH);
   ctx.stroke();
+}
+
+// ── Vue Traiteur — allergies et régimes ──────────────────────────
+function renderTraiteur() {
+  const tbody   = document.getElementById("traiteurTableBody");
+  const summary = document.getElementById("traiteurSummary");
+  if (!tbody) return;
+
+  const STATUS_LABEL = { yes: "Confirmé ✓", no: "Décliné", pending: "En attente" };
+
+  const withAllergy = state.guests.filter(
+    (g) => !g.isHost && g.allergies?.trim()
+  );
+
+  // Résumé des allergies par mot-clé
+  const keywords = ["végétarien", "vegan", "sans gluten", "sans lactose", "sans porc", "halal", "casher", "noix", "arachide", "shellfish"];
+  if (summary) {
+    const counts = {};
+    for (const g of withAllergy) {
+      const low = (g.allergies || "").toLowerCase();
+      for (const kw of keywords) {
+        if (low.includes(kw)) {
+          counts[kw] = (counts[kw] || 0) + 1;
+        }
+      }
+    }
+    const top = Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .map(([k, n]) => `${k} (${n})`)
+      .join(" — ");
+    summary.textContent = withAllergy.length
+      ? `${withAllergy.length} invité(s) avec allergie/régime${top ? " — " + top : ""}`
+      : "Aucune allergie renseignée.";
+  }
+
+  if (!withAllergy.length) {
+    tbody.innerHTML = '<tr><td colspan="4" style="padding:12px;color:var(--ink-soft,#888);font-style:italic;">Aucune allergie renseignée.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = withAllergy.map((g) => {
+    const statusLabel = STATUS_LABEL[g.status] || "En attente";
+    const statusColor = g.status === "yes" ? "color:#1a6e3a" : g.status === "no" ? "color:#9b1c1c" : "";
+    const heberg = g.hebergement ? "🏨 Oui" : "Non";
+    return `<tr>
+      <td style="padding:6px 10px;border-bottom:1px solid var(--border,#e5e5e5);">${g.name}</td>
+      <td style="padding:6px 10px;border-bottom:1px solid var(--border,#e5e5e5);">🥗 ${g.allergies}</td>
+      <td style="padding:6px 10px;border-bottom:1px solid var(--border,#e5e5e5);${statusColor}">${statusLabel}</td>
+      <td style="padding:6px 10px;border-bottom:1px solid var(--border,#e5e5e5);">${heberg}</td>
+    </tr>`;
+  }).join("");
+}
+
+// ── Téléchargement sauvegarde JSON ───────────────────────────────
+function bindDownloadBackup() {
+  const btn = document.getElementById("btnDownloadBackup");
+  if (!btn) return;
+  btn.addEventListener("click", async () => {
+    if (!isAdminUnlocked || !adminToken) return;
+    try {
+      const res = await fetch(SERVER_ENDPOINT, {
+        cache: "no-store",
+        headers: { "X-Admin-Key": adminToken },
+      });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const data = await res.json();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement("a");
+      const now  = new Date();
+      const stamp = now.getFullYear().toString()
+        + String(now.getMonth() + 1).padStart(2, "0")
+        + String(now.getDate()).padStart(2, "0")
+        + "_"
+        + String(now.getHours()).padStart(2, "0")
+        + String(now.getMinutes()).padStart(2, "0");
+      a.href     = url;
+      a.download = `data.backup.${stamp}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      alert("Impossible de télécharger la sauvegarde : " + err.message);
+    }
+  });
 }
 
 void init();

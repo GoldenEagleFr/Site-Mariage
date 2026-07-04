@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import email.mime.multipart
+import email.mime.text
 import json
 import os
+import smtplib
 import threading
 import time
 from collections import defaultdict
@@ -19,13 +22,101 @@ from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 BASE_DIR = Path(__file__).resolve().parent
 DATA_FILE = BASE_DIR / "data.json"
 BACKUP_FILE = BASE_DIR / "data.backup.json"
+BACKUPS_DIR = BASE_DIR / "backups"
 BUDGET_EXCEL_FILE = BASE_DIR / "budget_mariage.xlsx"
 DATA_LOCK = threading.Lock()
 ADMIN_PASSWORD = ""
 DEFAULT_ADMIN_PASSWORD = "mariage2026"
+_BACKUP_TIMER: threading.Timer | None = None
+BACKUP_INTERVAL_SECONDS = 6 * 3600  # 6 heures
+BACKUP_MAX_COUNT = 10
+MAINTENANCE_FILE = BASE_DIR / "maintenance.html"
 
 _RATE_LIMIT: defaultdict = defaultdict(list)
 _RATE_LIMIT_LOCK = threading.Lock()
+
+
+# ── Backup périodique ───────────────────────────────────────────
+
+def run_periodic_backup() -> None:
+    """Copie data.json dans backups/ et supprime les anciens backups."""
+    global _BACKUP_TIMER
+    try:
+        if DATA_FILE.exists():
+            BACKUPS_DIR.mkdir(parents=True, exist_ok=True)
+            stamp = datetime.now().strftime("%Y%m%d_%H%M")
+            dest = BACKUPS_DIR / f"data.backup.{stamp}.json"
+            dest.write_bytes(DATA_FILE.read_bytes())
+            # Garder max BACKUP_MAX_COUNT fichiers (les plus récents)
+            existing = sorted(BACKUPS_DIR.glob("data.backup.*.json"), key=lambda p: p.name)
+            for old in existing[:-BACKUP_MAX_COUNT]:
+                try:
+                    old.unlink()
+                except OSError:
+                    pass
+    except OSError as exc:
+        print(f"Avertissement backup : {exc}", flush=True)
+    finally:
+        # Replanifier
+        _BACKUP_TIMER = threading.Timer(BACKUP_INTERVAL_SECONDS, run_periodic_backup)
+        _BACKUP_TIMER.daemon = True
+        _BACKUP_TIMER.start()
+
+
+def start_backup_scheduler() -> None:
+    global _BACKUP_TIMER
+    _BACKUP_TIMER = threading.Timer(BACKUP_INTERVAL_SECONDS, run_periodic_backup)
+    _BACKUP_TIMER.daemon = True
+    _BACKUP_TIMER.start()
+    print(f"Backup automatique activé (toutes les {BACKUP_INTERVAL_SECONDS // 3600}h, max {BACKUP_MAX_COUNT} fichiers)", flush=True)
+
+
+# ── Notification email RSVP ────────────────────────────────────
+
+def send_rsvp_notification(guest: dict) -> None:
+    """Envoie un email de notification aux mariés après un RSVP. Si les variables
+    d'environnement ne sont pas définies, la fonction retourne silencieusement."""
+    smtp_host = os.getenv("MARIAGE_SMTP_HOST", "").strip()
+    smtp_user = os.getenv("MARIAGE_SMTP_USER", "").strip()
+    smtp_pass = os.getenv("MARIAGE_SMTP_PASSWORD", "").strip()
+    notify_email = os.getenv("MARIAGE_NOTIFY_EMAIL", "").strip()
+    if not all([smtp_host, smtp_user, smtp_pass, notify_email]):
+        return
+
+    smtp_port = int(os.getenv("MARIAGE_SMTP_PORT", "587"))
+    name      = guest.get("name", "Inconnu")
+    status    = "Oui" if guest.get("status") == "yes" else "Non"
+    allergies = guest.get("allergies", "") or "—"
+    heberg    = "Oui" if guest.get("hebergement") else "Non"
+
+    subject = f"RSVP reçu — {name}"
+    body = (
+        f"Nouveau RSVP reçu\n\n"
+        f"Invité   : {name}\n"
+        f"Réponse  : {status}\n"
+        f"Allergies : {allergies}\n"
+        f"Hébergement : {heberg}\n"
+    )
+
+    msg = email.mime.multipart.MIMEMultipart()
+    msg["From"]    = smtp_user
+    msg["To"]      = notify_email
+    msg["Subject"] = subject
+    msg.attach(email.mime.text.MIMEText(body, "plain", "utf-8"))
+
+    def _send() -> None:
+        try:
+            with smtplib.SMTP(smtp_host, smtp_port, timeout=10) as server:
+                server.ehlo()
+                server.starttls()
+                server.login(smtp_user, smtp_pass)
+                server.sendmail(smtp_user, notify_email, msg.as_string())
+        except Exception as exc:
+            print(f"Avertissement email RSVP : {exc}", flush=True)
+
+    t = threading.Thread(target=_send, daemon=True)
+    t.start()
+
 
 _404_PAGE = """\
 <!doctype html>
@@ -942,10 +1033,34 @@ class PlannerHandler(SimpleHTTPRequestHandler):
                 return str(guest.get("name", "")).strip()
         return ""
 
+    def _is_maintenance_mode(self) -> bool:
+        return os.getenv("MARIAGE_MAINTENANCE", "").strip() == "1"
+
     def do_GET(self) -> None:
         parsed = urlparse(self.path)
         path = parsed.path
         query = parse_qs(parsed.query)
+
+        # ── Mode maintenance ─────────────────────────────────────────
+        if self._is_maintenance_mode() and path != "/api/admin/check" and not self._is_admin_authorized():
+            if MAINTENANCE_FILE.exists():
+                body = MAINTENANCE_FILE.read_bytes()
+                self.send_response(HTTPStatus.SERVICE_UNAVAILABLE)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Cache-Control", "no-store")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+            else:
+                self._send_html(
+                    "<!doctype html><html lang='fr'><head><meta charset='UTF-8'><title>Maintenance</title></head>"
+                    "<body style='font-family:sans-serif;text-align:center;padding:4rem;'>"
+                    "<p style='font-size:3rem;'>💍</p><h1>Nous revenons bientôt</h1>"
+                    "<p>Le site est en cours de mise à jour. Revenez dans quelques instants.</p>"
+                    "</body></html>",
+                    HTTPStatus.SERVICE_UNAVAILABLE,
+                )
+            return
 
         if path == "/api/admin/check":
             if not self._is_admin_authorized():
@@ -1054,6 +1169,10 @@ class PlannerHandler(SimpleHTTPRequestHandler):
                 return
             data["updatedAt"] = int(time.time() * 1000)
             save_data_file(data)
+            # Notification email asynchrone
+            submitted_guest = next((g for g in data.get("guests", []) if g["id"] == guest_id), None)
+            if submitted_guest:
+                send_rsvp_notification(submitted_guest)
             self._send_json({"ok": True})
             return
 
@@ -1097,6 +1216,7 @@ def main() -> None:
     ADMIN_PASSWORD = load_admin_password()
     data = load_data_file()
     write_budget_excel(data)
+    start_backup_scheduler()
     handler = partial(PlannerHandler, directory=str(BASE_DIR))
     host = os.environ.get("MARIAGE_HOST", "0.0.0.0")
     port = int(os.environ.get("MARIAGE_PORT", "8000"))
@@ -1104,6 +1224,8 @@ def main() -> None:
     print(f"Serveur actif sur http://{host}:{port}")
     print(f"Fichier de données: {DATA_FILE}")
     print(f"Fichier budget Excel: {BUDGET_EXCEL_FILE}")
+    if os.getenv("MARIAGE_MAINTENANCE", "").strip() == "1":
+        print("Mode maintenance ACTIVÉ (MARIAGE_MAINTENANCE=1)", flush=True)
     server.serve_forever()
 
 

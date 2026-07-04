@@ -392,9 +392,10 @@
       hide(confirmYes); hide(confirmNo);
       if (status === "yes") {
         show(confirmYes);
+        const firstName = (currentGuest?.name || "").split(" ")[0] || "Cher invité";
         confirmYesTxt.textContent = hebergement
-          ? "Votre présence est confirmée avec demande d'information hébergement. Nous avons hâte de vous retrouver !"
-          : "Votre présence est confirmée. Nous avons hâte de vous retrouver !";
+          ? `Merci ${firstName}, votre présence est confirmée avec demande d'information hébergement. On a tellement hâte de célébrer avec vous !`
+          : `Merci ${firstName}, votre présence est confirmée ! On a tellement hâte de célébrer avec vous.`;
       } else {
         show(confirmNo);
       }

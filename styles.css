@@ -970,6 +970,27 @@ body::after {
   color: rgba(255, 245, 229, 0.9);
 }
 
+/* ── Photo du couple dans le hero ── */
+.hero-photo-wrap {
+  margin: 1.2rem auto 0.6rem;
+  display: flex;
+  justify-content: center;
+}
+.hero-photo {
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.8), 0 0 0 8px rgba(224, 10, 38, 0.35);
+  display: block;
+}
+@media (max-width: 600px) {
+  .hero-photo {
+    width: 120px;
+    height: 120px;
+  }
+}
+
 .hero-ribbon {
   margin: 10px 0 6px;
   display: flex;

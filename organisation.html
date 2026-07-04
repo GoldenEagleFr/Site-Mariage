@@ -52,6 +52,7 @@
           <button id="adminTabBtnBudget" class="admin-tab" type="button" data-admin-tab="budget" role="tab" aria-selected="false" aria-controls="adminTabBudget">Budget</button>
           <button id="adminTabBtnTasks" class="admin-tab" type="button" data-admin-tab="tasks" role="tab" aria-selected="false" aria-controls="adminTabTasks">Tâches</button>
           <button id="adminTabBtnGuests" class="admin-tab" type="button" data-admin-tab="guests" role="tab" aria-selected="false" aria-controls="adminTabGuests">Invités</button>
+          <button id="adminTabBtnTraiteur" class="admin-tab" type="button" data-admin-tab="traiteur" role="tab" aria-selected="false" aria-controls="adminTabTraiteur">Traiteur</button>
         </div>
 
         <section id="adminTabDashboard" class="admin-tab-panel is-active" data-admin-tab-panel="dashboard" role="tabpanel" aria-labelledby="adminTabBtnDashboard">
@@ -87,7 +88,26 @@
               <p id="metricRsvp">0%</p>
               <span class="metric-card-arrow">→ Voir les invités</span>
             </article>
+            <article class="metric-card" data-goto-tab="guests" tabindex="0" role="button" aria-label="Aller aux invités">
+              <h2>Confirmés / Déclinés / En attente</h2>
+              <p id="metricRsvpBreakdown">0 / 0 / 0</p>
+              <span class="metric-sub" id="metricRsvpBreakdownPct"></span>
+              <span class="metric-card-arrow">→ Voir les invités</span>
+            </article>
+            <article class="metric-card" data-goto-tab="traiteur" tabindex="0" role="button" aria-label="Aller au traiteur">
+              <h2>Allergies / régimes</h2>
+              <p id="metricAllergies">0</p>
+              <span class="metric-card-arrow">→ Voir le traiteur</span>
+            </article>
+            <article class="metric-card" data-goto-tab="guests" tabindex="0" role="button" aria-label="Aller aux invités">
+              <h2>Hébergements demandés</h2>
+              <p id="metricHebergements">0</p>
+              <span class="metric-card-arrow">→ Voir les invités</span>
+            </article>
           </section>
+          <div class="list-tools-actions" style="margin-top:8px;">
+            <button id="btnDownloadBackup" type="button" class="ghost-action">💾 Télécharger sauvegarde JSON</button>
+          </div>
 
           <!-- Graphiques supplémentaires -->
           <div class="extra-charts-grid">
@@ -294,6 +314,34 @@
               <input id="guestGroupColor" type="color" value="#7c6ae6" title="Couleur" style="width:44px;height:36px;padding:2px;border-radius:6px;cursor:pointer;">
               <button type="submit">Ajouter</button>
             </form>
+          </section>
+        </section>
+
+        <section id="adminTabTraiteur" class="admin-tab-panel is-hidden" data-admin-tab-panel="traiteur" role="tabpanel" aria-labelledby="adminTabBtnTraiteur">
+          <section class="panel">
+            <div class="panel-head">
+              <p class="panel-kicker">Traiteur</p>
+              <h2>Allergies et régimes alimentaires</h2>
+            </div>
+            <div id="traiteurSummary" class="list-stats" style="margin-bottom:12px;"></div>
+            <div class="list-tools-actions" style="margin-bottom:12px;">
+              <button onclick="window.print()" class="ghost-action" type="button">🖨️ Imprimer cette liste</button>
+            </div>
+            <div id="traiteurTableWrap" style="overflow-x:auto;">
+              <table id="traiteurTable" style="width:100%;border-collapse:collapse;font-size:0.88rem;">
+                <thead>
+                  <tr>
+                    <th style="text-align:left;padding:7px 10px;background:var(--card-bg,#fff);border-bottom:2px solid var(--border,#e5e5e5);">Nom</th>
+                    <th style="text-align:left;padding:7px 10px;background:var(--card-bg,#fff);border-bottom:2px solid var(--border,#e5e5e5);">Allergie / Régime</th>
+                    <th style="text-align:left;padding:7px 10px;background:var(--card-bg,#fff);border-bottom:2px solid var(--border,#e5e5e5);">Statut RSVP</th>
+                    <th style="text-align:left;padding:7px 10px;background:var(--card-bg,#fff);border-bottom:2px solid var(--border,#e5e5e5);">Hébergement</th>
+                  </tr>
+                </thead>
+                <tbody id="traiteurTableBody">
+                  <tr><td colspan="4" style="padding:12px;color:var(--ink-soft,#888);font-style:italic;">Aucune allergie renseignée.</td></tr>
+                </tbody>
+              </table>
+            </div>
           </section>
         </section>
 

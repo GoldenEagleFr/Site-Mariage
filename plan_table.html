@@ -43,7 +43,8 @@
       <div id="adminContent" class="is-hidden">
         <div class="private-tools-head">
           <p id="syncStatus" class="sync-note"></p>
-          <div style="display:flex;gap:8px;align-items:center;">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <button id="exportPdfBtn" type="button" class="cta cta-secondary" style="font-size:0.8rem;padding:6px 14px;">📄 Télécharger PDF</button>
             <button onclick="window.print()" class="cta cta-secondary" style="font-size:0.8rem;padding:6px 14px;">🖨️ Imprimer</button>
             <button id="adminLogout" type="button" class="cta cta-secondary">Déconnexion</button>
           </div>
@@ -2618,6 +2619,15 @@
       }
       await unlock(saved);
     })();
+
+    // ── Bouton Télécharger PDF ─────────────────────────────────────
+    const exportPdfBtn = document.getElementById("exportPdfBtn");
+    if (exportPdfBtn) {
+      exportPdfBtn.addEventListener("click", () => {
+        if (currentView !== "list") switchView("list");
+        setTimeout(() => window.print(), 150);
+      });
+    }
   })();
   </script>
 </body>
