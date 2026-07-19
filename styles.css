@@ -4672,6 +4672,35 @@ body.dark-mode .guest-host-status { color: #6fcf97; }
 }
 
 /* ── Domaine section ───────────────────────────────────────── */
+.domaine-gallery {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 1.25rem 0;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.domaine-gallery img {
+  width: 100%;
+  aspect-ratio: 4/3;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.3s ease;
+}
+
+.domaine-gallery img:hover { transform: scale(1.03); }
+
+.domaine-gallery img:first-child {
+  grid-column: span 2;
+  aspect-ratio: 16/9;
+}
+
+@media (max-width: 600px) {
+  .domaine-gallery { grid-template-columns: repeat(2, 1fr); }
+  .domaine-gallery img:first-child { grid-column: span 2; }
+}
+
 .domaine-actions {
   display: flex;
   flex-wrap: wrap;
