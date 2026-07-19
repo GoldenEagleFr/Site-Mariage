@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import email.mime.multipart
 import email.mime.text
+import hashlib
 import json
 import os
 import smtplib
@@ -20,6 +21,8 @@ from openpyxl import Workbook
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 
 BASE_DIR = Path(__file__).resolve().parent
+ACCESS_CODE = ""
+ACCESS_COOKIE_NAME = "mariage_access"
 DATA_FILE = BASE_DIR / "data.json"
 BACKUP_FILE = BASE_DIR / "data.backup.json"
 BACKUPS_DIR = BASE_DIR / "backups"
@@ -156,6 +159,10 @@ DEFAULT_DATA = {
 VALID_GUEST_STATUS = {"pending", "yes", "no"}
 VALID_GUEST_GROUP_TYPE = {"single", "couple", "family"}
 VALID_GUEST_ATTENDANCE_TYPE = {"vin_repas", "vin_only"}
+
+
+def _compute_access_token(code: str) -> str:
+    return hashlib.sha256(f"mariage_v1_{code}".encode()).hexdigest()[:48]
 
 
 def normalize_guest_group_type(value: object) -> str:
@@ -353,7 +360,7 @@ def normalize_data(candidate: object) -> dict:
                     "hebergement": bool(guest.get("hebergement", False)),
                     "hebergementInfo": bool(guest.get("hebergementInfo", False)),
                     "rsvpSubmittedAt": int(guest.get("rsvpSubmittedAt", 0) or 0),
-                    "guestCategory": "child" if str(guest.get("guestCategory", "")).strip() == "child" else "adult",
+                    "guestCategory": str(guest.get("guestCategory", "")).strip() if str(guest.get("guestCategory", "")).strip() in {"adult", "teen", "child"} else "adult",
                     "musicSuggestion": str(guest.get("musicSuggestion", "")).strip(),
                     "allergies": str(guest.get("allergies", "")).strip(),
                     "otherQuestion": str(guest.get("otherQuestion", "")).strip(),
@@ -1036,10 +1043,32 @@ class PlannerHandler(SimpleHTTPRequestHandler):
     def _is_maintenance_mode(self) -> bool:
         return os.getenv("MARIAGE_MAINTENANCE", "").strip() == "1"
 
+    def _is_access_authorized(self) -> bool:
+        if not ACCESS_CODE:
+            return True
+        expected = _compute_access_token(ACCESS_CODE)
+        for part in self.headers.get("Cookie", "").split(";"):
+            name, _, value = part.strip().partition("=")
+            if name.strip() == ACCESS_COOKIE_NAME and value.strip() == expected:
+                return True
+        return False
+
     def do_GET(self) -> None:
         parsed = urlparse(self.path)
         path = parsed.path
         query = parse_qs(parsed.query)
+
+        # ── Access gate (code invités) ────────────────────────────────
+        _ACCESS_EXEMPT = {"/access.html", "/api/access"}
+        if ACCESS_CODE and path not in _ACCESS_EXEMPT and not self._is_access_authorized():
+            if path.startswith("/api/"):
+                self._send_json({"ok": False, "error": "access_required"}, HTTPStatus.FORBIDDEN)
+            else:
+                self.send_response(HTTPStatus.FOUND)
+                self.send_header("Location", "/access.html")
+                self.send_header("Cache-Control", "no-store")
+                self.end_headers()
+            return
 
         # ── Mode maintenance ─────────────────────────────────────────
         if self._is_maintenance_mode() and path != "/api/admin/check" and not self._is_admin_authorized():
@@ -1134,6 +1163,32 @@ class PlannerHandler(SimpleHTTPRequestHandler):
         super().do_GET()
 
     def do_POST(self) -> None:
+        if self.path == "/api/access":
+            content_length = int(self.headers.get("Content-Length", "0"))
+            raw_body = self.rfile.read(content_length)
+            try:
+                payload = json.loads(raw_body.decode("utf-8"))
+            except json.JSONDecodeError:
+                self.send_error(HTTPStatus.BAD_REQUEST, "Invalid JSON")
+                return
+            code = str(payload.get("code", "")).strip()
+            if ACCESS_CODE and code == ACCESS_CODE:
+                token = _compute_access_token(ACCESS_CODE)
+                body = json.dumps({"ok": True}, ensure_ascii=False).encode("utf-8")
+                self.send_response(HTTPStatus.OK)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_header("Cache-Control", "no-store")
+                self.send_header("Content-Length", str(len(body)))
+                self.send_header(
+                    "Set-Cookie",
+                    f"{ACCESS_COOKIE_NAME}={token}; Max-Age=2592000; Path=/; HttpOnly; SameSite=Strict",
+                )
+                self.end_headers()
+                self.wfile.write(body)
+            else:
+                self._send_json({"ok": False, "error": "wrong_code"}, HTTPStatus.UNAUTHORIZED)
+            return
+
         if self.path == "/api/rsvp/submit":
             if not self._check_rsvp_rate_limit():
                 self._send_json({"ok": False, "error": "rate_limit"}, HTTPStatus.TOO_MANY_REQUESTS)
@@ -1212,8 +1267,13 @@ class PlannerHandler(SimpleHTTPRequestHandler):
 
 
 def main() -> None:
-    global ADMIN_PASSWORD
+    global ADMIN_PASSWORD, ACCESS_CODE
     ADMIN_PASSWORD = load_admin_password()
+    ACCESS_CODE = os.environ.get("MARIAGE_ACCESS_CODE", "").strip()
+    if ACCESS_CODE:
+        print(f"Protection par code d'accès ACTIVÉE (MARIAGE_ACCESS_CODE défini)", flush=True)
+    else:
+        print("Protection par code d'accès désactivée (MARIAGE_ACCESS_CODE non défini)", flush=True)
     data = load_data_file()
     write_budget_excel(data)
     start_backup_scheduler()

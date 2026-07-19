@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Accès — Mariage Florence &amp; Antoine</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💍</text></svg>">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Manrope', system-ui, sans-serif;
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #faf8f5;
+      color: #1a1a1a;
+      padding: 1.5rem;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      body { background: #18171a; color: #ede9e3; }
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 1.25rem;
+      box-shadow: 0 4px 32px rgba(0,0,0,0.08);
+      padding: 2.5rem 2rem;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .card { background: #24222a; box-shadow: 0 4px 32px rgba(0,0,0,0.4); }
+    }
+
+    .icon { font-size: 2.5rem; margin-bottom: 1rem; }
+
+    h1 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-bottom: 0.4rem;
+      letter-spacing: -0.02em;
+    }
+
+    .subtitle {
+      font-size: 0.9rem;
+      color: #888;
+      margin-bottom: 2rem;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 0.85rem 1.1rem;
+      border: 1.5px solid #ddd;
+      border-radius: 0.75rem;
+      font-size: 1.1rem;
+      letter-spacing: 0.1em;
+      text-align: center;
+      outline: none;
+      background: transparent;
+      color: inherit;
+      transition: border-color 0.15s;
+    }
+
+    input[type="text"]:focus { border-color: #c9a97e; }
+
+    @media (prefers-color-scheme: dark) {
+      input[type="text"] { border-color: #444; }
+      input[type="text"]:focus { border-color: #c9a97e; }
+    }
+
+    .btn {
+      display: block;
+      width: 100%;
+      margin-top: 1rem;
+      padding: 0.85rem;
+      background: #c9a97e;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 0.75rem;
+      cursor: pointer;
+      transition: background 0.15s, opacity 0.15s;
+    }
+
+    .btn:hover:not(:disabled) { background: #b8946a; }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .error {
+      margin-top: 1rem;
+      padding: 0.7rem 1rem;
+      background: #fee2e2;
+      color: #b91c1c;
+      border-radius: 0.6rem;
+      font-size: 0.88rem;
+      display: none;
+    }
+
+    .error.visible { display: block; }
+
+    @media (prefers-color-scheme: dark) {
+      .error { background: #3b1a1a; color: #f87171; }
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">💍</div>
+    <h1>Florence &amp; Antoine</h1>
+    <p class="subtitle">Entrez le code d'accès pour accéder au site.</p>
+    <form id="accessForm" autocomplete="off">
+      <input type="text" id="codeInput" placeholder="Code d'accès" autocomplete="off" spellcheck="false" inputmode="text" autofocus>
+      <button type="submit" class="btn" id="submitBtn">Accéder</button>
+      <div class="error" id="errorMsg">Code incorrect. Veuillez réessayer.</div>
+    </form>
+  </div>
+
+  <script>
+    const form = document.getElementById('accessForm');
+    const input = document.getElementById('codeInput');
+    const btn = document.getElementById('submitBtn');
+    const errorMsg = document.getElementById('errorMsg');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const code = input.value.trim();
+      if (!code) return;
+
+      btn.disabled = true;
+      errorMsg.classList.remove('visible');
+
+      try {
+        const res = await fetch('/api/access', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code }),
+        });
+        const data = await res.json();
+        if (data.ok) {
+          window.location.replace('/');
+        } else {
+          errorMsg.classList.add('visible');
+          input.select();
+        }
+      } catch {
+        errorMsg.textContent = 'Erreur réseau. Veuillez réessayer.';
+        errorMsg.classList.add('visible');
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

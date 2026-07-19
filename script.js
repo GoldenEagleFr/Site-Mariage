@@ -333,7 +333,7 @@ function bindPlannerEvents() {
         id: createId(),
         name,
         groupType: "single",
-        guestCategory: guestCategory?.value === "child" ? "child" : "adult",
+        guestCategory: ["adult", "teen", "child"].includes(guestCategory?.value) ? guestCategory.value : "adult",
         attendanceType,
         partySize: 1,
         status: VALID_GUEST_STATUS.has(status) ? status : "pending",
@@ -1339,7 +1339,7 @@ function renderGuests() {
     const attendanceLabel = getGuestAttendanceTypeLabel(attendanceType);
     if (mode !== "all" && guest.status !== mode) return false;
     if (attendanceMode !== "all" && attendanceType !== attendanceMode) return false;
-    if (categoryMode !== "all" && (guest.guestCategory === "child" ? "child" : "adult") !== categoryMode) return false;
+    if (categoryMode !== "all" && (guest.guestCategory || "adult") !== categoryMode) return false;
     if (search && !toSearchKey(`${guest.name} ${attendanceLabel}`).includes(search)) return false;
     return true;
   });
@@ -1351,9 +1351,10 @@ function renderGuests() {
     guestStats.textContent = `${filteredGuests.length}/${state.guests.length} affichés — ${confirmed} oui — ${pending} en attente (${invites.length} invités + ${state.guests.length - invites.length} marié${state.guests.length - invites.length > 1 ? "s" : ""})`;
   }
   if (guestCategoryStats) {
-    const adults = state.guests.filter((g) => g.guestCategory !== "child").length;
+    const adults = state.guests.filter((g) => !["child", "teen"].includes(g.guestCategory)).length;
+    const teens = state.guests.filter((g) => g.guestCategory === "teen").length;
     const children = state.guests.filter((g) => g.guestCategory === "child").length;
-    guestCategoryStats.textContent = `Adultes: ${adults} — Enfants: ${children}`;
+    guestCategoryStats.textContent = `Adultes: ${adults} — Ados: ${teens} — Enfants: ${children}`;
   }
   if (guestVinStats) {
     const totalPersons = state.guests.reduce((s, g) => s + normalizeGuestPartySize(g.partySize, g.groupType), 0);
@@ -1389,7 +1390,7 @@ function renderGuests() {
     const attendanceType = normalizeGuestAttendanceType(guest.attendanceType);
     const groupMeta = node.querySelector(".guest-meta");
     if (groupMeta) {
-      const catLabel = guest.guestCategory === "child" ? "👶 Enfant" : "Adulte";
+      const catLabel = guest.guestCategory === "child" ? "👶 Enfant" : guest.guestCategory === "teen" ? "🧑 Ado" : "Adulte";
       const submittedPart = guest.rsvpSubmittedAt > 0
         ? ` — RSVP le ${new Date(guest.rsvpSubmittedAt).toLocaleDateString("fr-FR")}`
         : "";
@@ -1398,7 +1399,7 @@ function renderGuests() {
 
     const categorySelect = node.querySelector("select.inline-category");
     if (categorySelect) {
-      categorySelect.value = guest.guestCategory === "child" ? "child" : "adult";
+      categorySelect.value = ["adult", "teen", "child"].includes(guest.guestCategory) ? guest.guestCategory : "adult";
       categorySelect.addEventListener("change", () => {
         guest.guestCategory = categorySelect.value;
         refresh({ persist: false });
@@ -1971,7 +1972,7 @@ function normalizeState(candidate) {
           hebergement: Boolean(guest.hebergement),
           hebergementInfo: Boolean(guest.hebergementInfo),
           rsvpSubmittedAt: Number(guest.rsvpSubmittedAt) || 0,
-          guestCategory: guest.guestCategory === "child" ? "child" : "adult",
+          guestCategory: ["adult", "teen", "child"].includes(guest.guestCategory) ? guest.guestCategory : "adult",
           musicSuggestion: String(guest.musicSuggestion ?? "").trim(),
           allergies: String(guest.allergies ?? "").trim(),
           otherQuestion: String(guest.otherQuestion ?? "").trim(),
@@ -2297,7 +2298,7 @@ function exportGuestsCSV() {
     rows.push([
       g.name,
       statusLabel[g.status] ?? g.status,
-      g.guestCategory === "child" ? "Enfant" : "Adulte",
+      g.guestCategory === "child" ? "Enfant" : g.guestCategory === "teen" ? "Ado" : "Adulte",
       getGuestAttendanceTypeLabel(g.attendanceType),
       String(normalizeGuestPartySize(g.partySize, g.groupType)),
       g.hebergement ? "Oui" : "",

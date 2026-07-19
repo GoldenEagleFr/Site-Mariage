@@ -22,7 +22,7 @@
       <a href="index.html" class="cta cta-secondary rsvp-back-home">← Retour au site</a>
       <p class="kicker">17 avril 2027</p>
       <h1>Florence &amp; Antoine</h1>
-      <p class="rsvp-header-sub" style="margin-bottom:1.5rem;">Confirmez votre présence avant le 1er mars 2027</p>
+      <p class="rsvp-header-sub" style="margin-bottom:1.5rem;">Confirmez votre présence avant le 15 novembre 2026</p>
 
       <!-- Indicateur de progression -->
       <div class="rsvp-progress" id="rsvpProgress" aria-label="Progression du formulaire">
@@ -51,9 +51,8 @@
     <!-- ÉTAPE 1 : Recherche -->
     <section id="rsvpStepSearch" class="rsvp-card">
       <h2>Trouvez votre invitation</h2>
-      <p class="rsvp-hint">Tapez votre nom ou le nom de votre famille tel qu'il figure sur votre invitation.</p>
       <form id="rsvpSearchForm" class="rsvp-search-form" autocomplete="off">
-        <input id="rsvpSearchInput" type="text" placeholder="Votre nom…" autocomplete="off" spellcheck="false">
+        <input id="rsvpSearchInput" type="text" placeholder="NOM Prénom" autocomplete="off" spellcheck="false">
         <button type="submit" class="cta cta-primary">Rechercher</button>
       </form>
       <div id="rsvpSearchSpinner" class="rsvp-spinner is-hidden" aria-hidden="true"></div>
@@ -90,31 +89,37 @@
 
         <fieldset id="rsvpHebergementSection" class="rsvp-fieldset is-hidden">
           <legend>Hébergement sur place</legend>
-          <div class="rsvp-choice-row">
+          <p class="rsvp-hebergement-info">Le domaine propose 41 chambres pour 90 couchages répartis en différents hébergements (pods nordiques, chalets, manoir…). Comptez à partir de 35 à 50 € par personne et par nuit selon le logement. Si vous souhaitez aussi dormir la nuit du vendredi (veille du mariage), un supplément de 25 €/personne s'applique.</p>
+          <div class="rsvp-choice-row rsvp-choice-col">
             <label class="rsvp-choice">
               <input type="radio" name="rsvpHebergement" value="yes">
               <span class="rsvp-choice-icon">🏨</span>
-              <span>Je souhaite plus d'information concernant l'hébergement</span>
+              <span>Je souhaite dormir sur place pour faire la fête jusqu'au bout de la nuit.</span>
             </label>
             <label class="rsvp-choice">
               <input type="radio" name="rsvpHebergement" value="no" checked>
               <span class="rsvp-choice-icon">🚗</span>
-              <span>Non, je rentre le soir</span>
+              <span>Non, je dors ailleurs.</span>
+            </label>
+            <label class="rsvp-choice">
+              <input type="radio" name="rsvpHebergement" value="maybe">
+              <span class="rsvp-choice-icon">🤔</span>
+              <span>J'y réfléchis, je vous fais signe rapidement.</span>
             </label>
           </div>
         </fieldset>
 
         <div class="rsvp-extra-fields">
           <div class="rsvp-field">
-            <label for="rsvpMusic">Je propose une musique <span class="rsvp-field-hint">(titre et artiste)</span></label>
+            <label for="rsvpMusic">Je propose une musique <span class="rsvp-field-hint">(titre et artiste — facultatif)</span></label>
             <input type="text" id="rsvpMusic" placeholder="Ex : Bohemian Rhapsody — Queen">
           </div>
           <div class="rsvp-field">
-            <label for="rsvpAllergies">Mes allergies / régimes alimentaires</label>
+            <label for="rsvpAllergies">Allergies / régimes alimentaires <span class="rsvp-field-hint">(facultatif)</span></label>
             <input type="text" id="rsvpAllergies" placeholder="Ex : sans gluten, végétarien…">
           </div>
           <div class="rsvp-field">
-            <label for="rsvpQuestion">Une autre question ?</label>
+            <label for="rsvpQuestion">Une question ou un message ? <span class="rsvp-field-hint">(facultatif)</span></label>
             <textarea id="rsvpQuestion" rows="3" placeholder="Votre message…"></textarea>
           </div>
         </div>
@@ -291,8 +296,9 @@
       const radios = document.querySelectorAll("input[name='rsvpStatus']");
       radios.forEach(r => { r.checked = r.value === guest.status; });
 
+      const hCurrent = guest.hebergement ? "yes" : (guest.hebergementInfo ? "maybe" : "no");
       const hRadios = document.querySelectorAll("input[name='rsvpHebergement']");
-      hRadios.forEach(r => { r.checked = r.value === (guest.hebergement ? "yes" : "no"); });
+      hRadios.forEach(r => { r.checked = r.value === hCurrent; });
 
       if (musicInput)    musicInput.value    = guest.musicSuggestion || "";
       if (allergiesInput) allergiesInput.value = guest.allergies || "";
@@ -326,19 +332,22 @@
 
       const status = statusRadio.value;
       const hRadio = document.querySelector("input[name='rsvpHebergement']:checked");
-      const hebergement = status === "yes" && hRadio?.value === "yes";
+      const hebergementChoice = status === "yes" ? (hRadio?.value || "no") : "no";
+      const hebergement = hebergementChoice === "yes";
+      const hebergementInfo = hebergementChoice === "maybe";
       const musicSuggestion = (musicInput?.value ?? "").trim();
       const allergies = (allergiesInput?.value ?? "").trim();
       const otherQuestion = (questionInput?.value ?? "").trim();
 
-      pendingPayload = { id: guestIdField.value, status, hebergement, musicSuggestion, allergies, otherQuestion };
+      pendingPayload = { id: guestIdField.value, status, hebergement, hebergementInfo, musicSuggestion, allergies, otherQuestion };
 
       // Construire le récapitulatif
       const rows = [];
       rows.push({ label: "Invité", value: currentGuest.name });
       rows.push({ label: "Réponse", value: status === "yes" ? "✓ Présent(e)" : "✕ Absent(e)" });
       if (status === "yes") {
-        rows.push({ label: "Hébergement", value: hebergement ? "🏨 Souhaite des informations" : "🚗 Rentre le soir" });
+        const hLabels = { yes: "🏨 Dort sur place", no: "🚗 Rentre le soir", maybe: "🤔 À confirmer rapidement" };
+        rows.push({ label: "Hébergement", value: hLabels[hebergementChoice] || "—" });
       }
       if (musicSuggestion) rows.push({ label: "Musique", value: `🎵 ${musicSuggestion}` });
       if (allergies)       rows.push({ label: "Allergies", value: `🥗 ${allergies}` });
@@ -377,7 +386,7 @@
         if (!data.ok) throw new Error(data.error || "Erreur serveur");
 
         currentGuest = { ...currentGuest, ...pendingPayload };
-        showConfirmation(pendingPayload.status, pendingPayload.hebergement);
+        showConfirmation(pendingPayload.status, pendingPayload.hebergement, pendingPayload.hebergementInfo);
       } catch (err) {
         reviewError.textContent = `Une erreur est survenue : ${err.message}. Réessayez ou contactez-nous.`;
         show(reviewError);
@@ -388,14 +397,17 @@
     });
 
     // ── Confirmation ─────────────────────────────────────────────
-    function showConfirmation(status, hebergement) {
+    function showConfirmation(status, hebergement, hebergementInfo = false) {
       hide(confirmYes); hide(confirmNo);
       if (status === "yes") {
         show(confirmYes);
-        const firstName = (currentGuest?.name || "").split(" ")[0] || "Cher invité";
-        confirmYesTxt.textContent = hebergement
-          ? `Merci ${firstName}, votre présence est confirmée avec demande d'information hébergement. On a tellement hâte de célébrer avec vous !`
-          : `Merci ${firstName}, votre présence est confirmée ! On a tellement hâte de célébrer avec vous.`;
+        const guestName = currentGuest?.name || "Cher invité";
+        const hebergChoice = hebergement ? "yes" : (hebergementInfo ? "maybe" : "no");
+        confirmYesTxt.textContent = hebergChoice === "yes"
+          ? `Merci ${guestName}, votre présence est confirmée avec hébergement sur place. On a tellement hâte de célébrer avec vous !`
+          : hebergChoice === "maybe"
+          ? `Merci ${guestName}, votre présence est confirmée ! Revenez-nous vite pour confirmer votre hébergement.`
+          : `Merci ${guestName}, votre présence est confirmée ! On a tellement hâte de célébrer avec vous.`;
       } else {
         show(confirmNo);
       }

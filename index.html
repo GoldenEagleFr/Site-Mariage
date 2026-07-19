@@ -19,11 +19,10 @@
   <!-- Navigation sticky (apparaît après le hero) -->
   <nav class="nav-sticky" id="navSticky" aria-label="Navigation principale">
     <a href="#programme">Programme</a>
-    <a href="#infos">Infos pratiques</a>
-    <a href="#lieux">Lieux</a>
-    <a href="#faq">FAQ</a>
     <a href="#rsvp">RSVP</a>
-    <button class="dark-mode-toggle-btn" id="darkModeToggleSticky" type="button" aria-label="Basculer mode sombre">🌙 Mode sombre</button>
+    <a href="#lieux">Lieux</a>
+    <a href="#domaine">Domaine</a>
+    <a href="#faq">FAQ</a>
   </nav>
 
   <main class="app-shell">
@@ -53,12 +52,11 @@
         <span class="petal"></span>
       </div>
       <nav class="top-nav" aria-label="Navigation principale">
-        <a href="#programme">Programme</a>
-        <a href="#infos">Infos pratiques</a>
-        <a href="#lieux">Lieux</a>
-        <a href="#faq">FAQ</a>
+            <a href="#programme">Programme</a>
         <a href="#rsvp">RSVP</a>
-        <button class="dark-mode-toggle-btn" id="darkModeToggleHero" type="button" aria-label="Basculer mode sombre">🌙 Mode sombre</button>
+        <a href="#lieux">Lieux</a>
+        <a href="#domaine">Domaine</a>
+        <a href="#faq">FAQ</a>
       </nav>
       <div class="hero-content">
         <p class="kicker">17 avril 2027</p>
@@ -89,35 +87,13 @@
           </div>
           <p id="countdownNote" class="countdown-note" aria-live="polite"></p>
         </section>
-        <div class="hero-ribbon" aria-label="Points forts">
-          <span>Mairie puis église de Gisors</span>
-          <span>Horaires en cours de définition</span>
-          <span>Réception aux Domaines de Gaston</span>
-        </div>
+
         <div class="hero-actions">
           <a class="cta cta-primary" href="#rsvp">Confirmer ma présence</a>
           <a class="cta cta-secondary" href="#programme">Voir le programme</a>
         </div>
       </div>
 
-      <section class="story-grid">
-        <article class="story-card" id="histoire">
-          <p class="panel-kicker">Notre histoire</p>
-          <h2>Une évidence, puis un grand oui</h2>
-          <p>Tout a commencé autour d'un café, puis de longues balades et beaucoup de projets partagés. Aujourd'hui, nous avons la joie de célébrer ce nouveau chapitre avec vous.</p>
-        </article>
-
-        <article class="story-card" id="infos">
-          <p class="panel-kicker">Infos pratiques</p>
-          <h2>Lieux et horaires (en cours)</h2>
-          <ul class="mini-list">
-            <li><strong>Cérémonies :</strong> mairie puis église de Gisors</li>
-            <li><strong>Horaires :</strong> tous les horaires restent à définir.</li>
-            <li><strong>Domaine :</strong> Les Domaines de Gaston, Les Andelys</li>
-            <li><strong>Infos pratiques :</strong> parking et navettes à préciser.</li>
-          </ul>
-        </article>
-      </section>
 
       <div class="sakura-layer sakura-front" aria-hidden="true">
         <span class="petal"></span>
@@ -137,39 +113,39 @@
     <section class="section-card" id="programme" data-reveal>
       <div class="section-head">
         <p class="panel-kicker">Programme</p>
-        <h2>Le déroulé de la journée (horaires à définir)</h2>
+        <h2>Le déroulé de la journée</h2>
       </div>
       <ol class="timeline">
         <li>
           <span class="timeline-icon">⚖️</span>
-          <span class="time">À définir</span>
+          <span class="time">14h00</span>
           <div>
-            <h3>Passage en mairie</h3>
-            <p>Cérémonie civile à la mairie de Gisors.</p>
+            <h3>Cérémonie civile</h3>
+            <p>Mairie de Gisors — merci d'arriver 15 min à l'avance.</p>
           </div>
         </li>
         <li>
           <span class="timeline-icon">⛪</span>
-          <span class="time">À définir</span>
+          <span class="time">14h30</span>
           <div>
             <h3>Cérémonie religieuse</h3>
-            <p>Célébration à l'église de Gisors.</p>
+            <p>Église de Gisors.</p>
           </div>
         </li>
         <li>
           <span class="timeline-icon">🏰</span>
-          <span class="time">À définir</span>
+          <span class="time">16h30</span>
           <div>
-            <h3>Arrivée au domaine</h3>
-            <p>Accueil aux Domaines de Gaston, aux Andelys.</p>
+            <h3>Arrivée aux Domaines de Gaston</h3>
+            <p>Accueil et vin d'honneur aux Domaines de Gaston, Les Andelys.</p>
           </div>
         </li>
         <li>
           <span class="timeline-icon">🥂</span>
-          <span class="time">À définir</span>
+          <span class="time">En soirée</span>
           <div>
-            <h3>Vin d'honneur, cocktail et repas</h3>
-            <p>Accueil et festivités aux Domaines de Gaston (détails à préciser).</p>
+            <h3>Dîner et soirée</h3>
+            <p>Repas, musique et festivités — la fête continue jusqu'au bout de la nuit !</p>
           </div>
         </li>
       </ol>
@@ -178,36 +154,18 @@
     <section class="section-card rsvp-card" id="rsvp" data-reveal>
       <div class="section-head">
         <p class="panel-kicker">RSVP</p>
-        <h2>Merci de confirmer avant le 1er mars 2027</h2>
+        <h2>Merci de confirmer avant le 15 novembre 2026</h2>
       </div>
       <p>Confirmez votre présence en ligne ou contactez-nous directement.</p>
-      <div id="rsvpCounterBar" class="rsvp-counter-bar is-hidden" aria-live="polite">
-        <span id="rsvpCounterLabel" class="rsvp-counter-label"></span>
-        <div class="rsvp-progress-track">
-          <div id="rsvpProgressFill" class="rsvp-progress-fill"></div>
-        </div>
-      </div>
       <div class="rsvp-actions">
         <a class="cta cta-primary" href="rsvp.html">Confirmer ma présence</a>
-        <a class="cta cta-secondary" href="mailto:florence.antoine.mariage@gmail.com">Écrire par email</a>
       </div>
     </section>
 
-    <section class="section-card save-the-date-card" data-reveal>
-      <div class="section-head">
-        <p class="panel-kicker">Save the Date</p>
-        <h2>Partagez la date</h2>
-      </div>
-      <p>Scannez ce QR code pour enregistrer la date dans votre agenda ou partager l'invitation.</p>
-      <div class="save-the-date-qr">
-        <img src="assets/qrcode/qr.jpg" alt="QR code Save the Date — Florence et Antoine, 17 avril 2027" class="qr-image" width="560" height="560" loading="lazy" decoding="async">
-      </div>
-    </section>
 
     <section class="section-card" id="lieux" data-reveal>
       <div class="section-head">
-        <p class="panel-kicker">Lieux</p>
-        <h2>Nous retrouver</h2>
+        <h2>Lieux</h2>
       </div>
       <p>Cliquez sur « Afficher la carte » puis sur le lien pour ouvrir l'itinéraire dans Google Maps.</p>
       <div class="maps-grid">
@@ -248,6 +206,20 @@
       </div>
     </section>
 
+    <section class="section-card" id="domaine" data-reveal>
+      <div class="section-head">
+        <p class="panel-kicker">Le lieu de réception</p>
+        <h2>Les Domaines de Gaston</h2>
+      </div>
+      <p>Notre réception se déroulera dans un cadre exceptionnel : les Domaines de Gaston, un lieu atypique au cœur de la nature normande, situé aux Andelys — à deux pas de la Seine et à 1h15 de Paris.</p>
+      <p>Sur 3,5 hectares entièrement privatisés, le domaine mêle avec charme espaces anciens, modernes et nordiques : manoir du 19e siècle, pods nordiques sur pilotis, chalets en bois, maison d'architecte… Un seul endroit, mille ambiances.</p>
+      <p>Le domaine propose 90 couchages pour ceux qui souhaitent prolonger la fête et dormir sur place. Toutes les infos dans le formulaire RSVP.</p>
+      <div class="domaine-actions">
+        <a href="https://lesdomainesdegaston.com/" target="_blank" rel="noopener" class="cta cta-secondary">Découvrir le domaine ↗</a>
+        <a class="cta cta-primary" href="#rsvp">Confirmer ma présence</a>
+      </div>
+    </section>
+
     <section class="section-card" id="faq" data-reveal>
       <div class="section-head">
         <p class="panel-kicker">FAQ</p>
@@ -257,27 +229,18 @@
 
         <details class="faq-item">
           <summary>👗 Quel est le dress code ?</summary>
-          <p>Tenue de cérémonie recommandée — costume ou robe habillée. Nous vous demandons d'éviter le blanc et le noir strict pour laisser la place aux mariés. Choisissez des couleurs gaies, on adore ça !</p>
+          <p>Tenue de cérémonie recommandée — costume ou robe habillée. Nous vous demandons d'éviter le blanc pour laisser la place aux mariés. Choisissez des couleurs gaies, on adore ça ! Voici un rappel de notre palette de couleurs :</p>
+          <p class="faq-palette-note"><em>(Palette à venir — restez connectés !)</em></p>
         </details>
 
         <details class="faq-item">
           <summary>👶 Peut-on venir avec ses enfants ?</summary>
-          <p>Les enfants sont les bienvenus ! Merci de bien les indiquer dans votre réponse RSVP afin qu'on puisse prévoir le nombre de couverts et, si possible, une animation pour les petits.</p>
+          <p>Les enfants sont les bienvenus ! Merci de bien les indiquer dans votre réponse RSVP afin qu'on puisse prévoir le nombre de couverts.</p>
         </details>
 
         <details class="faq-item">
           <summary>🅿️ Y a-t-il un parking sur place ?</summary>
-          <p>Oui, des parkings sont disponibles à chaque étape : un parking à l'église de Gisors, un parking à la mairie de Gisors, et plusieurs parkings sur le domaine des Domaines de Gaston. Les détails pratiques (emplacements précis, capacités) seront communiqués avant le mariage.</p>
-        </details>
-
-        <details class="faq-item">
-          <summary>🎁 Comment offrir un cadeau ?</summary>
-          <p>Votre présence est déjà le plus beau des cadeaux ! Si vous souhaitez nous faire plaisir, une participation à notre voyage de noces sera très appréciée. Une liste sera partagée prochainement.</p>
-        </details>
-
-        <details class="faq-item">
-          <summary>🌿 Y a-t-il des options végétariennes / allergies ?</summary>
-          <p>Le menu est le même pour tous les convives. Si vous avez une allergie ou un régime végétarien, merci de l'indiquer dans votre formulaire RSVP : le traiteur peut préparer un plat adapté, mais uniquement pour un nombre limité de personnes. Plus nous sommes prévenus tôt, mieux nous pouvons nous organiser.</p>
+          <p>Oui, des parkings sont disponibles à chaque étape : à la mairie de Gisors, à l'église de Gisors, et aux Domaines de Gaston. Les détails pratiques seront communiqués avant le mariage.</p>
         </details>
 
       </div>
@@ -303,25 +266,7 @@
       });
     });
 
-    // ── Compteur confirmations RSVP ────────────────────────────────
-    (async () => {
-      try {
-        const res = await fetch("/api/stats", { cache: "no-store" });
-        if (!res.ok) return;
-        const { total, confirmed, confirmedPersons } = await res.json();
-        if (!total) return;
-        const pct = Math.round((confirmed / total) * 100);
-        const bar   = document.getElementById("rsvpCounterBar");
-        const label = document.getElementById("rsvpCounterLabel");
-        const fill  = document.getElementById("rsvpProgressFill");
-        if (bar && label && fill) {
-          const persLabel = confirmedPersons ? ` (${confirmedPersons} pers.)` : "";
-          label.textContent = `${confirmed} confirmation${confirmed > 1 ? "s" : ""} reçue${confirmed > 1 ? "s" : ""}${persLabel} sur ${total} invitations`;
-          fill.style.width = pct + "%";
-          bar.classList.remove("is-hidden");
-        }
-      } catch { /* serveur indisponible ou hors-ligne */ }
-    })();
+
   </script>
 </body>
 </html>
