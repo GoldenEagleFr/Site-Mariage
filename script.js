@@ -778,6 +778,13 @@ function schedulePersist() {
   }, 1000);
 }
 
+function persistNow() {
+  if (_persistDebounceTimer) { clearTimeout(_persistDebounceTimer); _persistDebounceTimer = 0; }
+  persistQueued = true;
+  _hasUnsavedChanges = true;
+  if (!persistInProgress) void flushPersistQueue();
+}
+
 async function flushPersistQueue() {
   persistInProgress = true;
   while (persistQueued) {
@@ -906,7 +913,8 @@ function renderBudget() {
         if (item.solde && item.amountTotal > 0) {
           item.amountPaid = item.amountTotal;
         }
-        refresh();
+        refresh({ persist: false });
+        persistNow();
       });
     }
 
@@ -1393,7 +1401,8 @@ function renderGuests() {
       categorySelect.value = guest.guestCategory === "child" ? "child" : "adult";
       categorySelect.addEventListener("change", () => {
         guest.guestCategory = categorySelect.value;
-        refresh();
+        refresh({ persist: false });
+        persistNow();
       });
     }
 
@@ -1402,7 +1411,8 @@ function renderGuests() {
       hebergCheck.checked = Boolean(guest.hebergement);
       hebergCheck.addEventListener("change", () => {
         guest.hebergement = hebergCheck.checked;
-        refresh();
+        refresh({ persist: false });
+        persistNow();
       });
     }
 
