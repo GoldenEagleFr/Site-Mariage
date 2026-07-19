@@ -4708,10 +4708,23 @@ body.dark-mode .guest-host-status { color: #6fcf97; }
   margin-top: 1.5rem;
 }
 
-/* ── FAQ palette note ──────────────────────────────────────── */
-.faq-palette-note {
-  margin-top: 0.5rem;
-  font-size: 0.88rem;
-  color: var(--ink-soft, #888);
-  font-style: italic;
+/* ── FAQ palette ───────────────────────────────────────────── */
+.faq-palette {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 0.75rem;
 }
+
+.palette-swatch {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: inline-block;
+  border: 2px solid rgba(74, 11, 20, 0.12);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  transition: transform 0.2s ease;
+  cursor: default;
+}
+
+.palette-swatch:hover { transform: scale(1.2); }
