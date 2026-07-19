@@ -351,6 +351,63 @@ function bindPlannerEvents() {
     });
   }
 
+  // ── CSV import ────────────────────────────────────────────
+  const importCsvBtn  = document.getElementById("importCsvBtn");
+  const csvFileInput  = document.getElementById("csvFileInput");
+
+  if (importCsvBtn && csvFileInput) {
+    importCsvBtn.addEventListener("click", () => csvFileInput.click());
+
+    csvFileInput.addEventListener("change", () => {
+      const file = csvFileInput.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        if (!isAdminUnlocked) return;
+        const text = e.target.result || "";
+        const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+        let added = 0;
+        for (const line of lines) {
+          // Support: "Prénom Nom", "Prénom Nom;adulte;oui", "Prénom Nom,adult,yes"
+          const cols = line.split(/[,;]/).map(c => c.trim());
+          const name = cols[0];
+          if (!name || name.toLowerCase() === "nom" || name.toLowerCase() === "name") continue;
+          const rawCat = (cols[1] || "").toLowerCase();
+          const catMap = { enfant: "child", child: "child", kid: "child", ado: "teen", teen: "teen", adolescent: "teen" };
+          const guestCategory = catMap[rawCat] || "adult";
+          const rawStatus = (cols[2] || "").toLowerCase();
+          const statusMap = { oui: "yes", yes: "yes", non: "no", no: "no" };
+          const status = statusMap[rawStatus] || "pending";
+          state.guests.push({
+            id: createId(),
+            name,
+            groupType: "single",
+            guestCategory,
+            attendanceType: "vin_repas",
+            partySize: 1,
+            status,
+            rsvpToken: createGuestToken(),
+            hebergement: false,
+            hebergementInfo: false,
+            rsvpSubmittedAt: 0,
+            musicSuggestion: "",
+            allergies: "",
+            otherQuestion: "",
+          });
+          added++;
+        }
+        csvFileInput.value = "";
+        if (added > 0) {
+          refresh();
+          alert(`${added} invité(s) importé(s) avec succès.`);
+        } else {
+          alert("Aucun invité trouvé dans le fichier.");
+        }
+      };
+      reader.readAsText(file, "UTF-8");
+    });
+  }
+
   if (guestSearch) {
     guestSearch.addEventListener("input", () => {
       renderGuests();

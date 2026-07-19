@@ -96,6 +96,22 @@
                 </div>
                 <div id="constraintList" class="constraint-list"></div>
               </div>
+
+              <div class="panel">
+                <div class="panel-head">
+                  <p class="panel-kicker">Liaisons</p>
+                  <h2>Toujours ensemble</h2>
+                </div>
+                <p style="font-size:0.83rem;color:var(--ink-soft);margin:0 0 10px;">
+                  Un avertissement ⚠️ apparaîtra si deux invités liés sont placés à des tables différentes.
+                </p>
+                <div class="constraint-form">
+                  <select id="pairGuest1"><option value="">— Invité 1 —</option></select>
+                  <select id="pairGuest2"><option value="">— Invité 2 —</option></select>
+                  <button id="addPairBtn" type="button">Lier</button>
+                </div>
+                <div id="pairList" class="constraint-list"></div>
+              </div>
             </div>
 
             <div class="panel">
@@ -186,6 +202,10 @@
           </div>
 
           <div class="room-canvas-wrapper">
+            <div id="guestDragSidebar" class="guest-drag-sidebar">
+              <div class="guest-drag-header">🪑 À placer <span id="guestDragCount" class="guest-drag-count"></span></div>
+              <div id="guestDragList" class="guest-drag-list"></div>
+            </div>
             <div class="room-canvas-container">
               <canvas id="roomCanvas"></canvas>
             </div>
@@ -220,12 +240,16 @@
     let tables      = [];
     let assignments = {};
     let constraints = [];
+    let pairs       = [];
     let seatMap     = {};   // { "tableId:seatIdx": guestId }
     let roomConfig  = { widthM: 22.5, heightM: 16, elements: [] };
     let showNames    = false;
     let showSeatNums = true;
     let snapToGrid   = false;
     let highlightGuestId = null;
+    let dragGuestId      = null;
+    let dragHoverChair   = null;   // { tableId, seatIdx }
+    let selectedGuestId  = null;   // click-to-place
     let guestGroups  = [];
     let roomZoom  = 1.0;
     let roomPanX  = 0, roomPanY = 0;
@@ -280,6 +304,7 @@
         if (Array.isArray(data.tables))                               tables      = data.tables;
         if (data.assignments && typeof data.assignments === "object") assignments = data.assignments;
         if (Array.isArray(data.constraints))                          constraints = data.constraints;
+        if (Array.isArray(data.pairs))                                pairs       = data.pairs;
         if (data.seatMap && typeof data.seatMap === "object")         seatMap     = data.seatMap;
         if (data.roomConfig && typeof data.roomConfig === "object")   roomConfig  = { ...roomConfig, ...data.roomConfig };
         if (!Array.isArray(roomConfig.elements)) roomConfig.elements = [];
@@ -290,7 +315,7 @@
     function saveTables() {
       const cleanTables = tables.map(({ _drag, ...rest }) => rest);
       localStorage.setItem(TABLE_STORAGE_KEY, JSON.stringify({
-        tables: cleanTables, assignments, constraints, seatMap, roomConfig
+        tables: cleanTables, assignments, constraints, pairs, seatMap, roomConfig
       }));
     }
 
@@ -431,6 +456,7 @@
         initTablePositions();
         renderRoom();
         renderRoomConfig();
+        renderGuestDragSidebar();
       }
     }
 
@@ -783,7 +809,8 @@
       renderGuests();
       renderStats();
       renderConstraints();
-      if (currentView === "room") renderRoom();
+      renderPairs();
+      if (currentView === "room") { renderRoom(); renderGuestDragSidebar(); }
     }
 
     function renderStats() {
@@ -791,8 +818,10 @@
       const placed   = guests.filter(g => assignments[g.id]).length;
       const unplaced = total - placed;
       const allViolations = tables.reduce((acc, t) => acc + getTableViolations(t.id).length, 0);
+      const pairViols     = getPairViolations().length;
       tableStats.innerHTML = `${total} invités confirmés — ${placed} placés — ${unplaced} à placer — ${tables.length} table(s)` +
-        (allViolations ? ` — <span style="color:#b91c1c;">⚠️ ${allViolations} conflit(s)</span>` : "");
+        (allViolations ? ` — <span style="color:#b91c1c;">⚠️ ${allViolations} conflit(s)</span>` : "") +
+        (pairViols ? ` — <span style="color:#b91c1c;">💑 ${pairViols} séparé(s)</span>` : "");
     }
 
     function renderTables() {
@@ -1124,6 +1153,141 @@
       return pos;
     }
 
+    // ── Nearest chair helper ──────────────────────────────────
+    function findNearestChair(wx, wy) {
+      let best = null, bestDist = globalChairR * 3;
+      for (const table of tables) {
+        if (table.x == null) continue;
+        const positions = computeSeatPositions(table);
+        for (let i = 0; i < positions.length; i++) {
+          const { cx, cy } = positions[i];
+          const d = Math.hypot(cx - wx, cy - wy);
+          if (d < bestDist) { bestDist = d; best = { tableId: table.id, seatIdx: i }; }
+        }
+      }
+      return best;
+    }
+
+    function assignGuestToChair(guestId, tableId, seatIdx) {
+      for (const k of Object.keys(seatMap)) {
+        if (seatMap[k] === guestId) delete seatMap[k];
+      }
+      delete assignments[guestId];
+      assignments[guestId] = tableId;
+      seatMap[`${tableId}:${seatIdx}`] = guestId;
+      saveTables();
+      render();
+      renderGuestDragSidebar();
+    }
+
+    // ── Paires "ensemble" ─────────────────────────────────────
+    const pairGuest1El  = document.getElementById("pairGuest1");
+    const pairGuest2El  = document.getElementById("pairGuest2");
+    const addPairBtn    = document.getElementById("addPairBtn");
+    const pairListEl    = document.getElementById("pairList");
+
+    addPairBtn?.addEventListener("click", () => {
+      const g1 = pairGuest1El.value, g2 = pairGuest2El.value;
+      if (!g1 || !g2 || g1 === g2) return;
+      const exists = pairs.some(p =>
+        (p.guest1Id === g1 && p.guest2Id === g2) ||
+        (p.guest1Id === g2 && p.guest2Id === g1)
+      );
+      if (!exists) { pairs.push({ id: createId(), guest1Id: g1, guest2Id: g2 }); saveTables(); render(); }
+    });
+
+    function removePair(pId) { pairs = pairs.filter(p => p.id !== pId); saveTables(); render(); }
+
+    function getPairViolations() {
+      return pairs.filter(p => {
+        const t1 = assignments[p.guest1Id], t2 = assignments[p.guest2Id];
+        return t1 && t2 && t1 !== t2;
+      });
+    }
+
+    function renderPairs() {
+      if (!pairGuest1El || !pairListEl) return;
+      const makeOpts = (sel) => {
+        const cur = sel.value;
+        sel.innerHTML = `<option value="">— Invité —</option>` +
+          guests.map(g => `<option value="${g.id}" ${g.id === cur ? "selected" : ""}>${g.name}</option>`).join("");
+      };
+      makeOpts(pairGuest1El); makeOpts(pairGuest2El);
+      pairListEl.innerHTML = "";
+      if (!pairs.length) {
+        pairListEl.innerHTML = '<p style="font-size:0.82rem;color:var(--ink-soft);font-style:italic;">Aucune liaison.</p>';
+        return;
+      }
+      for (const p of pairs) {
+        const g1 = guests.find(g => g.id === p.guest1Id);
+        const g2 = guests.find(g => g.id === p.guest2Id);
+        if (!g1 || !g2) continue;
+        const isViol = getPairViolations().some(v => v === p);
+        const item = document.createElement("div");
+        item.className = "constraint-item";
+        item.innerHTML = `<span>${isViol ? "⚠️ " : "💑 "}<strong>${g1.name}</strong> + <strong>${g2.name}</strong></span>
+          <button data-pid="${p.id}" title="Supprimer">×</button>`;
+        item.querySelector("button").addEventListener("click", () => removePair(p.id));
+        pairListEl.appendChild(item);
+      }
+    }
+
+    // ── Sidebar drag invités ──────────────────────────────────
+    function renderGuestDragSidebar() {
+      const sidebar = document.getElementById("guestDragSidebar");
+      const list    = document.getElementById("guestDragList");
+      const countEl = document.getElementById("guestDragCount");
+      if (!sidebar || !list) return;
+
+      const unplaced = guests.filter(g => !assignments[g.id]);
+      const placed   = guests.filter(g => assignments[g.id]);
+      if (countEl) countEl.textContent = unplaced.length ? `(${unplaced.length})` : "";
+
+      list.innerHTML = "";
+
+      for (const guest of unplaced) {
+        const item = document.createElement("div");
+        item.className = "guest-drag-item" + (guest.id === selectedGuestId ? " is-selected" : "");
+        item.draggable = true;
+        item.textContent = guest.name;
+        item.dataset.gid = guest.id;
+        item.title = "Glisser sur une chaise ou cliquer pour sélectionner";
+        item.addEventListener("dragstart", (e) => {
+          dragGuestId = guest.id; selectedGuestId = null;
+          e.dataTransfer.setData("text/plain", guest.id);
+          e.dataTransfer.effectAllowed = "move";
+          item.classList.add("dragging");
+          renderRoom();
+        });
+        item.addEventListener("dragend", () => {
+          dragGuestId = null; dragHoverChair = null;
+          item.classList.remove("dragging");
+          renderRoom();
+        });
+        item.addEventListener("click", () => {
+          selectedGuestId = selectedGuestId === guest.id ? null : guest.id;
+          renderGuestDragSidebar(); renderRoom();
+        });
+        list.appendChild(item);
+      }
+
+      if (placed.length) {
+        const sep = document.createElement("div");
+        sep.className = "guest-drag-section";
+        sep.textContent = `✓ ${placed.length} placé${placed.length > 1 ? "s" : ""}`;
+        list.appendChild(sep);
+        for (const guest of placed) {
+          const tName = tables.find(t => t.id === assignments[guest.id])?.name || "?";
+          const item = document.createElement("div");
+          item.className = "guest-drag-item is-placed";
+          item.textContent = guest.name;
+          item.title = `→ ${tName} — Cliquer pour retirer`;
+          item.addEventListener("click", () => { removeGuestFromTable(guest.id); renderGuestDragSidebar(); });
+          list.appendChild(item);
+        }
+      }
+    }
+
     // ── Dessin des chaises ────────────────────────────────────
     function drawChairs(ctx, table, isDark) {
       const x = table.x ?? 100;
@@ -1165,6 +1329,15 @@
           ctx.arc(cx, cy, r + 5, 0, Math.PI * 2);
           ctx.strokeStyle = "#e00a26";
           ctx.lineWidth = 2.5;
+          ctx.stroke();
+        }
+
+        // Halo cible drag-and-drop
+        if (dragHoverChair && dragHoverChair.tableId === table.id && dragHoverChair.seatIdx === i) {
+          ctx.beginPath();
+          ctx.arc(cx, cy, r + 5, 0, Math.PI * 2);
+          ctx.strokeStyle = "#22c55e";
+          ctx.lineWidth = 3;
           ctx.stroke();
         }
 
@@ -2261,6 +2434,15 @@
       const pos = getRoomPos(e);
       const { wx, wy } = screenToWorld(pos.x, pos.y);
 
+      // Mode click-to-place (invité sélectionné dans la sidebar)
+      if (selectedGuestId) {
+        const chair = findNearestChair(wx, wy);
+        if (chair) assignGuestToChair(selectedGuestId, chair.tableId, chair.seatIdx);
+        selectedGuestId = null;
+        renderGuestDragSidebar(); renderRoom();
+        return;
+      }
+
       // Poignée de redimensionnement (priorité sur le drag)
       for (const el of [...roomConfig.elements].reverse()) {
         if (isPointOnElemResizeHandle(wx, wy, el)) {
@@ -2420,6 +2602,31 @@
     });
 
     window.addEventListener("resize", () => { if (currentView === "room") renderRoom(); });
+
+    // ── Drag invités → canvas ─────────────────────────────────
+    roomCanvas.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      if (!dragGuestId && !selectedGuestId) return;
+      const pos = getRoomPos(e);
+      const { wx, wy } = screenToWorld(pos.x, pos.y);
+      dragHoverChair = findNearestChair(wx, wy);
+      renderRoom();
+    });
+
+    roomCanvas.addEventListener("dragleave", () => {
+      dragHoverChair = null;
+      renderRoom();
+    });
+
+    roomCanvas.addEventListener("drop", (e) => {
+      e.preventDefault();
+      const gId = e.dataTransfer.getData("text/plain") || dragGuestId;
+      if (gId && dragHoverChair) {
+        assignGuestToChair(gId, dragHoverChair.tableId, dragHoverChair.seatIdx);
+      }
+      dragHoverChair = null; dragGuestId = null;
+      renderRoom();
+    });
 
     // ── Snap to grid ─────────────────────────────────────────
     document.getElementById("btnSnapGrid")?.addEventListener("click", function () {

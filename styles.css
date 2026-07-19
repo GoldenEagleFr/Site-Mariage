@@ -4124,6 +4124,9 @@ body.dark-mode .table-violation-warning {
    ═══════════════════════════════════════════════════════════ */
 .room-canvas-wrapper {
   position: relative;
+  display: flex;
+  gap: 0;
+  align-items: flex-start;
 }
 .table-manage-panel {
   position: absolute;
@@ -4713,3 +4716,123 @@ body.dark-mode .guest-host-status { color: #6fcf97; }
 }
 
 .palette-swatch:hover { transform: scale(1.2); }
+
+/* ═══════════════════════════════════════════════════════════
+   GUEST DRAG SIDEBAR (plan de table — vue salle)
+   ═══════════════════════════════════════════════════════════ */
+.guest-drag-sidebar {
+  width: 180px;
+  flex-shrink: 0;
+  background: var(--card, #fff);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  max-height: 600px;
+  display: flex;
+  flex-direction: column;
+  margin-right: 8px;
+}
+.guest-drag-header {
+  padding: 8px 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--ink);
+  background: var(--bg-cream, #fff3f2);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.guest-drag-count {
+  background: var(--rose);
+  color: #fff;
+  border-radius: 999px;
+  padding: 1px 7px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+.guest-drag-list {
+  overflow-y: auto;
+  flex: 1;
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.guest-drag-section {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--ink-soft);
+  padding: 4px 4px 2px;
+  margin-top: 4px;
+}
+.guest-drag-item {
+  padding: 5px 8px;
+  border-radius: 7px;
+  font-size: 0.78rem;
+  cursor: grab;
+  user-select: none;
+  border: 1px solid transparent;
+  transition: background .12s, border-color .12s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.guest-drag-item:not(.is-placed):not(.is-selected) {
+  background: var(--forest-soft, rgba(255,183,182,.34));
+  color: var(--ink);
+  border-color: var(--rose-soft);
+}
+.guest-drag-item:not(.is-placed):not(.is-selected):hover {
+  background: var(--rose-soft);
+  border-color: var(--rose);
+}
+.guest-drag-item.is-placed {
+  background: rgba(34,197,94,.12);
+  color: var(--ink);
+  border-color: rgba(34,197,94,.3);
+  cursor: pointer;
+}
+.guest-drag-item.is-placed:hover {
+  background: rgba(34,197,94,.22);
+}
+.guest-drag-item.is-selected {
+  background: var(--rose);
+  color: #fff;
+  border-color: var(--rose);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   PAIRS (liaisons "toujours ensemble")
+   ═══════════════════════════════════════════════════════════ */
+.pair-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  background: rgba(34,197,94,.08);
+  border: 1px solid rgba(34,197,94,.25);
+}
+.pair-item.is-violation {
+  background: rgba(185,28,28,.08);
+  border-color: rgba(185,28,28,.3);
+}
+.pair-item button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+  padding: 0 2px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.pair-item button:hover { color: #b91c1c; }
