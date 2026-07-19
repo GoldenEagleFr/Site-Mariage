@@ -477,8 +477,20 @@
         <option value="no">Non</option>
       </select>
       <div class="guest-color-group-wrap is-hidden"></div>
+      <button class="guest-edit-btn" type="button" title="Modifier">✏️</button>
       <button class="danger" type="button">Supprimer</button>
       <div class="guest-rsvp-details is-hidden"></div>
+      <div class="guest-item-edit is-hidden">
+        <input class="edit-guest-name" type="text" placeholder="Prénom Nom" required>
+        <select class="edit-guest-attendance">
+          <option value="vin_repas">Vin d'honneur + repas</option>
+          <option value="vin_only">Vin d'honneur seul</option>
+        </select>
+        <div class="guest-edit-actions">
+          <button class="save-guest-edit-btn" type="button">✓ Enregistrer</button>
+          <button class="cancel-guest-edit-btn" type="button">Annuler</button>
+        </div>
+      </div>
     </li>
   </template>
 

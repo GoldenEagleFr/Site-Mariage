@@ -1469,7 +1469,40 @@ function renderGuests() {
       groupBadgeWrap.classList.remove("is-hidden");
     }
 
-    node.querySelector("button").addEventListener("click", () => {
+    const editBtn = node.querySelector(".guest-edit-btn");
+    const editPanel = node.querySelector(".guest-item-edit");
+    const editNameInput = node.querySelector(".edit-guest-name");
+    const editAttendanceSelect = node.querySelector(".edit-guest-attendance");
+
+    if (editBtn && editPanel) {
+      editBtn.addEventListener("click", () => {
+        const isOpen = !editPanel.classList.contains("is-hidden");
+        if (isOpen) {
+          editPanel.classList.add("is-hidden");
+        } else {
+          editNameInput.value = guest.name;
+          editAttendanceSelect.value = normalizeGuestAttendanceType(guest.attendanceType);
+          editPanel.classList.remove("is-hidden");
+          editNameInput.focus();
+        }
+      });
+
+      node.querySelector(".save-guest-edit-btn").addEventListener("click", () => {
+        const newName = editNameInput.value.trim();
+        if (!newName) { editNameInput.focus(); return; }
+        guest.name = newName;
+        guest.attendanceType = editAttendanceSelect.value;
+        editPanel.classList.add("is-hidden");
+        refresh({ persist: false });
+        persistNow();
+      });
+
+      node.querySelector(".cancel-guest-edit-btn").addEventListener("click", () => {
+        editPanel.classList.add("is-hidden");
+      });
+    }
+
+    node.querySelector(".danger").addEventListener("click", () => {
       state.guests = state.guests.filter((entry) => entry.id !== guest.id);
       refresh();
     });
