@@ -137,7 +137,7 @@
             <div class="panel-two-col">
               <div class="panel-controls">
                 <form id="budgetGoalForm" class="row-form row-form-2">
-                  <input id="budgetGoal" type="number" min="0" step="1" placeholder="Budget cible EUR" required>
+                  <input id="budgetGoal" type="number" min="0" step="0.01" placeholder="Budget cible EUR" required>
                   <button type="submit">Mettre à jour</button>
                 </form>
                 <form id="budgetPeopleForm" class="row-form budget-people-form">
@@ -161,8 +161,8 @@
                     </select>
                   </div>
                   <div class="budget-form-row">
-                    <input id="budgetAmountTotal" type="number" min="0" step="1" placeholder="Montant total prévu (€)">
-                    <input id="budgetAmountPaid" type="number" min="0" step="1" placeholder="Déjà payé (€)">
+                    <input id="budgetAmountTotal" type="number" min="0" step="0.01" placeholder="Montant total prévu (€)">
+                    <input id="budgetAmountPaid" type="number" min="0" step="0.01" placeholder="Déjà payé (€)">
                     <button type="submit">Ajouter</button>
                   </div>
                   <div class="budget-form-row" style="grid-template-columns:1fr auto">
@@ -436,8 +436,8 @@
       </div>
       <div class="budget-item-edit is-hidden">
         <select class="edit-category"></select>
-        <input class="edit-amount-total" type="number" min="0" step="1" placeholder="Montant total (€)">
-        <input class="edit-amount-paid" type="number" min="0" step="1" placeholder="Déjà payé (€)">
+        <input class="edit-amount-total" type="number" min="0" step="0.01" placeholder="Montant total (€)">
+        <input class="edit-amount-paid" type="number" min="0" step="0.01" placeholder="Déjà payé (€)">
         <input class="edit-due-date" type="date" title="Date d'échéance">
         <button class="save-btn" type="button">Enregistrer</button>
       </div>

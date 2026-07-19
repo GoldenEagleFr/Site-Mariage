@@ -1050,8 +1050,8 @@ function renderPayments(item, container) {
     form.className = "payment-add-form";
     form.innerHTML = `
       <input type="text"   class="pmt-label"   placeholder="Ex : Acompte" value="">
-      <input type="number" class="pmt-total"   placeholder="Montant (€)" min="0" step="1">
-      <input type="number" class="pmt-paid"    placeholder="Déjà payé (€)" min="0" step="1">
+      <input type="number" class="pmt-total"   placeholder="Montant (€)" min="0" step="0.01">
+      <input type="number" class="pmt-paid"    placeholder="Déjà payé (€)" min="0" step="0.01">
       <input type="date"   class="pmt-due"     title="Échéance">
       <button type="button" class="pmt-add-btn">Ajouter</button>`;
     form.querySelector(".pmt-add-btn").addEventListener("click", () => {
@@ -1688,13 +1688,15 @@ function clearPrivateUi() {
   renderBudgetChart();
 }
 
-function formatMoney(value, digits = 0) {
+function formatMoney(value, digits) {
+  const v = Number(value) || 0;
+  const d = digits !== undefined ? digits : (v % 1 === 0 ? 0 : 2);
   return new Intl.NumberFormat("fr-FR", {
     style: "currency",
     currency: "EUR",
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits,
-  }).format(value);
+    minimumFractionDigits: d,
+    maximumFractionDigits: d,
+  }).format(v);
 }
 
 function toSearchKey(value) {
