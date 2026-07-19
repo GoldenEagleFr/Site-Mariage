@@ -268,6 +268,7 @@ def normalize_data(candidate: object) -> dict:
                         "amountTotal": max(0.0, pmt_total),
                         "amountPaid":  max(0.0, pmt_paid),
                         "dueDate":     str(pmt.get("dueDate", "")).strip(),
+                        "payer":       str(pmt.get("payer", "")).strip(),
                         "solde":       bool(pmt.get("solde", False)),
                     })
 

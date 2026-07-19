@@ -1036,7 +1036,7 @@ function renderPayments(item, container) {
       row.className = "payment-row";
       const rest = Math.max(0, pmt.amountTotal - pmt.amountPaid);
       row.innerHTML = `
-        <span class="payment-label">${pmt.label}</span>
+        <span class="payment-label">${pmt.label}${pmt.payer ? ` <span class="payment-payer">— ${pmt.payer}</span>` : ""}</span>
         <span class="payment-amounts">
           ${formatMoney(pmt.amountTotal)} — payé ${formatMoney(pmt.amountPaid)}
           ${rest > 0 ? `<span class="payment-rest">(reste ${formatMoney(rest)})</span>` : `<span class="payment-solde">✓</span>`}
@@ -1061,14 +1061,16 @@ function renderPayments(item, container) {
       <input type="number" class="pmt-total"   placeholder="Montant (€)" min="0" step="0.01">
       <input type="number" class="pmt-paid"    placeholder="Déjà payé (€)" min="0" step="0.01">
       <input type="date"   class="pmt-due"     title="Échéance">
+      <input type="text"   class="pmt-payer"   placeholder="Payé par (optionnel)">
       <button type="button" class="pmt-add-btn">Ajouter</button>`;
     form.querySelector(".pmt-add-btn").addEventListener("click", () => {
       const lbl   = form.querySelector(".pmt-label").value.trim() || "Versement";
       const total = Math.max(0, Number(form.querySelector(".pmt-total").value) || 0);
       const paid  = Math.max(0, Number(form.querySelector(".pmt-paid").value)  || 0);
       const due   = form.querySelector(".pmt-due").value;
+      const payer = form.querySelector(".pmt-payer").value.trim();
       if (!item.payments) item.payments = [];
-      item.payments.push({ id: createId(), label: lbl, amountTotal: total, amountPaid: paid, dueDate: due, solde: total > 0 && paid >= total });
+      item.payments.push({ id: createId(), label: lbl, amountTotal: total, amountPaid: paid, dueDate: due, payer, solde: total > 0 && paid >= total });
       item.amountTotal = item.payments.reduce((s,p) => s+p.amountTotal, 0);
       item.amountPaid  = item.payments.reduce((s,p) => s+p.amountPaid,  0);
       item.solde = item.amountTotal > 0 && item.amountPaid >= item.amountTotal;

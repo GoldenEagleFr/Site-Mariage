@@ -4501,6 +4501,7 @@ body.dark-mode .table-violation-warning {
 }
 .dark-mode .payment-row { background: rgba(255,255,255,0.04); }
 .payment-label { font-weight: 600; color: var(--ink); flex: 1; min-width: 80px; }
+.payment-payer { font-weight: 400; font-size: 0.85em; color: var(--ink-soft); }
 .payment-amounts { display: flex; flex-wrap: wrap; gap: 4px; color: var(--ink-soft); align-items: center; }
 .payment-rest  { color: #c05621; font-weight: 600; }
 .payment-solde { color: #1e8449; font-weight: 600; }
