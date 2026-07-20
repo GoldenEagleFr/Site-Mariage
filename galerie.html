@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Galerie — Florence &amp; Antoine</title>
+  <meta name="description" content="Galerie photos du mariage de Florence et Antoine — 17 avril 2027.">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💍</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .gallery-coming-soon {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 1.5rem;
+      text-align: center;
+      gap: 1rem;
+    }
+
+    .gallery-coming-soon-icon {
+      font-size: 3.5rem;
+      line-height: 1;
+      animation: gallery-float 3s ease-in-out infinite;
+    }
+
+    @keyframes gallery-float {
+      0%, 100% { transform: translateY(0); }
+      50%       { transform: translateY(-8px); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .gallery-coming-soon-icon { animation: none; }
+    }
+
+    .gallery-coming-soon h2 {
+      font-family: Fraunces, Georgia, serif;
+      font-size: clamp(1.4rem, 3vw, 2rem);
+      color: var(--ink);
+      margin: 0;
+    }
+
+    .gallery-coming-soon p {
+      color: var(--ink-soft);
+      max-width: 40ch;
+      margin: 0;
+      line-height: 1.6;
+    }
+
+    /* Grille prête pour les photos — activée en supprimant is-hidden sur .gallery-grid */
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 12px;
+      margin-top: 1rem;
+    }
+
+    .gallery-grid.is-hidden {
+      display: none;
+    }
+
+    .gallery-item {
+      position: relative;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      aspect-ratio: 4 / 3;
+      background: var(--bg-pearl);
+      cursor: pointer;
+    }
+
+    .gallery-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.3s ease;
+    }
+
+    .gallery-item:hover img {
+      transform: scale(1.04);
+    }
+
+    /* Lightbox */
+    .gallery-lightbox {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 999;
+      background: rgba(74, 11, 20, 0.92);
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .gallery-lightbox.is-open {
+      display: flex;
+    }
+
+    .gallery-lightbox img {
+      max-width: 90vw;
+      max-height: 90vh;
+      border-radius: var(--radius-md);
+      box-shadow: 0 32px 80px rgba(0, 0, 0, 0.5);
+      object-fit: contain;
+    }
+
+    .gallery-lightbox-close {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: rgba(255, 255, 255, 0.15);
+      border: none;
+      color: #fff;
+      font-size: 1.4rem;
+      width: 44px;
+      height: 44px;
+      border-radius: 999px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+    }
+
+    .gallery-lightbox-close:hover {
+      background: rgba(255, 255, 255, 0.28);
+    }
+
+    .gallery-lightbox-nav {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(255, 255, 255, 0.15);
+      border: none;
+      color: #fff;
+      font-size: 1.6rem;
+      width: 48px;
+      height: 48px;
+      border-radius: 999px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+    }
+
+    .gallery-lightbox-nav:hover { background: rgba(255, 255, 255, 0.28); }
+    .gallery-lightbox-prev { left: 1rem; }
+    .gallery-lightbox-next { right: 1rem; }
+  </style>
+</head>
+<body>
+  <nav class="nav-sticky" id="navSticky" aria-label="Navigation principale">
+    <a href="index.html#programme">Programme</a>
+    <a href="index.html#rsvp">RSVP</a>
+    <a href="index.html#lieux">Lieux</a>
+    <a href="index.html#domaine">Domaine</a>
+    <a href="index.html#faq">FAQ</a>
+    <a href="galerie.html" aria-current="page">Galerie</a>
+  </nav>
+
+  <main class="app-shell">
+    <section class="section-card" style="margin-top:1.5rem;" data-reveal>
+      <div class="section-head">
+        <p class="panel-kicker">Galerie</p>
+        <h2>Les photos du mariage</h2>
+      </div>
+
+      <!-- Message "bientôt disponible" — retirer ce bloc une fois les photos ajoutées -->
+      <div class="gallery-coming-soon" id="galleryComingSoon">
+        <span class="gallery-coming-soon-icon">📷</span>
+        <h2>Bientôt disponible</h2>
+        <p>Les photos de notre journée seront partagées ici après le 17 avril 2027. Revenez vite !</p>
+        <a href="index.html" class="cta cta-primary" style="margin-top:0.5rem;">Retour au site</a>
+      </div>
+
+      <!-- Grille photos — ajouter class is-hidden pour masquer, retirer pour afficher -->
+      <div class="gallery-grid is-hidden" id="galleryGrid">
+        <!--
+          Pour ajouter des photos, copier ce bloc pour chaque photo :
+          <div class="gallery-item">
+            <img src="assets/galerie/photo-01.jpg" alt="Florence et Antoine" loading="lazy">
+          </div>
+        -->
+      </div>
+    </section>
+  </main>
+
+  <!-- Lightbox -->
+  <div class="gallery-lightbox" id="galleryLightbox" role="dialog" aria-modal="true" aria-label="Photo en grand">
+    <button class="gallery-lightbox-close" id="lightboxClose" aria-label="Fermer">✕</button>
+    <button class="gallery-lightbox-nav gallery-lightbox-prev" id="lightboxPrev" aria-label="Photo précédente">‹</button>
+    <img id="lightboxImg" src="" alt="">
+    <button class="gallery-lightbox-nav gallery-lightbox-next" id="lightboxNext" aria-label="Photo suivante">›</button>
+  </div>
+
+  <footer style="text-align:center;padding:1.5rem 0 2rem;">
+    <a href="organisation.html" style="font-size:0.7rem;color:var(--ink-soft,#aaa);opacity:0.35;text-decoration:none;" aria-label="Espace organisation">🔒</a>
+  </footer>
+
+  <script src="script.js"></script>
+  <script>
+    (() => {
+      const grid = document.getElementById('galleryGrid');
+      const lightbox = document.getElementById('galleryLightbox');
+      const lightboxImg = document.getElementById('lightboxImg');
+      const comingSoon = document.getElementById('galleryComingSoon');
+
+      const items = grid ? Array.from(grid.querySelectorAll('.gallery-item img')) : [];
+
+      // Si la grille contient des photos, cacher le message "bientôt"
+      if (items.length > 0) {
+        comingSoon?.classList.add('is-hidden');
+        grid.classList.remove('is-hidden');
+      }
+
+      let current = 0;
+
+      function openLightbox(idx) {
+        current = idx;
+        lightboxImg.src = items[idx].src;
+        lightboxImg.alt = items[idx].alt;
+        lightbox.classList.add('is-open');
+        document.body.style.overflow = 'hidden';
+      }
+
+      function closeLightbox() {
+        lightbox.classList.remove('is-open');
+        document.body.style.overflow = '';
+      }
+
+      function showPrev() {
+        current = (current - 1 + items.length) % items.length;
+        lightboxImg.src = items[current].src;
+        lightboxImg.alt = items[current].alt;
+      }
+
+      function showNext() {
+        current = (current + 1) % items.length;
+        lightboxImg.src = items[current].src;
+        lightboxImg.alt = items[current].alt;
+      }
+
+      items.forEach((img, idx) => {
+        img.closest('.gallery-item').addEventListener('click', () => openLightbox(idx));
+      });
+
+      document.getElementById('lightboxClose')?.addEventListener('click', closeLightbox);
+      document.getElementById('lightboxPrev')?.addEventListener('click', showPrev);
+      document.getElementById('lightboxNext')?.addEventListener('click', showNext);
+
+      lightbox?.addEventListener('click', (e) => {
+        if (e.target === lightbox) closeLightbox();
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (!lightbox.classList.contains('is-open')) return;
+        if (e.key === 'Escape') closeLightbox();
+        if (e.key === 'ArrowLeft') showPrev();
+        if (e.key === 'ArrowRight') showNext();
+      });
+    })();
+  </script>
+</body>
+</html>

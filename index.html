@@ -23,6 +23,7 @@
     <a href="#lieux">Lieux</a>
     <a href="#domaine">Domaine</a>
     <a href="#faq">FAQ</a>
+    <a href="galerie.html">Galerie</a>
   </nav>
 
   <main class="app-shell">
@@ -52,11 +53,12 @@
         <span class="petal"></span>
       </div>
       <nav class="top-nav" aria-label="Navigation principale">
-            <a href="#programme">Programme</a>
+        <a href="#programme">Programme</a>
         <a href="#rsvp">RSVP</a>
         <a href="#lieux">Lieux</a>
         <a href="#domaine">Domaine</a>
         <a href="#faq">FAQ</a>
+        <a href="galerie.html">Galerie</a>
       </nav>
       <div class="hero-content">
         <p class="kicker">17 avril 2027</p>
@@ -118,10 +120,10 @@
       <ol class="timeline">
         <li>
           <span class="timeline-icon">⚖️</span>
-          <span class="time">14h00</span>
+          <span class="time">13h45</span>
           <div>
             <h3>Cérémonie civile</h3>
-            <p>Mairie de Gisors — merci d'arriver 15 min à l'avance.</p>
+            <p>Mairie de Gisors.</p>
           </div>
         </li>
         <li>
@@ -142,7 +144,15 @@
         </li>
         <li>
           <span class="timeline-icon">🥂</span>
-          <span class="time">En soirée</span>
+          <span class="time">18h30</span>
+          <div>
+            <h3>Cocktail</h3>
+            <p>Vin d'honneur et cocktail dans les jardins des Domaines de Gaston.</p>
+          </div>
+        </li>
+        <li>
+          <span class="timeline-icon">🍽️</span>
+          <span class="time">20h00</span>
           <div>
             <h3>Dîner et soirée</h3>
             <p>Repas, musique et festivités — la fête continue jusqu'au bout de la nuit !</p>
@@ -167,7 +177,7 @@
       <div class="section-head">
         <h2>Lieux</h2>
       </div>
-      <p>Cliquez sur « Afficher la carte » puis sur le lien pour ouvrir l'itinéraire dans Google Maps.</p>
+      <p>Cliquez sur le lien pour ouvrir l'itinéraire dans Google Maps.</p>
       <div class="maps-grid">
 
         <div class="map-card">
@@ -176,8 +186,8 @@
             <p>Place Carpeaux, 27140 Gisors</p>
             <a href="https://maps.google.com/?q=Mairie+de+Gisors,+27140+Gisors" target="_blank" rel="noopener">Ouvrir dans Maps ↗</a>
           </div>
-          <div class="map-embed" data-src="https://maps.google.com/maps?q=Mairie+de+Gisors,+27140+Gisors,+France&output=embed&z=15">
-            <button class="map-load-btn" type="button">📍 Afficher la carte</button>
+          <div class="map-embed">
+            <iframe src="https://maps.google.com/maps?q=Mairie+de+Gisors,+27140+Gisors,+France&output=embed&z=15" allowfullscreen title="Mairie de Gisors" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;"></iframe>
           </div>
         </div>
 
@@ -187,8 +197,8 @@
             <p>Parvis Saint-Gervais, 27140 Gisors</p>
             <a href="https://maps.google.com/?q=Cath%C3%A9drale+Saint-Gervais+Gisors" target="_blank" rel="noopener">Ouvrir dans Maps ↗</a>
           </div>
-          <div class="map-embed" data-src="https://maps.google.com/maps?q=Cath%C3%A9drale+Saint-Gervais+Saint-Protais+Gisors,+France&output=embed&z=15">
-            <button class="map-load-btn" type="button">📍 Afficher la carte</button>
+          <div class="map-embed">
+            <iframe src="https://maps.google.com/maps?q=Cath%C3%A9drale+Saint-Gervais+Saint-Protais+Gisors,+France&output=embed&z=15" allowfullscreen title="Église de Gisors" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;"></iframe>
           </div>
         </div>
 
@@ -198,8 +208,8 @@
             <p>Les Andelys, 27700</p>
             <a href="https://maps.google.com/?q=Les+Domaines+de+Gaston,+Les+Andelys" target="_blank" rel="noopener">Ouvrir dans Maps ↗</a>
           </div>
-          <div class="map-embed" data-src="https://maps.google.com/maps?q=Les+Domaines+de+Gaston,+27700+Les+Andelys,+France&output=embed&z=14">
-            <button class="map-load-btn" type="button">📍 Afficher la carte</button>
+          <div class="map-embed">
+            <iframe src="https://maps.google.com/maps?q=Les+Domaines+de+Gaston,+27700+Les+Andelys,+France&output=embed&z=14" allowfullscreen title="Les Domaines de Gaston" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;"></iframe>
           </div>
         </div>
 
@@ -265,21 +275,6 @@
   </footer>
 
   <script src="script.js"></script>
-  <script>
-    // ── Cartes en lazy load (chargées au clic) ─────────────────────
-    document.querySelectorAll('.map-embed[data-src]').forEach(embed => {
-      embed.querySelector('.map-load-btn')?.addEventListener('click', () => {
-        const iframe = document.createElement('iframe');
-        iframe.src = embed.dataset.src;
-        iframe.allowFullscreen = true;
-        iframe.title = embed.closest('.map-card')?.querySelector('h3')?.textContent ?? 'Carte';
-        iframe.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;border:0;';
-        embed.replaceChildren(iframe);
-      });
-    });
-
-
-  </script>
 </body>
 </html>
 

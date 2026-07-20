@@ -30,6 +30,7 @@
 
 html {
   scroll-behavior: smooth;
+  scroll-padding-top: 68px;
 }
 
 body {
@@ -612,6 +613,7 @@ body::after {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+  justify-content: center;
 }
 
 .section-card .cta-secondary {
@@ -1044,7 +1046,17 @@ body::after {
   gap: 14px;
   position: relative;
   z-index: 1;
+  margin-bottom: 18px;
 }
+
+/* Contextual metrics: hide irrelevant cards when not on dashboard */
+#adminContent[data-active-tab]:not([data-active-tab="dashboard"]) .metric-card {
+  display: none;
+}
+#adminContent[data-active-tab="budget"]   .metric-card[data-goto-tab="budget"]   { display: block; }
+#adminContent[data-active-tab="tasks"]    .metric-card[data-goto-tab="tasks"]    { display: block; }
+#adminContent[data-active-tab="guests"]   .metric-card[data-goto-tab="guests"]   { display: block; }
+#adminContent[data-active-tab="traiteur"] .metric-card[data-goto-tab="traiteur"] { display: block; }
 
 .metric-card {
   border: 1px solid rgba(240, 63, 89, 0.5);
@@ -1620,6 +1632,75 @@ body::after {
   margin: 0 0 10px;
   display: grid;
   gap: 4px;
+}
+
+/* Simplified guest panel */
+.guest-search-input {
+  display: block;
+  width: 100%;
+  padding: 10px 14px;
+  font-size: 1rem;
+  border: 2px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--card);
+  color: var(--ink);
+  margin-bottom: 8px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.guest-search-input:focus {
+  border-color: var(--rose);
+}
+
+.guest-filters-compact {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.guest-filters-compact select {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 6px 8px;
+  font-size: 0.78rem;
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--card);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.guest-add-details {
+  margin-top: 10px;
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.guest-add-details summary {
+  padding: 9px 14px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--gold-dark);
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.guest-add-details summary::-webkit-details-marker { display: none; }
+
+.guest-add-details[open] summary {
+  border-bottom: 1.5px solid var(--line);
+}
+
+.guest-add-details > form,
+.guest-add-details > div {
+  padding: 0 12px 12px;
 }
 
 .ghost-action {
@@ -3341,8 +3422,8 @@ body.rsvp-page {
   list-style: none;
   margin: 1rem 0 0;
   padding: 0;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 0.6rem;
 }
 
@@ -4694,6 +4775,7 @@ body.dark-mode .guest-host-status { color: #6fcf97; }
   flex-wrap: wrap;
   gap: 0.75rem;
   margin-top: 1.5rem;
+  justify-content: center;
 }
 
 /* ── FAQ palette ───────────────────────────────────────────── */

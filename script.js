@@ -727,6 +727,8 @@ function setActiveAdminTab(tabId) {
   }
 
   activeAdminTab = tabId;
+  if (adminContent) adminContent.dataset.activeTab = tabId;
+
   for (const button of adminTabButtons) {
     const isActive = button.dataset.adminTab === tabId;
     button.classList.toggle("is-active", isActive);
@@ -736,12 +738,10 @@ function setActiveAdminTab(tabId) {
 
   for (const panel of adminTabPanels) {
     const panelId = panel.dataset.adminTabPanel;
-    const shouldStayVisible = panelId === "dashboard";
     const isActive = panelId === tabId;
-    const shouldShow = shouldStayVisible || isActive;
-    panel.classList.toggle("is-active", shouldShow);
-    panel.classList.toggle("is-hidden", !shouldShow);
-    panel.setAttribute("aria-hidden", String(!shouldShow));
+    panel.classList.toggle("is-active", isActive);
+    panel.classList.toggle("is-hidden", !isActive);
+    panel.setAttribute("aria-hidden", String(!isActive));
   }
 }
 

@@ -8,6 +8,7 @@ import os
 import smtplib
 import threading
 import time
+import unicodedata
 from collections import defaultdict
 from datetime import datetime
 from html import escape
@@ -1128,16 +1129,23 @@ class PlannerHandler(SimpleHTTPRequestHandler):
             return
 
         if path == "/api/rsvp/search":
-            q = str(query.get("q", [""])[0]).strip().lower()
+            q = str(query.get("q", [""])[0]).strip()
             if not q or len(q) < 2:
                 self._send_json({"ok": True, "results": []})
                 return
+
+            def _norm(s: str) -> str:
+                s = unicodedata.normalize("NFD", s.lower())
+                return "".join(c for c in s if unicodedata.category(c) != "Mn")
+
+            q_words = _norm(q).split()
             data = load_data_file()
             results = []
             for g in data.get("guests", []):
                 if g.get("isHost"):
                     continue
-                if q in str(g.get("name", "")).lower():
+                name_norm = _norm(str(g.get("name", "")))
+                if all(w in name_norm for w in q_words):
                     results.append({
                         "id": g["id"],
                         "name": g["name"],

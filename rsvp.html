@@ -89,7 +89,7 @@
 
         <fieldset id="rsvpHebergementSection" class="rsvp-fieldset is-hidden">
           <legend>Hébergement sur place</legend>
-          <p class="rsvp-hebergement-info">Le domaine propose 41 chambres pour 90 couchages répartis en différents hébergements (pods nordiques, chalets, manoir…). Comptez à partir de 35 à 50 € par personne et par nuit selon le logement. Si vous souhaitez aussi dormir la nuit du vendredi (veille du mariage), un supplément de 25 €/personne s'applique.</p>
+          <p class="rsvp-hebergement-info">Comptez entre 35 à 50 € par personne en fonction du nombre de réservations par personne et pour la nuit samedi.</p>
           <div class="rsvp-choice-row rsvp-choice-col">
             <label class="rsvp-choice">
               <input type="radio" name="rsvpHebergement" value="yes">
@@ -206,6 +206,18 @@
     let currentGuest = null;
     let pendingPayload = null;
 
+    // Reformate "NOM Prénom" → "Prénom NOM" si le premier mot est en majuscules
+    function formatName(raw) {
+      const parts = raw.trim().split(/\s+/);
+      if (parts.length < 2) return raw;
+      let i = 0;
+      while (i < parts.length && parts[i] === parts[i].toUpperCase() && /[A-ZÀÂÄÉÈÊËÎÏÔÙÛÜÇ]/.test(parts[i])) {
+        i++;
+      }
+      if (i === 0 || i === parts.length) return raw;
+      return parts.slice(i).join(" ") + " " + parts.slice(0, i).join(" ");
+    }
+
     function show(el) { el.classList.remove("is-hidden"); }
     function hide(el) { el.classList.add("is-hidden"); }
 
@@ -270,7 +282,7 @@
           const alreadyAnswered = guest.rsvpSubmittedAt > 0;
           const statusLabel = guest.status === "yes" ? "Confirmé ✓" : guest.status === "no" ? "Décliné" : "";
           li.innerHTML = `
-            <span class="rsvp-result-name">${guest.name}</span>
+            <span class="rsvp-result-name">${formatName(guest.name)}</span>
             <span class="rsvp-result-meta">${gl}${alreadyAnswered ? ` — <em>${statusLabel}</em>` : ""}</span>
             <button class="cta cta-primary rsvp-result-btn" type="button">
               ${alreadyAnswered ? "Modifier ma réponse" : "Répondre"}
@@ -288,7 +300,7 @@
     function openForm(guest) {
       currentGuest = guest;
       guestIdField.value = guest.id;
-      formTitle.textContent = guest.name;
+      formTitle.textContent = formatName(guest.name);
 
       const groupLabels = { single: "1 personne", couple: "2 personnes", family: `${guest.partySize} personnes` };
       formParty.textContent = groupLabels[guest.groupType] || `${guest.partySize} personnes`;
@@ -343,7 +355,7 @@
 
       // Construire le récapitulatif
       const rows = [];
-      rows.push({ label: "Invité", value: currentGuest.name });
+      rows.push({ label: "Invité", value: formatName(currentGuest.name) });
       rows.push({ label: "Réponse", value: status === "yes" ? "✓ Présent(e)" : "✕ Absent(e)" });
       if (status === "yes") {
         const hLabels = { yes: "🏨 Dort sur place", no: "🚗 Rentre le soir", maybe: "🤔 À confirmer rapidement" };
@@ -401,7 +413,7 @@
       hide(confirmYes); hide(confirmNo);
       if (status === "yes") {
         show(confirmYes);
-        const guestName = currentGuest?.name || "Cher invité";
+        const guestName = formatName(currentGuest?.name || "Cher invité");
         const hebergChoice = hebergement ? "yes" : (hebergementInfo ? "maybe" : "no");
         confirmYesTxt.textContent = hebergChoice === "yes"
           ? `Merci ${guestName}, votre présence est confirmée avec hébergement sur place. On a tellement hâte de célébrer avec vous !`
