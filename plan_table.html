@@ -11,221 +11,213 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body data-page="plan-table">
-  <main class="app-shell">
-    <header class="hero" id="accueil">
-      <nav class="top-nav" aria-label="Navigation">
-        <a href="index.html">🏠 Accueil</a>
-        <a href="organisation.html">← Organisation</a>
-        <button class="dark-mode-toggle-btn" type="button" aria-label="Basculer mode sombre">🌙 Mode sombre</button>
-      </nav>
-      <div class="hero-content">
-        <p class="kicker">Espace privé</p>
-        <h1>Plan de table</h1>
-        <p class="subtitle">Assignez vos invités confirmés aux tables de votre réception.</p>
+
+  <!-- Connexion (plein écran) -->
+  <section id="adminGate" class="pt-gate">
+    <div class="pt-gate-card">
+      <p class="kicker">Espace privé</p>
+      <h2 style="font-family:'Fraunces',serif;font-size:1.8rem;margin:8px 0 20px;">Plan de table</h2>
+      <p style="font-size:0.85rem;color:var(--ink-soft);margin:0 0 18px;">Florence &amp; Antoine</p>
+      <form id="adminLoginForm" class="row-form row-form-2 admin-login">
+        <input id="adminPassword" type="password" placeholder="Mot de passe administrateur" autocomplete="current-password" required>
+        <button type="submit">Se connecter</button>
+      </form>
+      <p id="adminError" class="admin-error" aria-live="polite"></p>
+    </div>
+  </section>
+
+  <!-- Application (masquée jusqu'à connexion) -->
+  <div id="adminContent" class="pt-app is-hidden">
+
+    <!-- ── Barre du haut ─────────────────────────────────────── -->
+    <header class="pt-topbar">
+      <a href="organisation.html" class="pt-back-btn" title="Retour à l'organisation">← Org.</a>
+      <span class="pt-app-title">Plan de table</span>
+      <p id="syncStatus" class="pt-sync-label"></p>
+      <div class="pt-topbar-sep"></div>
+      <div class="pt-zoom-group">
+        <button id="btnZoomOut" class="pt-topbar-btn" type="button" title="Dézoomer">−</button>
+        <span id="roomZoomLabel" class="pt-zoom-val">100%</span>
+        <button id="btnZoomIn" class="pt-topbar-btn" type="button" title="Zoomer">+</button>
       </div>
+      <button id="btnZoomReset" class="pt-topbar-btn" type="button" title="Réinitialiser la vue">⊡</button>
+      <div class="pt-topbar-sep"></div>
+      <button id="btnToggleNames" class="pt-topbar-btn" type="button" title="Noms complets sur les chaises">👤 Noms</button>
+      <button id="btnToggleSeatNums" class="pt-topbar-btn is-active" type="button" title="Numéros de siège">🔢</button>
+      <div class="pt-topbar-sep"></div>
+      <button id="viewBtnList" class="pt-topbar-btn" type="button" title="Vue liste et contraintes">📋 Liste</button>
+      <button id="btnExportCSV"   class="pt-topbar-btn" type="button" title="Exporter CSV">⬇ CSV</button>
+      <button id="btnExportHD"    class="pt-topbar-btn" type="button" title="Exporter image HD">🖼</button>
+      <button id="btnPrintRoom"   class="pt-topbar-btn" type="button" title="Imprimer le plan">🖨️</button>
+      <button id="btnPrintSheets" class="pt-topbar-btn" type="button" title="Fiches par table">🗒️ Fiches</button>
+      <button id="exportPdfBtn"   class="pt-topbar-btn" type="button" title="Télécharger PDF">📄</button>
+      <div class="pt-topbar-sep"></div>
+      <button id="adminLogout" class="pt-topbar-btn" type="button">Déconnexion</button>
     </header>
 
-    <section class="private-zone" id="organisation">
-      <div class="section-head">
-        <p class="panel-kicker">Organisation</p>
-        <h2>Plan de table</h2>
+    <div class="pt-workspace">
+
+      <!-- ── Sidebar gauche : palette d'ajout ─────────────────── -->
+      <aside class="pt-sidebar-left">
+        <div class="pt-sb-group">TABLES</div>
+        <button class="pt-sb-btn" data-add-table="round" type="button">
+          <svg class="pt-sb-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="8"/></svg>
+          Ronde
+        </button>
+        <button class="pt-sb-btn" data-add-table="rect" type="button">
+          <svg class="pt-sb-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="5" width="18" height="10" rx="1"/></svg>
+          Rectangulaire
+        </button>
+        <button class="pt-sb-btn" data-add-table="oval" type="button">
+          <svg class="pt-sb-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><ellipse cx="10" cy="10" rx="9" ry="6"/></svg>
+          Ovale
+        </button>
+
+        <div class="pt-sb-group">SALLE</div>
+        <button class="pt-sb-btn" data-add-element="scene"  type="button">🎭 Scène</button>
+        <button class="pt-sb-btn" data-add-element="bar"    type="button">🍸 Bar</button>
+        <button class="pt-sb-btn" data-add-element="dj"     type="button">🎵 DJ / Scène</button>
+        <button class="pt-sb-btn" data-add-element="buffet" type="button">🍽️ Buffet</button>
+        <button class="pt-sb-btn" data-add-element="entree" type="button">🚪 Entrée</button>
+        <button class="pt-sb-btn" data-add-element="custom" type="button">📦 Autre</button>
+
+        <div class="pt-sb-group">OPTIONS</div>
+        <button class="pt-sb-btn" id="btnSnapGrid"   type="button">⊞ Grille</button>
+        <button class="pt-sb-btn" id="btnLegend"     type="button">📌 Légende</button>
+        <button class="pt-sb-btn" id="btnLayout"     type="button">⊟ Disposition</button>
+        <div id="layoutMenu" class="room-layout-menu is-hidden">
+          <button class="layout-menu-item" data-layout="grid">⬛ Grille — rangées régulières</button>
+          <button class="layout-menu-item" data-layout="quinconce">⬛ Quinconce — rangées décalées</button>
+          <button class="layout-menu-item" data-layout="u">⬛ En U — périmètre, centre libre</button>
+          <button class="layout-menu-item" data-layout="banquet">⬛ Banquet — longues rangées</button>
+        </div>
+        <button class="pt-sb-btn" id="btnConfigRoom" type="button">⚙️ Salle</button>
+      </aside>
+
+      <!-- ── Zone canvas (vue principale) ─────────────────────── -->
+      <div class="pt-canvas-area" id="viewRoom">
+        <div id="tableStats" class="pt-canvas-stats"></div>
+        <div class="room-search-bar">
+          <input id="roomGuestSearch" type="text" class="room-guest-search-input" placeholder="🔍 Rechercher un invité dans la salle…" autocomplete="off">
+          <button id="btnClearGuestSearch" class="room-search-clear is-hidden" type="button" title="Effacer">✕</button>
+        </div>
+        <div id="roomLegendPanel" class="room-legend-panel is-hidden"></div>
+        <div id="roomConfigPanel" class="room-config-panel is-hidden">
+          <div class="room-config-dims">
+            <label>Dimensions de la salle :
+              <input id="roomWidthM" type="number" min="1" max="500" step="0.5" value="22.5" style="width:55px"> m ×
+              <input id="roomHeightM" type="number" min="1" max="500" step="0.5" value="16" style="width:55px"> m
+            </label>
+            <button id="applyRoomDims" type="button">Appliquer</button>
+          </div>
+          <div class="room-elements-add">
+            <strong style="font-size:0.85rem;">Ajouter un élément</strong>
+            <form id="roomElementForm" class="room-element-form">
+              <select id="elementType">
+                <option value="scene">🎭 Scène</option>
+                <option value="dj">🎵 DJ</option>
+                <option value="bar">🍸 Bar</option>
+                <option value="buffet">🍽️ Buffet</option>
+                <option value="entree">🚪 Entrée</option>
+                <option value="custom">📦 Autre</option>
+              </select>
+              <input id="elementLabel" type="text" placeholder="Nom (optionnel)" style="width:120px">
+              <input id="elementWM" type="number" min="0.5" max="80" step="0.5" placeholder="L (m)" style="width:62px">
+              <input id="elementHM" type="number" min="0.5" max="80" step="0.5" placeholder="H (m)" style="width:62px">
+              <button type="submit">Ajouter</button>
+            </form>
+          </div>
+          <div id="roomElementsList" class="room-elements-list"></div>
+        </div>
+        <div class="room-canvas-container">
+          <canvas id="roomCanvas"></canvas>
+        </div>
+        <div id="tableManagePanel" class="table-manage-panel is-hidden">
+          <div class="table-manage-header">
+            <div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:0;">
+              <input id="tableNameEditInput" type="text" class="table-name-edit" placeholder="Nom de la table">
+              <span id="tableManageTitle" style="font-size:0.78rem;color:var(--ink-soft);"></span>
+            </div>
+            <button id="tableManageClose" type="button">✕</button>
+          </div>
+          <div id="tableManageContent" class="table-manage-content"></div>
+        </div>
+        <div id="roomViolationsPanel" class="room-violations-panel is-hidden"></div>
       </div>
 
-      <section id="adminGate" class="admin-gate">
-        <p>Cette zone est réservée à l'administrateur du mariage.</p>
-        <form id="adminLoginForm" class="row-form row-form-2 admin-login">
-          <input id="adminPassword" type="password" placeholder="Mot de passe administrateur" autocomplete="current-password" required>
-          <button type="submit">Se connecter</button>
-        </form>
-        <p id="adminError" class="admin-error" aria-live="polite"></p>
-      </section>
-
-      <div id="adminContent" class="is-hidden">
-        <div class="private-tools-head">
-          <p id="syncStatus" class="sync-note"></p>
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-            <button id="exportPdfBtn" type="button" class="cta cta-secondary" style="font-size:0.8rem;padding:6px 14px;">📄 Télécharger PDF</button>
-            <button onclick="window.print()" class="cta cta-secondary" style="font-size:0.8rem;padding:6px 14px;">🖨️ Imprimer</button>
-            <button id="adminLogout" type="button" class="cta cta-secondary">Déconnexion</button>
-          </div>
+      <!-- ── Sidebar droite : invités à placer ─────────────────── -->
+      <aside class="pt-sidebar-right" id="guestDragSidebar">
+        <div class="pt-rhs-head">
+          <span class="pt-rhs-title">🪑 Invités</span>
+          <span id="guestDragCount" class="guest-drag-count"></span>
         </div>
+        <div id="guestDragList" class="guest-drag-list pt-rhs-list"></div>
+      </aside>
 
-        <div id="tableStats" class="list-stats" style="margin-bottom:12px;"></div>
+    </div><!-- /pt-workspace -->
 
-        <div class="view-toggle">
-          <button id="viewBtnList" class="view-toggle-btn is-active" type="button">📋 Liste</button>
-          <button id="viewBtnRoom" class="view-toggle-btn" type="button">🏠 Vue salle</button>
+    <!-- ── Vue liste (overlay latéral) ──────────────────────────── -->
+    <div id="viewList" class="pt-list-overlay is-hidden">
+      <div class="pt-list-panel">
+        <div class="pt-list-panel-head">
+          <h3>Listes &amp; contraintes</h3>
+          <button id="viewBtnRoom" class="pt-list-close" type="button">✕ Fermer</button>
         </div>
-
-        <!-- ── Vue Liste ─────────────────────────────────────── -->
-        <div id="viewList">
-          <div class="panel-two-col" style="align-items:start;">
-
-            <div class="pt-col-left">
-
-              <div class="panel">
-                <div class="panel-head">
-                  <p class="panel-kicker">Tables</p>
-                  <h2>Créer une table</h2>
-                </div>
-                <form id="tableForm" class="row-form">
-                  <input id="tableName" type="text" placeholder="Nom auto si vide (ex : Table 3)">
-                  <input id="tableCapacity" type="number" min="1" max="30" step="1" placeholder="Capacité (pers.)" required>
-                  <select id="tableShape">
-                    <option value="round">⭕ Ronde (⌀152cm)</option>
-                    <option value="rect">▭ Rectangulaire (183×76cm)</option>
-                  </select>
-                  <input id="tableCount" type="number" min="1" max="50" step="1" value="1" placeholder="Qté" title="Nombre de tables à créer">
-                  <button type="submit">Créer</button>
-                </form>
-                <div id="tableListGrid" class="plan-table-grid"></div>
-              </div>
-
-              <div class="panel">
-                <div class="panel-head">
-                  <p class="panel-kicker">Contraintes</p>
-                  <h2>Ne pas mettre ensemble</h2>
-                </div>
-                <p style="font-size:0.83rem;color:var(--ink-soft);margin:0 0 10px;">
-                  Un avertissement ⚠️ apparaîtra si deux invités incompatibles sont à la même table.
-                </p>
-                <div class="constraint-form">
-                  <select id="constraintGuest1"><option value="">— Invité 1 —</option></select>
-                  <select id="constraintGuest2"><option value="">— Invité 2 —</option></select>
-                  <button id="addConstraintBtn" type="button">Ajouter</button>
-                </div>
-                <div id="constraintList" class="constraint-list"></div>
-              </div>
-
-              <div class="panel">
-                <div class="panel-head">
-                  <p class="panel-kicker">Liaisons</p>
-                  <h2>Toujours ensemble</h2>
-                </div>
-                <p style="font-size:0.83rem;color:var(--ink-soft);margin:0 0 10px;">
-                  Un avertissement ⚠️ apparaîtra si deux invités liés sont placés à des tables différentes.
-                </p>
-                <div class="constraint-form">
-                  <select id="pairGuest1"><option value="">— Invité 1 —</option></select>
-                  <select id="pairGuest2"><option value="">— Invité 2 —</option></select>
-                  <button id="addPairBtn" type="button">Lier</button>
-                </div>
-                <div id="pairList" class="constraint-list"></div>
-              </div>
-            </div>
-
+        <div class="pt-list-body">
+          <div class="pt-col-left">
             <div class="panel">
-              <div class="panel-head">
-                <p class="panel-kicker">Invités confirmés</p>
-                <h2>Placement</h2>
-              </div>
-              <p style="font-size:0.84rem;color:var(--ink-soft);margin:0 0 10px;">
-                Seuls les invités ayant répondu <strong>Oui</strong> apparaissent ici.
-              </p>
-              <div class="list-tools" style="margin-bottom:10px;">
-                <input id="guestSearch" type="text" placeholder="Rechercher un invité…">
-                <select id="tableFilter">
-                  <option value="all">Tous les invités</option>
-                  <option value="unassigned">Non placés</option>
-                  <option value="assigned">Déjà placés</option>
+              <div class="panel-head"><p class="panel-kicker">Tables</p><h2>Créer une table</h2></div>
+              <form id="tableForm" class="row-form">
+                <input id="tableName" type="text" placeholder="Nom auto si vide (ex : Table 3)">
+                <input id="tableCapacity" type="number" min="1" max="30" step="1" placeholder="Capacité (pers.)" required>
+                <select id="tableShape">
+                  <option value="round">⭕ Ronde (⌀152cm)</option>
+                  <option value="rect">▭ Rectangulaire (183×76cm)</option>
                 </select>
-              </div>
-              <div id="guestPlacementList" class="data-list" style="display:flex;flex-direction:column;gap:8px;"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ── Vue Salle ─────────────────────────────────────── -->
-        <div id="viewRoom" class="is-hidden">
-
-          <div class="room-toolbar">
-            <button id="btnToggleNames" class="room-tool-btn" type="button" title="Afficher/masquer les prénoms sur les chaises">👤 Noms</button>
-            <button id="btnToggleSeatNums" class="room-tool-btn is-active" type="button" title="Afficher/masquer les numéros de siège">🔢 Sièges</button>
-            <span class="room-toolbar-sep"></span>
-            <button id="btnZoomOut" class="room-tool-btn" type="button" title="Dézoomer">−</button>
-            <span id="roomZoomLabel" class="room-zoom-label">100%</span>
-            <button id="btnZoomIn" class="room-tool-btn" type="button" title="Zoomer">+</button>
-            <button id="btnZoomReset" class="room-tool-btn" type="button" title="Réinitialiser la vue">⊡</button>
-            <span class="room-toolbar-sep"></span>
-            <button id="btnSnapGrid" class="room-tool-btn" type="button" title="Aligner les tables sur une grille de 0,5 m">⊞ Grille</button>
-            <span class="room-toolbar-sep"></span>
-            <div class="room-layout-wrap">
-              <button id="btnLayout" class="room-tool-btn" type="button" title="Appliquer une disposition prédéfinie">⊟ Disposition</button>
-              <div id="layoutMenu" class="room-layout-menu is-hidden">
-                <button class="layout-menu-item" data-layout="grid">⬛ Grille — rangées régulières</button>
-                <button class="layout-menu-item" data-layout="quinconce">⬛ Quinconce — rangées décalées</button>
-                <button class="layout-menu-item" data-layout="u">⬛ En U — périmètre, centre libre</button>
-                <button class="layout-menu-item" data-layout="banquet">⬛ Banquet — longues rangées</button>
-              </div>
-            </div>
-            <span class="room-toolbar-sep"></span>
-            <button id="btnConfigRoom" class="room-tool-btn" type="button" title="Configurer la salle et ses éléments">⚙️ Salle</button>
-            <button id="btnLegend" class="room-tool-btn" type="button" title="Afficher la légende des couleurs">📌 Légende</button>
-            <span class="room-toolbar-sep"></span>
-            <button id="btnExportCSV" class="room-tool-btn" type="button" title="Télécharger la liste des placements (CSV)">⬇ CSV</button>
-            <button id="btnExportHD" class="room-tool-btn" type="button" title="Exporter le plan en image haute résolution">🖼 Plan HD</button>
-            <button id="btnPrintRoom" class="room-tool-btn" type="button" title="Imprimer le plan de salle">🖨️ Imprimer</button>
-            <button id="btnPrintSheets" class="room-tool-btn" type="button" title="Imprimer une fiche par table (avec invités)">🗒️ Fiches</button>
-          </div>
-          <div class="room-search-bar">
-            <input id="roomGuestSearch" type="text" class="room-guest-search-input" placeholder="🔍 Rechercher un invité dans la salle…" autocomplete="off">
-            <button id="btnClearGuestSearch" class="room-search-clear is-hidden" type="button" title="Effacer">✕</button>
-          </div>
-          <div id="roomLegendPanel" class="room-legend-panel is-hidden"></div>
-
-          <div id="roomConfigPanel" class="room-config-panel is-hidden">
-            <div class="room-config-dims">
-              <label>Dimensions de la salle :
-                <input id="roomWidthM" type="number" min="1" max="500" step="0.5" value="22.5" style="width:55px"> m ×
-                <input id="roomHeightM" type="number" min="1" max="500" step="0.5" value="16" style="width:55px"> m
-              </label>
-              <button id="applyRoomDims" type="button">Appliquer</button>
-            </div>
-            <div class="room-elements-add">
-              <strong style="font-size:0.85rem;">Ajouter un élément</strong>
-              <form id="roomElementForm" class="room-element-form">
-                <select id="elementType">
-                  <option value="scene">🎭 Scène</option>
-                  <option value="dj">🎵 DJ</option>
-                  <option value="bar">🍸 Bar</option>
-                  <option value="buffet">🍽️ Buffet</option>
-                  <option value="entree">🚪 Entrée</option>
-                  <option value="custom">📦 Autre</option>
-                </select>
-                <input id="elementLabel" type="text" placeholder="Nom (optionnel)" style="width:120px">
-                <input id="elementWM" type="number" min="0.5" max="80" step="0.5" placeholder="L (m)" style="width:62px">
-                <input id="elementHM" type="number" min="0.5" max="80" step="0.5" placeholder="H (m)" style="width:62px">
-                <button type="submit">Ajouter</button>
+                <input id="tableCount" type="number" min="1" max="50" step="1" value="1" placeholder="Qté" title="Nombre de tables à créer">
+                <button type="submit">Créer</button>
               </form>
+              <div id="tableListGrid" class="plan-table-grid"></div>
             </div>
-            <div id="roomElementsList" class="room-elements-list"></div>
-          </div>
-
-          <div class="room-canvas-wrapper">
-            <div id="guestDragSidebar" class="guest-drag-sidebar">
-              <div class="guest-drag-header">🪑 À placer <span id="guestDragCount" class="guest-drag-count"></span></div>
-              <div id="guestDragList" class="guest-drag-list"></div>
-            </div>
-            <div class="room-canvas-container">
-              <canvas id="roomCanvas"></canvas>
-            </div>
-            <div id="tableManagePanel" class="table-manage-panel is-hidden">
-              <div class="table-manage-header">
-                <div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:0;">
-                  <input id="tableNameEditInput" type="text" class="table-name-edit" placeholder="Nom de la table">
-                  <span id="tableManageTitle" style="font-size:0.78rem;color:var(--ink-soft);"></span>
-                </div>
-                <button id="tableManageClose" type="button">✕</button>
+            <div class="panel">
+              <div class="panel-head"><p class="panel-kicker">Contraintes</p><h2>Ne pas mettre ensemble</h2></div>
+              <p style="font-size:0.83rem;color:var(--ink-soft);margin:0 0 10px;">Un avertissement ⚠️ apparaîtra si deux invités incompatibles sont à la même table.</p>
+              <div class="constraint-form">
+                <select id="constraintGuest1"><option value="">— Invité 1 —</option></select>
+                <select id="constraintGuest2"><option value="">— Invité 2 —</option></select>
+                <button id="addConstraintBtn" type="button">Ajouter</button>
               </div>
-              <div id="tableManageContent" class="table-manage-content"></div>
+              <div id="constraintList" class="constraint-list"></div>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><p class="panel-kicker">Liaisons</p><h2>Toujours ensemble</h2></div>
+              <p style="font-size:0.83rem;color:var(--ink-soft);margin:0 0 10px;">Un avertissement ⚠️ apparaîtra si deux invités liés sont placés à des tables différentes.</p>
+              <div class="constraint-form">
+                <select id="pairGuest1"><option value="">— Invité 1 —</option></select>
+                <select id="pairGuest2"><option value="">— Invité 2 —</option></select>
+                <button id="addPairBtn" type="button">Lier</button>
+              </div>
+              <div id="pairList" class="constraint-list"></div>
             </div>
           </div>
-
-          <div id="roomViolationsPanel" class="room-violations-panel is-hidden"></div>
+          <div class="panel" style="flex:1;min-width:0;">
+            <div class="panel-head"><p class="panel-kicker">Invités confirmés</p><h2>Placement</h2></div>
+            <p style="font-size:0.84rem;color:var(--ink-soft);margin:0 0 10px;">Seuls les invités ayant répondu <strong>Oui</strong> apparaissent ici.</p>
+            <div class="list-tools" style="margin-bottom:10px;">
+              <input id="guestSearch" type="text" placeholder="Rechercher un invité…">
+              <select id="tableFilter">
+                <option value="all">Tous les invités</option>
+                <option value="unassigned">Non placés</option>
+                <option value="assigned">Déjà placés</option>
+              </select>
+            </div>
+            <div id="guestPlacementList" class="data-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+          </div>
         </div>
       </div>
-    </section>
-  </main>
+    </div><!-- /viewList overlay -->
+
+  </div><!-- /pt-app -->
 
   <script>
   (() => {
@@ -368,7 +360,7 @@
         guests = [];
       }
       loadTables();
-      render();
+      switchView("room");
       startSyncPolling(token);
     }
 
@@ -446,18 +438,16 @@
     }
 
     function switchView(view) {
-      currentView = view;
-      viewListEl.classList.toggle("is-hidden", view !== "list");
-      viewRoomEl.classList.toggle("is-hidden", view !== "room");
-      viewBtnList.classList.toggle("is-active", view === "list");
-      viewBtnRoom.classList.toggle("is-active", view === "room");
-      if (view === "room") {
-        ensureDefaultElements();
-        initTablePositions();
-        renderRoom();
-        renderRoomConfig();
-        renderGuestDragSidebar();
-      }
+      // Canvas is always visible — list view is an overlay
+      currentView = "room";
+      const isListOpen = view === "list";
+      viewListEl.classList.toggle("is-hidden", !isListOpen);
+      viewBtnList.classList.toggle("is-active", isListOpen);
+      ensureDefaultElements();
+      initTablePositions();
+      render();
+      renderRoomConfig();
+      renderGuestDragSidebar();
     }
 
     // ── Créer une table ───────────────────────────────────────
@@ -1305,7 +1295,7 @@
       const unspecific = guestsAtTable.filter(g => !specificGuestIds.has(g.id));
       let uIdx = 0;
 
-      const fillOcc  = isDark ? "#8a6040" : "#d4a870";
+      const fillOcc  = isDark ? "#7a2535" : "#9c3555";
       const fillFree = isDark ? "#2e2822" : "#ede5d8";
       const strokeC  = isDark ? "#6a5a4a" : "#9a7a5a";
 
@@ -1357,11 +1347,19 @@
         ctx.lineWidth = 2.5;
         ctx.stroke();
 
-        // Numéro de siège
-        if (showSeatNums) {
+        // Initiales sur siège occupé, numéro sur siège libre
+        if (isOcc && guest && !showNames) {
+          const _p = guest.name.trim().split(/\s+/);
+          const _i = (_p.length >= 2 ? _p[0][0] + _p[_p.length - 1][0] : _p[0].slice(0, 2)).toUpperCase();
           ctx.textAlign    = "center";
           ctx.textBaseline = "middle";
-          ctx.fillStyle    = isOcc ? (isDark ? "#f0d0a0" : "#5a3010") : (isDark ? "#9a8a7a" : "#8a7a6a");
+          ctx.fillStyle    = isDark ? "#fde8d8" : "#ffffff";
+          ctx.font = `bold ${Math.max(4, Math.round(r * 0.82))}px 'Manrope', sans-serif`;
+          ctx.fillText(_i, cx, cy);
+        } else if (showSeatNums && !isOcc) {
+          ctx.textAlign    = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillStyle    = isDark ? "#9a8a7a" : "#8a7a6a";
           ctx.font = `bold ${Math.max(5, Math.round(r - 1))}px 'Manrope', sans-serif`;
           ctx.fillText(String(i + 1), cx, cy);
         }
@@ -2835,6 +2833,47 @@
         setTimeout(() => window.print(), 150);
       });
     }
+
+    // ── Sidebar gauche : ajouter une table ────────────────────────
+    document.querySelectorAll("[data-add-table]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const shape = btn.dataset.addTable;
+        const cap   = shape === "rect" ? 10 : 8;
+        const name  = `Table ${nextTableNumber()}`;
+        const t = { id: createId(), name, capacity: cap, shape };
+        const cx = (roomCanvas?.width  ?? 800) / 2;
+        const cy = (roomCanvas?.height ?? 400) / 2;
+        const { wx, wy } = screenToWorld(cx, cy);
+        t.x = Math.round(Math.max(ROOM_WORLD_X + 50, Math.min(wx, ROOM_WORLD_X + ROOM_WORLD_W - 50)));
+        t.y = Math.round(Math.max(ROOM_WORLD_Y + 50, Math.min(wy, ROOM_WORLD_Y + getRoomWorldH() - 50)));
+        tables.push(t);
+        saveTables();
+        render();
+      });
+    });
+
+    // ── Sidebar gauche : ajouter un élément de salle ──────────────
+    document.querySelectorAll("[data-add-element]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const type = btn.dataset.addElement;
+        const ppm  = ROOM_WORLD_W / roomConfig.widthM;
+        const defSizes = { scene:[3.5,10], bar:[3,2], dj:[2.5,2.5], buffet:[4,2], entree:[2,0.5], custom:[3,2] };
+        const [wM, hM] = defSizes[type] ?? [3, 2];
+        const wPx = Math.round(wM * ppm), hPx = Math.round(hM * ppm);
+        const cx = (roomCanvas?.width  ?? 800) / 2;
+        const cy = (roomCanvas?.height ?? 400) / 2;
+        const { wx, wy } = screenToWorld(cx, cy);
+        roomConfig.elements.push({
+          id: createId(), type, label: "",
+          x: Math.max(ROOM_WORLD_X, Math.min(wx - wPx / 2, ROOM_WORLD_X + ROOM_WORLD_W - wPx)),
+          y: Math.max(ROOM_WORLD_Y, Math.min(wy - hPx / 2, ROOM_WORLD_Y + getRoomWorldH() - hPx)),
+          w: wPx, h: hPx
+        });
+        saveTables();
+        renderRoomConfig();
+        renderRoom();
+      });
+    });
   })();
   </script>
 </body>

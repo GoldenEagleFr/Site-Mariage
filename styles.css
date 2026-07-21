@@ -4918,3 +4918,260 @@ body.dark-mode .guest-host-status { color: #6fcf97; }
   flex-shrink: 0;
 }
 .pair-item button:hover { color: #b91c1c; }
+
+/* ══════════════════════════════════════════════════════════
+   Plan de table — layout plandetabl.com style
+   ══════════════════════════════════════════════════════════ */
+
+/* Gate plein écran */
+.pt-gate {
+  position: fixed; inset: 0; z-index: 9999;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg);
+}
+.pt-gate.is-hidden { display: none; }
+.pt-gate-card {
+  background: var(--card);
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 40px 48px;
+  text-align: center;
+  max-width: 420px; width: 90%;
+  box-shadow: 0 8px 32px rgba(74,11,20,.10);
+}
+
+/* App shell plein écran */
+.pt-app {
+  display: flex; flex-direction: column;
+  position: fixed; inset: 0; z-index: 100;
+  background: var(--bg);
+  overflow: hidden;
+}
+.pt-app.is-hidden { display: none; }
+
+/* ── Topbar ─────────────────────────────────────────────── */
+.pt-topbar {
+  display: flex; align-items: center; gap: 4px;
+  height: 46px; padding: 0 10px;
+  background: var(--card);
+  border-bottom: 1.5px solid var(--line);
+  flex-shrink: 0; overflow-x: auto; overflow-y: hidden;
+}
+.pt-back-btn {
+  text-decoration: none; color: var(--ink-soft);
+  font-size: 0.8rem; font-weight: 600; white-space: nowrap;
+  padding: 4px 8px; border-radius: 6px;
+}
+.pt-back-btn:hover { background: var(--line); color: var(--ink); }
+.pt-app-title {
+  font-family: 'Fraunces', serif; font-size: 0.95rem;
+  color: var(--ink); white-space: nowrap; padding: 0 6px;
+}
+.pt-sync-label {
+  font-size: 0.72rem; color: var(--ink-soft);
+  white-space: nowrap; min-width: 80px;
+}
+.pt-topbar-sep {
+  width: 1px; height: 22px; background: var(--line);
+  margin: 0 4px; flex-shrink: 0;
+}
+.pt-topbar-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 9px; border-radius: 6px;
+  background: none; border: 1.5px solid transparent;
+  font-size: 0.78rem; font-weight: 600; cursor: pointer;
+  white-space: nowrap; color: var(--ink); transition: background 0.15s, border-color 0.15s;
+}
+.pt-topbar-btn:hover { background: var(--line); }
+.pt-topbar-btn.is-active {
+  background: var(--rose-pale, #fce7ea);
+  border-color: var(--rose);
+  color: var(--rose);
+}
+@media (prefers-color-scheme: dark) {
+  .pt-topbar-btn.is-active {
+    background: rgba(176,44,80,.18);
+    border-color: var(--rose);
+    color: var(--rose);
+  }
+}
+.pt-zoom-group { display: flex; align-items: center; gap: 2px; }
+.pt-zoom-val {
+  font-size: 0.78rem; font-weight: 700; min-width: 36px;
+  text-align: center; color: var(--ink);
+}
+
+/* ── Workspace (3 colonnes) ─────────────────────────────── */
+.pt-workspace {
+  display: flex; flex: 1; min-height: 0; overflow: hidden;
+}
+
+/* ── Sidebar gauche ─────────────────────────────────────── */
+.pt-sidebar-left {
+  width: 130px; flex-shrink: 0;
+  background: var(--card);
+  border-right: 1.5px solid var(--line);
+  overflow-y: auto; overflow-x: hidden;
+  padding: 8px 6px 16px;
+  display: flex; flex-direction: column; gap: 3px;
+  position: relative;
+}
+/* menu disposition inline dans la sidebar */
+.pt-sidebar-left .room-layout-menu {
+  position: static;
+  box-shadow: none;
+  border: 1.5px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  margin: 2px 0 4px;
+  overflow: hidden;
+}
+.pt-sidebar-left .layout-menu-item {
+  display: block; width: 100%; text-align: left;
+  padding: 6px 10px; font-size: 0.75rem;
+  border: none; background: none; cursor: pointer;
+  color: var(--ink);
+}
+.pt-sidebar-left .layout-menu-item:hover { background: var(--line); }
+.pt-sb-group {
+  font-size: 0.62rem; font-weight: 800; letter-spacing: .08em;
+  color: var(--ink-soft); padding: 10px 4px 4px;
+  text-transform: uppercase;
+}
+.pt-sb-btn {
+  display: flex; align-items: center; gap: 7px;
+  padding: 7px 8px; border-radius: 8px;
+  background: none; border: 1.5px solid transparent;
+  font-size: 0.8rem; font-weight: 600; cursor: pointer;
+  color: var(--ink); width: 100%; text-align: left;
+  transition: background 0.12s, border-color 0.12s;
+}
+.pt-sb-btn:hover {
+  background: var(--line);
+  border-color: var(--rose);
+}
+.pt-sb-icon {
+  width: 18px; height: 18px; flex-shrink: 0; color: var(--rose);
+}
+
+/* ── Zone canvas ─────────────────────────────────────────── */
+.pt-canvas-area {
+  flex: 1; min-width: 0;
+  display: flex; flex-direction: column;
+  position: relative; overflow: hidden;
+  background: var(--bg);
+}
+.pt-canvas-area .room-canvas-container {
+  flex: 1; min-height: 0;
+  position: relative; overflow: hidden;
+}
+.pt-canvas-area canvas {
+  display: block;
+}
+.pt-canvas-stats {
+  font-size: 0.78rem; color: var(--ink-soft);
+  padding: 4px 12px; background: var(--card);
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* Panels flottants sur le canvas */
+.pt-canvas-area .room-search-bar {
+  position: absolute; top: 40px; left: 50%; transform: translateX(-50%);
+  z-index: 15; width: min(400px, 80%);
+}
+.pt-canvas-area .room-legend-panel,
+.pt-canvas-area .room-config-panel {
+  position: absolute; top: 40px; left: 12px; z-index: 15;
+  max-width: 340px;
+}
+.pt-canvas-area .room-violations-panel {
+  position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
+  z-index: 15; width: min(600px, 90%);
+}
+/* Table manage panel flottant sur la canvas */
+.pt-canvas-area .table-manage-panel {
+  position: absolute;
+  top: 0; right: 0; bottom: 0;
+  width: 220px; z-index: 20;
+  box-shadow: -2px 0 12px rgba(74,11,20,.12);
+}
+
+/* ── Sidebar droite ─────────────────────────────────────── */
+.pt-sidebar-right {
+  width: 190px; flex-shrink: 0;
+  background: var(--card);
+  border-left: 1.5px solid var(--line);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.pt-rhs-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 12px 8px;
+  border-bottom: 1.5px solid var(--line);
+  flex-shrink: 0;
+}
+.pt-rhs-title {
+  font-size: 0.83rem; font-weight: 700; color: var(--ink);
+}
+.pt-rhs-list {
+  flex: 1; overflow-y: auto; overflow-x: hidden;
+  padding: 6px 4px;
+}
+
+/* ── Overlay liste ───────────────────────────────────────── */
+.pt-list-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(20,5,10,.55);
+  display: flex; align-items: stretch; justify-content: flex-end;
+}
+.pt-list-overlay.is-hidden { display: none; }
+.pt-list-panel {
+  width: min(920px, 92vw);
+  background: var(--bg);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  box-shadow: -4px 0 24px rgba(74,11,20,.18);
+}
+.pt-list-panel-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1.5px solid var(--line);
+  background: var(--card);
+  flex-shrink: 0;
+}
+.pt-list-panel-head h3 {
+  font-family: 'Fraunces', serif; font-size: 1.15rem;
+  margin: 0; color: var(--ink);
+}
+.pt-list-close {
+  background: none; border: 1.5px solid var(--line);
+  border-radius: 8px; padding: 5px 12px;
+  font-size: 0.82rem; font-weight: 700; cursor: pointer;
+  color: var(--ink-soft);
+}
+.pt-list-close:hover { background: var(--line); color: var(--ink); }
+.pt-list-body {
+  flex: 1; overflow-y: auto; overflow-x: hidden;
+  display: flex; gap: 16px; padding: 16px;
+  align-items: flex-start;
+}
+.pt-col-left {
+  display: flex; flex-direction: column; gap: 16px;
+  width: 300px; flex-shrink: 0;
+}
+
+/* ── Masquer les anciens éléments inutiles ──────────────── */
+body[data-page="plan-table"] .app-shell,
+body[data-page="plan-table"] .hero,
+body[data-page="plan-table"] .private-zone,
+body[data-page="plan-table"] .section-head,
+body[data-page="plan-table"] .private-tools-head,
+body[data-page="plan-table"] .view-toggle,
+body[data-page="plan-table"] .room-toolbar,
+body[data-page="plan-table"] .room-search-bar:not(.pt-canvas-area .room-search-bar) {
+  display: none !important;
+}
+/* admin-gate style de base */
+body[data-page="plan-table"] .admin-gate {
+  border: none; background: none; padding: 0;
+}
