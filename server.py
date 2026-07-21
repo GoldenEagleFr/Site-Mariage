@@ -1170,6 +1170,21 @@ class PlannerHandler(SimpleHTTPRequestHandler):
                 self.send_error(HTTPStatus.FORBIDDEN, "Accès refusé")
                 return
 
+        # Fichiers HTML : servir directement avec no-cache
+        if path.endswith(".html") or path == "/":
+            fs_path = self.translate_path(self.path)
+            import os as _os
+            if _os.path.isfile(fs_path):
+                with open(fs_path, "rb") as f:
+                    content = f.read()
+                self.send_response(HTTPStatus.OK)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Cache-Control", "no-store, must-revalidate")
+                self.send_header("Content-Length", str(len(content)))
+                self.end_headers()
+                self.wfile.write(content)
+                return
+
         super().do_GET()
 
     def do_POST(self) -> None:
