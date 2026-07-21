@@ -18,7 +18,7 @@
       <a href="index.html" class="cta cta-secondary rsvp-back-home">← Retour au site</a>
       <p class="kicker">17 avril 2027</p>
       <h1>Florence &amp; Antoine</h1>
-      <p class="rsvp-header-sub" style="margin-bottom:0.5rem;">Vin d'honneur &amp; cocktail</p>
+      <p class="rsvp-header-sub" style="margin-bottom:0.5rem;">Vin d'honneur</p>
       <p style="font-size:0.88rem;color:var(--ink-soft);margin-bottom:1.5rem;">Confirmez votre présence avant le 15 novembre 2026</p>
 
       <!-- Indicateur de progression -->
@@ -65,7 +65,7 @@
       <h2 id="rsvpFormTitle">Votre réponse</h2>
       <p id="rsvpFormParty" class="rsvp-party-info"></p>
       <p style="font-size:0.84rem;color:var(--ink-soft);margin-bottom:1.2rem;">
-        🥂 Vin d'honneur &amp; cocktail — Domaines de Gaston, Les Andelys — à partir de 16h30
+        🥂 Vin d'honneur — Domaines de Gaston, Les Andelys — à partir de 16h30
       </p>
 
       <form id="rsvpForm" novalidate>
@@ -124,7 +124,7 @@
         <div class="rsvp-confirm-icon rsvp-confirm-icon-yes">✓</div>
         <h2>À très bientôt !</h2>
         <p id="rsvpConfirmYesText"></p>
-        <p class="rsvp-confirm-date">📅 Le 17 avril 2027 — à partir de 16h30 aux Domaines de Gaston, Les Andelys</p>
+        <p class="rsvp-confirm-date">📅 Le 17 avril 2027 — vin d'honneur à partir de 16h30, Domaines de Gaston, Les Andelys</p>
         <a id="rsvpCalendarLink" class="cta cta-secondary rsvp-calendar-btn" download="mariage-florence-antoine-vh.ics">
           📆 Ajouter à mon agenda
         </a>
@@ -353,7 +353,7 @@
       if (status === "yes") {
         show(confirmYes);
         const guestName = formatName(currentGuest?.name || "Cher invité");
-        confirmYesTxt.textContent = `Merci ${guestName}, votre présence au vin d'honneur est confirmée ! On a tellement hâte de célébrer avec vous.`;
+        confirmYesTxt.textContent = `Merci ${guestName}, votre présence au vin d'honneur est confirmée ! On a tellement hâte de vous voir.`;
         stepDone.classList.add("is-celebrating");
         launchPetals();
       } else {
