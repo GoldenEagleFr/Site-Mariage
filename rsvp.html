@@ -67,6 +67,7 @@
     <section id="rsvpStepForm" class="rsvp-card is-hidden">
       <h2 id="rsvpFormTitle">Votre réponse</h2>
       <p id="rsvpFormParty" class="rsvp-party-info"></p>
+      <p id="rsvpFormEventBadge" class="rsvp-event-badge is-hidden"></p>
 
       <form id="rsvpForm" novalidate>
         <input type="hidden" id="rsvpGuestId">
@@ -87,6 +88,7 @@
           </div>
         </fieldset>
 
+        <!-- Sections visibles uniquement pour les invités repas (vin_repas) -->
         <fieldset id="rsvpHebergementSection" class="rsvp-fieldset is-hidden">
           <legend>Hébergement sur place</legend>
           <p class="rsvp-hebergement-info">Comptez entre 35 à 50 € par personne en fonction du nombre de réservations par personne et pour la nuit samedi.</p>
@@ -110,11 +112,11 @@
         </fieldset>
 
         <div class="rsvp-extra-fields">
-          <div class="rsvp-field">
+          <div class="rsvp-field rsvp-field-repas-only">
             <label for="rsvpMusic">Je propose une musique <span class="rsvp-field-hint">(titre et artiste — facultatif)</span></label>
             <input type="text" id="rsvpMusic" placeholder="Ex : Bohemian Rhapsody — Queen">
           </div>
-          <div class="rsvp-field">
+          <div class="rsvp-field rsvp-field-repas-only">
             <label for="rsvpAllergies">Allergies / régimes alimentaires <span class="rsvp-field-hint">(facultatif)</span></label>
             <input type="text" id="rsvpAllergies" placeholder="Ex : sans gluten, végétarien…">
           </div>
@@ -189,6 +191,7 @@
 
     const formTitle        = document.getElementById("rsvpFormTitle");
     const formParty        = document.getElementById("rsvpFormParty");
+    const formEventBadge   = document.getElementById("rsvpFormEventBadge");
     const guestIdField     = document.getElementById("rsvpGuestId");
     const hebergSection    = document.getElementById("rsvpHebergementSection");
     const musicInput       = document.getElementById("rsvpMusic");
@@ -197,6 +200,7 @@
     const formError        = document.getElementById("rsvpFormError");
     const reviewError      = document.getElementById("rsvpReviewError");
     const summaryBox       = document.getElementById("rsvpSummaryBox");
+    const repasOnlyFields  = document.querySelectorAll(".rsvp-field-repas-only");
 
     const confirmYes     = document.getElementById("rsvpConfirmYes");
     const confirmNo      = document.getElementById("rsvpConfirmNo");
@@ -297,13 +301,27 @@
     });
 
     // ── Formulaire ───────────────────────────────────────────────
+    let isVhOnly = false;
+
     function openForm(guest) {
       currentGuest = guest;
+      isVhOnly = guest.attendanceType === "vin_only";
       guestIdField.value = guest.id;
       formTitle.textContent = formatName(guest.name);
 
       const groupLabels = { single: "1 personne", couple: "2 personnes", family: `${guest.partySize} personnes` };
       formParty.textContent = groupLabels[guest.groupType] || `${guest.partySize} personnes`;
+
+      // Badge type d'invitation
+      if (formEventBadge) {
+        formEventBadge.textContent = isVhOnly
+          ? "🥂 Vin d'honneur & cocktail uniquement — à partir de 16h30"
+          : "🎉 Vin d'honneur, cocktail & dîner — journée complète";
+        show(formEventBadge);
+      }
+
+      // Champs repas uniquement
+      repasOnlyFields.forEach(f => f.style.display = isVhOnly ? "none" : "");
 
       const radios = document.querySelectorAll("input[name='rsvpStatus']");
       radios.forEach(r => { r.checked = r.value === guest.status; });
@@ -312,18 +330,21 @@
       const hRadios = document.querySelectorAll("input[name='rsvpHebergement']");
       hRadios.forEach(r => { r.checked = r.value === hCurrent; });
 
-      if (musicInput)    musicInput.value    = guest.musicSuggestion || "";
-      if (allergiesInput) allergiesInput.value = guest.allergies || "";
-      if (questionInput)  questionInput.value  = guest.otherQuestion || "";
+      if (musicInput)     musicInput.value     = guest.musicSuggestion || "";
+      if (allergiesInput) allergiesInput.value  = guest.allergies || "";
+      if (questionInput)  questionInput.value   = guest.otherQuestion || "";
 
-      if (guest.status === "yes") show(hebergSection); else hide(hebergSection);
+      // Hébergement uniquement pour invités repas
+      if (!isVhOnly && guest.status === "yes") show(hebergSection);
+      else hide(hebergSection);
+
       hide(formError);
       goToStep(stepForm);
     }
 
     document.querySelectorAll("input[name='rsvpStatus']").forEach(r => {
       r.addEventListener("change", () => {
-        if (r.value === "yes" && r.checked) show(hebergSection);
+        if (r.value === "yes" && r.checked && !isVhOnly) show(hebergSection);
         else if (r.value === "no" && r.checked) hide(hebergSection);
       });
     });
@@ -344,20 +365,21 @@
 
       const status = statusRadio.value;
       const hRadio = document.querySelector("input[name='rsvpHebergement']:checked");
-      const hebergementChoice = status === "yes" ? (hRadio?.value || "no") : "no";
+      const hebergementChoice = (!isVhOnly && status === "yes") ? (hRadio?.value || "no") : "no";
       const hebergement = hebergementChoice === "yes";
       const hebergementInfo = hebergementChoice === "maybe";
-      const musicSuggestion = (musicInput?.value ?? "").trim();
-      const allergies = (allergiesInput?.value ?? "").trim();
-      const otherQuestion = (questionInput?.value ?? "").trim();
+      const musicSuggestion = isVhOnly ? "" : (musicInput?.value ?? "").trim();
+      const allergies       = isVhOnly ? "" : (allergiesInput?.value ?? "").trim();
+      const otherQuestion   = (questionInput?.value ?? "").trim();
 
       pendingPayload = { id: guestIdField.value, status, hebergement, hebergementInfo, musicSuggestion, allergies, otherQuestion };
 
       // Construire le récapitulatif
       const rows = [];
       rows.push({ label: "Invité", value: formatName(currentGuest.name) });
+      rows.push({ label: "Événement", value: isVhOnly ? "🥂 Vin d'honneur & cocktail" : "🎉 Journée complète" });
       rows.push({ label: "Réponse", value: status === "yes" ? "✓ Présent(e)" : "✕ Absent(e)" });
-      if (status === "yes") {
+      if (!isVhOnly && status === "yes") {
         const hLabels = { yes: "🏨 Dort sur place", no: "🚗 Rentre le soir", maybe: "🤔 À confirmer rapidement" };
         rows.push({ label: "Hébergement", value: hLabels[hebergementChoice] || "—" });
       }

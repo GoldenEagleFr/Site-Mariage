@@ -1150,6 +1150,7 @@ class PlannerHandler(SimpleHTTPRequestHandler):
                         "id": g["id"],
                         "name": g["name"],
                         "groupType": g.get("groupType", "single"),
+                        "attendanceType": g.get("attendanceType", "vin_repas"),
                         "partySize": g.get("partySize", 1),
                         "status": g.get("status", "pending"),
                         "hebergement": g.get("hebergement", False),

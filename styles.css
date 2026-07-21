@@ -4919,6 +4919,22 @@ body.dark-mode .guest-host-status { color: #6fcf97; }
 }
 .pair-item button:hover { color: #b91c1c; }
 
+/* Badge type d'événement dans le RSVP */
+.rsvp-event-badge {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  background: var(--rose-pale, #fce7ea);
+  color: var(--rose, #b83050);
+  border: 1.5px solid var(--rose, #b83050);
+  margin-bottom: 1.2rem;
+}
+@media (prefers-color-scheme: dark) {
+  .rsvp-event-badge { background: rgba(176,44,80,.18); }
+}
+
 /* ══════════════════════════════════════════════════════════
    Plan de table — layout plandetabl.com style
    ══════════════════════════════════════════════════════════ */
