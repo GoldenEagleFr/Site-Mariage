@@ -111,12 +111,12 @@
           </div>
         </fieldset>
 
-        <div class="rsvp-extra-fields">
-          <div class="rsvp-field rsvp-field-repas-only">
+        <div class="rsvp-extra-fields" id="rsvpExtraFields">
+          <div class="rsvp-field">
             <label for="rsvpMusic">Je propose une musique <span class="rsvp-field-hint">(titre et artiste — facultatif)</span></label>
             <input type="text" id="rsvpMusic" placeholder="Ex : Bohemian Rhapsody — Queen">
           </div>
-          <div class="rsvp-field rsvp-field-repas-only">
+          <div class="rsvp-field">
             <label for="rsvpAllergies">Allergies / régimes alimentaires <span class="rsvp-field-hint">(facultatif)</span></label>
             <input type="text" id="rsvpAllergies" placeholder="Ex : sans gluten, végétarien…">
           </div>
@@ -200,7 +200,7 @@
     const formError        = document.getElementById("rsvpFormError");
     const reviewError      = document.getElementById("rsvpReviewError");
     const summaryBox       = document.getElementById("rsvpSummaryBox");
-    const repasOnlyFields  = document.querySelectorAll(".rsvp-field-repas-only");
+    const extraFields      = document.getElementById("rsvpExtraFields");
 
     const confirmYes     = document.getElementById("rsvpConfirmYes");
     const confirmNo      = document.getElementById("rsvpConfirmNo");
@@ -320,8 +320,8 @@
         show(formEventBadge);
       }
 
-      // Champs repas uniquement
-      repasOnlyFields.forEach(f => f.style.display = isVhOnly ? "none" : "");
+      // Pour vin d'honneur : uniquement le oui/non, rien d'autre
+      if (extraFields) extraFields.style.display = isVhOnly ? "none" : "";
 
       const radios = document.querySelectorAll("input[name='rsvpStatus']");
       radios.forEach(r => { r.checked = r.value === guest.status; });
