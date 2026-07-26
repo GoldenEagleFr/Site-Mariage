@@ -686,6 +686,9 @@ body::after {
   color: var(--gold-dark);
   font-weight: 700;
   white-space: nowrap;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
 }
 
 .admin-tab:hover {
@@ -4211,15 +4214,15 @@ body.dark-mode .table-violation-warning {
 }
 .table-manage-panel {
   position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 260px;
-  max-height: calc(100% - 16px);
+  top: 12px;
+  right: 12px;
+  width: 268px;
+  max-height: calc(100% - 24px);
   overflow-y: auto;
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0,0,0,.15);
+  border: none;
+  border-radius: 18px;
+  box-shadow: 0 10px 32px rgba(0,0,0,.18), 0 2px 8px rgba(0,0,0,.09);
   z-index: 10;
   font-size: 0.83rem;
 }
@@ -4227,12 +4230,13 @@ body.dark-mode .table-violation-warning {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 14px 8px;
-  border-bottom: 1px solid var(--border);
+  padding: 12px 14px 10px;
+  border-bottom: none;
   font-weight: 600;
   position: sticky;
   top: 0;
-  background: var(--surface);
+  background: linear-gradient(135deg, #9c3555, #7a2535);
+  border-radius: 18px 18px 0 0;
   z-index: 1;
 }
 .table-manage-header button {
@@ -4240,24 +4244,25 @@ body.dark-mode .table-violation-warning {
   border: none;
   cursor: pointer;
   font-size: 1rem;
-  color: var(--ink-soft);
+  color: rgba(255,255,255,0.65);
   padding: 0 2px;
   line-height: 1;
 }
-.table-manage-header button:hover { color: var(--ink); }
+.table-manage-header button:hover { color: #fff; }
 .table-name-edit {
   font: 600 0.9rem 'Manrope', sans-serif;
-  color: var(--ink);
+  color: #fff;
   background: transparent;
   border: none;
-  border-bottom: 1.5px solid transparent;
+  border-bottom: 1.5px solid rgba(255,255,255,0.25);
   padding: 0 2px;
   width: 100%;
   outline: none;
   transition: border-color .15s;
 }
-.table-name-edit:hover  { border-bottom-color: var(--border); }
-.table-name-edit:focus  { border-bottom-color: var(--accent); background: var(--surface-alt, #f9f7f4); border-radius: 3px 3px 0 0; }
+.table-name-edit::placeholder { color: rgba(255,255,255,0.45); }
+.table-name-edit:hover  { border-bottom-color: rgba(255,255,255,0.5); }
+.table-name-edit:focus  { border-bottom-color: rgba(255,255,255,0.9); background: rgba(255,255,255,0.08); border-radius: 3px 3px 0 0; }
 .table-manage-content { padding: 8px 12px 14px; }
 .tms-rotation-row {
   display: flex;
@@ -4854,8 +4859,9 @@ body.dark-mode .guest-host-status { color: #6fcf97; }
   margin-top: 4px;
 }
 .guest-drag-item {
-  padding: 5px 8px;
-  border-radius: 7px;
+  padding: 7px 10px 7px 7px;
+  border-radius: 999px;
+  display: flex; align-items: center; gap: 6px;
   font-size: 0.78rem;
   cursor: grab;
   user-select: none;
@@ -4888,6 +4894,13 @@ body.dark-mode .guest-host-status { color: #6fcf97; }
   color: #fff;
   border-color: var(--rose);
 }
+.gdi-handle {
+  font-size: 13px; line-height: 1; flex-shrink: 0;
+  color: rgba(237,70,114,0.4); cursor: grab;
+}
+.gdi-handle.placed { color: rgba(34,197,94,0.5); }
+.guest-drag-item.is-selected .gdi-handle { color: rgba(255,255,255,0.6); }
+.gdi-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 
 /* ═══════════════════════════════════════════════════════════
    PAIRS (liaisons "toujours ensemble")
@@ -4967,8 +4980,8 @@ body.dark-mode .guest-host-status { color: #6fcf97; }
 
 /* ── Topbar ─────────────────────────────────────────────── */
 .pt-topbar {
-  display: flex; align-items: center; gap: 4px;
-  height: 46px; padding: 0 10px;
+  display: flex; align-items: center; gap: 5px;
+  height: 52px; padding: 0 14px;
   background: var(--card);
   border-bottom: 1.5px solid var(--line);
   flex-shrink: 0; overflow-x: auto; overflow-y: hidden;
@@ -4992,8 +5005,8 @@ body.dark-mode .guest-host-status { color: #6fcf97; }
   margin: 0 4px; flex-shrink: 0;
 }
 .pt-topbar-btn {
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 4px 9px; border-radius: 6px;
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 7px 14px; border-radius: 999px;
   background: none; border: 1.5px solid transparent;
   font-size: 0.78rem; font-weight: 600; cursor: pointer;
   white-space: nowrap; color: var(--ink); transition: background 0.15s, border-color 0.15s;
@@ -5011,7 +5024,15 @@ body.dark-mode .guest-host-status { color: #6fcf97; }
     color: var(--rose);
   }
 }
-.pt-zoom-group { display: flex; align-items: center; gap: 2px; }
+.pt-zoom-group {
+  display: flex; align-items: center; gap: 0;
+  background: var(--card); border: 1.5px solid var(--line);
+  border-radius: 999px; padding: 0 4px;
+}
+.pt-zoom-group .pt-topbar-btn {
+  padding: 5px 9px;
+  border: none; background: transparent; box-shadow: none;
+}
 .pt-zoom-val {
   font-size: 0.78rem; font-weight: 700; min-width: 36px;
   text-align: center; color: var(--ink);
@@ -5024,7 +5045,7 @@ body.dark-mode .guest-host-status { color: #6fcf97; }
 
 /* ── Sidebar gauche ─────────────────────────────────────── */
 .pt-sidebar-left {
-  width: 130px; flex-shrink: 0;
+  width: 80px; flex-shrink: 0;
   background: var(--card);
   border-right: 1.5px solid var(--line);
   overflow-y: auto; overflow-x: hidden;
@@ -5055,8 +5076,9 @@ body.dark-mode .guest-host-status { color: #6fcf97; }
   text-transform: uppercase;
 }
 .pt-sb-btn {
-  display: flex; align-items: center; gap: 7px;
-  padding: 7px 8px; border-radius: 8px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 10px 4px; border-radius: 12px;
+  font-size: 0.68rem; text-align: center; line-height: 1.1;
   background: none; border: 1.5px solid transparent;
   font-size: 0.8rem; font-weight: 600; cursor: pointer;
   color: var(--ink); width: 100%; text-align: left;
@@ -5067,8 +5089,9 @@ body.dark-mode .guest-host-status { color: #6fcf97; }
   border-color: var(--rose);
 }
 .pt-sb-icon {
-  width: 18px; height: 18px; flex-shrink: 0; color: var(--rose);
+  width: 22px; height: 22px; flex-shrink: 0; color: var(--rose);
 }
+.pt-sb-emoji { font-size: 18px; line-height: 1; }
 
 /* ── Zone canvas ─────────────────────────────────────────── */
 .pt-canvas-area {
@@ -5114,7 +5137,7 @@ body.dark-mode .guest-host-status { color: #6fcf97; }
 
 /* ── Sidebar droite ─────────────────────────────────────── */
 .pt-sidebar-right {
-  width: 190px; flex-shrink: 0;
+  width: 210px; flex-shrink: 0;
   background: var(--card);
   border-left: 1.5px solid var(--line);
   display: flex; flex-direction: column;

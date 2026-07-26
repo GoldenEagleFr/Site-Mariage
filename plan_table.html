@@ -74,24 +74,24 @@
         </button>
 
         <div class="pt-sb-group">SALLE</div>
-        <button class="pt-sb-btn" data-add-element="scene"  type="button">🎭 Scène</button>
-        <button class="pt-sb-btn" data-add-element="bar"    type="button">🍸 Bar</button>
-        <button class="pt-sb-btn" data-add-element="dj"     type="button">🎵 DJ / Scène</button>
-        <button class="pt-sb-btn" data-add-element="buffet" type="button">🍽️ Buffet</button>
-        <button class="pt-sb-btn" data-add-element="entree" type="button">🚪 Entrée</button>
-        <button class="pt-sb-btn" data-add-element="custom" type="button">📦 Autre</button>
+        <button class="pt-sb-btn" data-add-element="scene"  type="button"><span class="pt-sb-emoji">🎭</span>Scène</button>
+        <button class="pt-sb-btn" data-add-element="bar"    type="button"><span class="pt-sb-emoji">🍸</span>Bar</button>
+        <button class="pt-sb-btn" data-add-element="dj"     type="button"><span class="pt-sb-emoji">🎵</span>DJ</button>
+        <button class="pt-sb-btn" data-add-element="buffet" type="button"><span class="pt-sb-emoji">🍽️</span>Buffet</button>
+        <button class="pt-sb-btn" data-add-element="entree" type="button"><span class="pt-sb-emoji">🚪</span>Entrée</button>
+        <button class="pt-sb-btn" data-add-element="custom" type="button"><span class="pt-sb-emoji">📦</span>Autre</button>
 
         <div class="pt-sb-group">OPTIONS</div>
-        <button class="pt-sb-btn" id="btnSnapGrid"   type="button">⊞ Grille</button>
-        <button class="pt-sb-btn" id="btnLegend"     type="button">📌 Légende</button>
-        <button class="pt-sb-btn" id="btnLayout"     type="button">⊟ Disposition</button>
+        <button class="pt-sb-btn" id="btnSnapGrid"   type="button"><span class="pt-sb-emoji">⊞</span>Grille</button>
+        <button class="pt-sb-btn" id="btnLegend"     type="button"><span class="pt-sb-emoji">📌</span>Légende</button>
+        <button class="pt-sb-btn" id="btnLayout"     type="button"><span class="pt-sb-emoji">⊟</span>Dispo.</button>
         <div id="layoutMenu" class="room-layout-menu is-hidden">
           <button class="layout-menu-item" data-layout="grid">⬛ Grille — rangées régulières</button>
           <button class="layout-menu-item" data-layout="quinconce">⬛ Quinconce — rangées décalées</button>
           <button class="layout-menu-item" data-layout="u">⬛ En U — périmètre, centre libre</button>
           <button class="layout-menu-item" data-layout="banquet">⬛ Banquet — longues rangées</button>
         </div>
-        <button class="pt-sb-btn" id="btnConfigRoom" type="button">⚙️ Salle</button>
+        <button class="pt-sb-btn" id="btnConfigRoom" type="button"><span class="pt-sb-emoji">⚙️</span>Salle</button>
       </aside>
 
       <!-- ── Zone canvas (vue principale) ─────────────────────── -->
@@ -1239,8 +1239,10 @@
         const item = document.createElement("div");
         item.className = "guest-drag-item" + (guest.id === selectedGuestId ? " is-selected" : "");
         item.draggable = true;
-        item.textContent = guest.name;
         item.dataset.gid = guest.id;
+        const hdl = document.createElement("span"); hdl.className = "gdi-handle"; hdl.textContent = "⠿";
+        const lbl = document.createElement("span"); lbl.className = "gdi-name"; lbl.textContent = guest.name;
+        item.appendChild(hdl); item.appendChild(lbl);
         item.title = "Glisser sur une chaise ou cliquer pour sélectionner";
         item.addEventListener("dragstart", (e) => {
           dragGuestId = guest.id; selectedGuestId = null;
@@ -1270,7 +1272,9 @@
           const tName = tables.find(t => t.id === assignments[guest.id])?.name || "?";
           const item = document.createElement("div");
           item.className = "guest-drag-item is-placed";
-          item.textContent = guest.name;
+          const hdl2 = document.createElement("span"); hdl2.className = "gdi-handle placed"; hdl2.textContent = "✓";
+          const lbl2 = document.createElement("span"); lbl2.className = "gdi-name"; lbl2.textContent = guest.name;
+          item.appendChild(hdl2); item.appendChild(lbl2);
           item.title = `→ ${tName} — Cliquer pour retirer`;
           item.addEventListener("click", () => { removeGuestFromTable(guest.id); renderGuestDragSidebar(); });
           list.appendChild(item);
@@ -1590,7 +1594,7 @@
       const isDark = document.body.classList.contains("dark-mode");
 
       // Fond global (pas zoomé)
-      ctx.fillStyle = isDark ? "#1a1612" : "#f7f3ee";
+      ctx.fillStyle = isDark ? "#1a1612" : "#EDEAF5";
       ctx.fillRect(0, 0, roomCanvas.width, roomCanvas.height);
 
       ctx.save();
