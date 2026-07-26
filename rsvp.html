@@ -372,7 +372,7 @@
       const allergies       = isVhOnly ? "" : (allergiesInput?.value ?? "").trim();
       const otherQuestion   = (questionInput?.value ?? "").trim();
 
-      pendingPayload = { id: guestIdField.value, status, hebergement, hebergementInfo, musicSuggestion, allergies, otherQuestion };
+      pendingPayload = { id: guestIdField.value, token: currentGuest.rsvpToken || "", status, hebergement, hebergementInfo, musicSuggestion, allergies, otherQuestion };
 
       // Construire le récapitulatif
       const rows = [];

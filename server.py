@@ -1149,6 +1149,7 @@ class PlannerHandler(SimpleHTTPRequestHandler):
                     results.append({
                         "id": g["id"],
                         "name": g["name"],
+                        "rsvpToken": g.get("rsvpToken", ""),
                         "groupType": g.get("groupType", "single"),
                         "attendanceType": g.get("attendanceType", "vin_repas"),
                         "partySize": g.get("partySize", 1),
@@ -1165,7 +1166,7 @@ class PlannerHandler(SimpleHTTPRequestHandler):
 
         # Bloquer l'accès direct aux fichiers sensibles sans auth admin
         BLOCKED_PATHS = {"/data.json", "/data.backup.json", "/budget_mariage.xlsx"}
-        if path in BLOCKED_PATHS:
+        if path in BLOCKED_PATHS or path.startswith("/backups/"):
             if not self._is_admin_authorized():
                 self.send_error(HTTPStatus.FORBIDDEN, "Accès refusé")
                 return
@@ -1226,6 +1227,7 @@ class PlannerHandler(SimpleHTTPRequestHandler):
                 self.send_error(HTTPStatus.BAD_REQUEST, "Invalid JSON")
                 return
             guest_id = str(payload.get("id", "")).strip()
+            token = str(payload.get("token", "")).strip()
             status = str(payload.get("status", "")).strip()
             hebergement = bool(payload.get("hebergement", False))
             if not guest_id or status not in VALID_GUEST_STATUS:
@@ -1234,7 +1236,8 @@ class PlannerHandler(SimpleHTTPRequestHandler):
             data = load_data_file()
             found = False
             for g in data.get("guests", []):
-                if g["id"] == guest_id:
+                stored_token = str(g.get("rsvpToken", "")).strip()
+                if g["id"] == guest_id and stored_token and stored_token == token:
                     g["status"] = status
                     g["hebergement"] = hebergement
                     g["hebergementInfo"] = bool(payload.get("hebergementInfo", False))

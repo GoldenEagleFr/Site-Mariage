@@ -1,4 +1,8 @@
-﻿const STORAGE_KEY = "plan_mariage_data_v1";
+﻿function escHtml(s) {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+const STORAGE_KEY = "plan_mariage_data_v1";
 const SERVER_ENDPOINT = "/api/data";
 const ADMIN_CHECK_ENDPOINT = "/api/admin/check";
 const ADMIN_SESSION_KEY = "plan_mariage_admin_token";
@@ -1575,7 +1579,7 @@ function renderGuests() {
       if (guest.allergies) lines.push(`🥗 ${guest.allergies}`);
       if (guest.otherQuestion) lines.push(`❓ ${guest.otherQuestion}`);
       if (lines.length > 0) {
-        rsvpDetails.innerHTML = lines.map(l => `<span class="guest-rsvp-detail">${l}</span>`).join("");
+        rsvpDetails.innerHTML = lines.map(l => `<span class="guest-rsvp-detail">${escHtml(l)}</span>`).join("");
         rsvpDetails.classList.remove("is-hidden");
       }
     }
