@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
+  <style>html, body { overflow: hidden; }</style>
 </head>
 <body data-page="plan-table">
 
@@ -85,12 +86,6 @@
         <button class="pt-sb-btn" id="btnSnapGrid"   type="button"><span class="pt-sb-emoji">⊞</span>Grille</button>
         <button class="pt-sb-btn" id="btnLegend"     type="button"><span class="pt-sb-emoji">📌</span>Légende</button>
         <button class="pt-sb-btn" id="btnLayout"     type="button"><span class="pt-sb-emoji">⊟</span>Dispo.</button>
-        <div id="layoutMenu" class="room-layout-menu is-hidden">
-          <button class="layout-menu-item" data-layout="grid">⬛ Grille — rangées régulières</button>
-          <button class="layout-menu-item" data-layout="quinconce">⬛ Quinconce — rangées décalées</button>
-          <button class="layout-menu-item" data-layout="u">⬛ En U — périmètre, centre libre</button>
-          <button class="layout-menu-item" data-layout="banquet">⬛ Banquet — longues rangées</button>
-        </div>
         <button class="pt-sb-btn" id="btnConfigRoom" type="button"><span class="pt-sb-emoji">⚙️</span>Salle</button>
       </aside>
 
@@ -102,32 +97,50 @@
           <button id="btnClearGuestSearch" class="room-search-clear is-hidden" type="button" title="Effacer">✕</button>
         </div>
         <div id="roomLegendPanel" class="room-legend-panel is-hidden"></div>
+        <div id="layoutPanel" class="room-legend-panel is-hidden" style="top:56px;">
+          <div class="panel-titlebar" data-drag-target="layoutPanel">
+            ⊟ Disposition
+            <button type="button" class="panel-close-btn" data-panel="layoutPanel">✕</button>
+          </div>
+          <div class="panel-body" style="display:flex;flex-direction:column;gap:3px;min-width:180px;">
+            <button class="layout-menu-item" data-layout="grid">⬛ Grille</button>
+            <button class="layout-menu-item" data-layout="quinconce">⬛ Quinconce</button>
+            <button class="layout-menu-item" data-layout="u">⬛ En U</button>
+            <button class="layout-menu-item" data-layout="banquet">⬛ Banquet</button>
+          </div>
+        </div>
         <div id="roomConfigPanel" class="room-config-panel is-hidden">
-          <div class="room-config-dims">
-            <label>Dimensions de la salle :
-              <input id="roomWidthM" type="number" min="1" max="500" step="0.5" value="22.5" style="width:55px"> m ×
-              <input id="roomHeightM" type="number" min="1" max="500" step="0.5" value="16" style="width:55px"> m
-            </label>
-            <button id="applyRoomDims" type="button">Appliquer</button>
+          <div class="panel-titlebar" data-drag-target="roomConfigPanel">
+            ⚙️ Configuration salle
+            <button type="button" class="panel-close-btn" data-panel="roomConfigPanel">✕</button>
           </div>
-          <div class="room-elements-add">
-            <strong style="font-size:0.85rem;">Ajouter un élément</strong>
-            <form id="roomElementForm" class="room-element-form">
-              <select id="elementType">
-                <option value="scene">🎭 Scène</option>
-                <option value="dj">🎵 DJ</option>
-                <option value="bar">🍸 Bar</option>
-                <option value="buffet">🍽️ Buffet</option>
-                <option value="entree">🚪 Entrée</option>
-                <option value="custom">📦 Autre</option>
-              </select>
-              <input id="elementLabel" type="text" placeholder="Nom (optionnel)" style="width:120px">
-              <input id="elementWM" type="number" min="0.5" max="80" step="0.5" placeholder="L (m)" style="width:62px">
-              <input id="elementHM" type="number" min="0.5" max="80" step="0.5" placeholder="H (m)" style="width:62px">
-              <button type="submit">Ajouter</button>
-            </form>
+          <div class="panel-body">
+            <div class="room-config-dims">
+              <label>Dimensions de la salle :
+                <input id="roomWidthM" type="number" min="1" max="500" step="0.5" value="22.5" style="width:55px"> m ×
+                <input id="roomHeightM" type="number" min="1" max="500" step="0.5" value="16" style="width:55px"> m
+              </label>
+              <button id="applyRoomDims" type="button">Appliquer</button>
+            </div>
+            <div class="room-elements-add">
+              <strong style="font-size:0.85rem;">Ajouter un élément</strong>
+              <form id="roomElementForm" class="room-element-form">
+                <select id="elementType">
+                  <option value="scene">🎭 Scène</option>
+                  <option value="dj">🎵 DJ</option>
+                  <option value="bar">🍸 Bar</option>
+                  <option value="buffet">🍽️ Buffet</option>
+                  <option value="entree">🚪 Entrée</option>
+                  <option value="custom">📦 Autre</option>
+                </select>
+                <input id="elementLabel" type="text" placeholder="Nom (optionnel)" style="width:120px">
+                <input id="elementWM" type="number" min="0.5" max="80" step="0.5" placeholder="L (m)" style="width:62px">
+                <input id="elementHM" type="number" min="0.5" max="80" step="0.5" placeholder="H (m)" style="width:62px">
+                <button type="submit">Ajouter</button>
+              </form>
+            </div>
+            <div id="roomElementsList" class="room-elements-list"></div>
           </div>
-          <div id="roomElementsList" class="room-elements-list"></div>
         </div>
         <div class="room-canvas-container">
           <canvas id="roomCanvas"></canvas>
@@ -141,6 +154,7 @@
             <button id="tableManageClose" type="button">✕</button>
           </div>
           <div id="tableManageContent" class="table-manage-content"></div>
+          <div class="panel-resize-handle" id="panelResizeHandle"></div>
         </div>
         <div id="roomViolationsPanel" class="room-violations-panel is-hidden"></div>
       </div>
@@ -245,6 +259,7 @@
     let guestGroups  = [];
     let roomZoom  = 1.0;
     let roomPanX  = 0, roomPanY = 0;
+    let roomViewInitialized = false;
     let selectedTableId = null;
     let editingTableId  = null;
     let globalChairR    = 5;
@@ -360,8 +375,8 @@
         guests = [];
       }
       loadTables();
-      switchView("room");
       startSyncPolling(token);
+      requestAnimationFrame(() => switchView("room"));
     }
 
     function startSyncPolling(token) {
@@ -553,8 +568,8 @@
         const gapY = Math.abs(Math.abs(t.y - other.y) - (d.ry + od.ry));
         const alignY = Math.abs(t.y - other.y) < d.ry + od.ry;
         const alignX = Math.abs(t.x - other.x) < d.rx + od.rx;
-        if (gapX <= 2 && alignY) return { table: other, dir: "h" };
-        if (gapY <= 2 && alignX) return { table: other, dir: "v" };
+        if (gapX <= 20 && alignY) return { table: other, dir: "h" };
+        if (gapY <= 20 && alignX) return { table: other, dir: "v" };
       }
       return null;
     }
@@ -969,14 +984,35 @@
       // Profondeur de la scène (extension à droite) : 3,48 m
       return Math.round(3.48 * ROOM_WORLD_W / roomConfig.widthM);
     }
-    function getMinZoom() {
+    // Largeurs des sidebars flottantes (doit correspondre au CSS)
+    const PT_SIDEBAR_L = 155;
+    const PT_SIDEBAR_R = 210;
+
+    function getVisibleW() {
       const cw = (roomCanvas && roomCanvas.width) || 800;
-      // Inclut la scène (à droite) + marge droite
+      return Math.max(200, cw - PT_SIDEBAR_L - PT_SIDEBAR_R);
+    }
+
+    function getMinZoom() {
+      const ch = (roomCanvas && roomCanvas.height) || 600;
+      const visW = getVisibleW();
       const totalW = ROOM_WORLD_X + ROOM_WORLD_W + getSceneDepthPx() + ROOM_WORLD_X;
-      return Math.max(0.05, Math.min(
-        cw  / totalW,
-        650 / (ROOM_WORLD_Y * 2 + getRoomWorldH())
-      ));
+      const totalH = ROOM_WORLD_Y * 2 + getRoomWorldH();
+      return Math.max(0.05, Math.min(visW / totalW, ch / totalH));
+    }
+
+    function resetRoomView() {
+      const cw = roomCanvas.width  || 800;
+      const ch = roomCanvas.height || 600;
+      const RH    = getRoomWorldH();
+      const scene = getSceneDepthPx();
+      const visW  = getVisibleW();
+      roomZoom = 1.0;
+      // Centrer la salle dans la zone visible entre les deux sidebars
+      const drawW = (ROOM_WORLD_W + scene) * roomZoom;
+      const drawH = RH * roomZoom;
+      roomPanX = Math.round(PT_SIDEBAR_L + (visW - drawW) / 2 - ROOM_WORLD_X * roomZoom);
+      roomPanY = Math.round((ch - drawH) / 2 - ROOM_WORLD_Y * roomZoom);
     }
 
     const GRID_M = 0.5;
@@ -1100,16 +1136,28 @@
           });
         }
       } else if (shape === "rect") {
-        // Chaises sur les côtés longs (haut + bas), dossier perpendiculaire au bord
         const W    = dims.rx * 2;
-        const nTop = Math.ceil(n / 2), nBot = n - Math.ceil(n / 2);
-        for (let j = 0; j < nTop; j++) {
-          const frac = nTop > 1 ? j / (nTop - 1) : 0.5;
-          pos.push({ cx: x - dims.rx + MARGIN + frac * (W - 2 * MARGIN), cy: y - dims.ry - CHAIR_GAP - CHAIR_R, r: CHAIR_R, outAngle: -Math.PI / 2 });
-        }
-        for (let j = 0; j < nBot; j++) {
-          const frac = nBot > 1 ? j / (nBot - 1) : 0.5;
-          pos.push({ cx: x - dims.rx + MARGIN + frac * (W - 2 * MARGIN), cy: y + dims.ry + CHAIR_GAP + CHAIR_R, r: CHAIR_R, outAngle: Math.PI / 2 });
+        const sides = table.seatSides || "both";
+        if (sides === "top") {
+          for (let j = 0; j < n; j++) {
+            const frac = n > 1 ? j / (n - 1) : 0.5;
+            pos.push({ cx: x - dims.rx + MARGIN + frac * (W - 2 * MARGIN), cy: y - dims.ry - CHAIR_GAP - CHAIR_R, r: CHAIR_R, outAngle: -Math.PI / 2 });
+          }
+        } else if (sides === "bottom") {
+          for (let j = 0; j < n; j++) {
+            const frac = n > 1 ? j / (n - 1) : 0.5;
+            pos.push({ cx: x - dims.rx + MARGIN + frac * (W - 2 * MARGIN), cy: y + dims.ry + CHAIR_GAP + CHAIR_R, r: CHAIR_R, outAngle: Math.PI / 2 });
+          }
+        } else {
+          const nTop = Math.ceil(n / 2), nBot = n - Math.ceil(n / 2);
+          for (let j = 0; j < nTop; j++) {
+            const frac = nTop > 1 ? j / (nTop - 1) : 0.5;
+            pos.push({ cx: x - dims.rx + MARGIN + frac * (W - 2 * MARGIN), cy: y - dims.ry - CHAIR_GAP - CHAIR_R, r: CHAIR_R, outAngle: -Math.PI / 2 });
+          }
+          for (let j = 0; j < nBot; j++) {
+            const frac = nBot > 1 ? j / (nBot - 1) : 0.5;
+            pos.push({ cx: x - dims.rx + MARGIN + frac * (W - 2 * MARGIN), cy: y + dims.ry + CHAIR_GAP + CHAIR_R, r: CHAIR_R, outAngle: Math.PI / 2 });
+          }
         }
       } else { // square — 4 côtés avec marge aux coins
         const W = dims.rx * 2, H = dims.ry * 2;
@@ -1440,6 +1488,27 @@
         ctx.fillStyle = isDark ? "#5a5a6a" : "#a0a0b0";
         ctx.fill();
 
+        // Sélection : contour + bouton ×
+        if (el === selectedRoomEl) {
+          const pad = 3 / roomZoom;
+          ctx.strokeStyle = "#e03055";
+          ctx.lineWidth = 2 / roomZoom;
+          ctx.setLineDash([5/roomZoom, 3/roomZoom]);
+          ctx.beginPath();
+          if (ctx.roundRect) ctx.roundRect(ex-pad, ey-pad, ew+2*pad, eh+2*pad, (el.radii??4)+pad);
+          else ctx.rect(ex-pad, ey-pad, ew+2*pad, eh+2*pad);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          const dr = 9 / roomZoom;
+          const bx = ex + ew, by = ey;
+          ctx.beginPath(); ctx.arc(bx, by, dr, 0, Math.PI*2);
+          ctx.fillStyle = "#e03055"; ctx.fill();
+          ctx.fillStyle = "#fff";
+          ctx.font = `bold ${Math.max(8, Math.round(12/roomZoom))}px sans-serif`;
+          ctx.textAlign = "center"; ctx.textBaseline = "middle";
+          ctx.fillText("×", bx, by);
+        }
+
         ctx.restore();
       }
     }
@@ -1584,17 +1653,30 @@
       if (!roomCtx) return;
       updateGlobalChairR();
       initTablePositions();
-      const container = roomCanvas.parentElement;
-      roomCanvas.width = container.clientWidth || 800;
+      // Forcer les bonnes dimensions si le canvas est encore à ses valeurs HTML par défaut (300×150)
+      // ou si le ResizeObserver n'a pas encore fireé
+      if (!roomCanvas.width || !roomCanvas.height ||
+          (roomCanvas.width === 300 && roomCanvas.height === 150)) {
+        const c = roomCanvas.parentElement;
+        if (c) {
+          const r = c.getBoundingClientRect();
+          if (r.width > 0 && r.height > 0) {
+            roomCanvas.width  = Math.floor(r.width);
+            roomCanvas.height = Math.floor(r.height);
+          } else {
+            roomCanvas.width  = roomCanvas.width  || 800;
+            roomCanvas.height = roomCanvas.height || 600;
+          }
+        }
+      }
       const RH = getRoomWorldH();
       const minZ = getMinZoom();
-      if (roomZoom < minZ) { roomZoom = minZ; roomPanX = 0; roomPanY = 0; }
-      roomCanvas.height = Math.round((ROOM_WORLD_Y * 2 + RH) * minZ + 20);
+      if (!roomViewInitialized) { resetRoomView(); roomViewInitialized = true; }
       const ctx    = roomCtx;
       const isDark = document.body.classList.contains("dark-mode");
 
       // Fond global (pas zoomé)
-      ctx.fillStyle = isDark ? "#1a1612" : "#EDEAF5";
+      ctx.fillStyle = isDark ? "#1a1612" : "#f5f4f2";
       ctx.fillRect(0, 0, roomCanvas.width, roomCanvas.height);
 
       ctx.save();
@@ -1745,7 +1827,11 @@
 
     document.getElementById("btnConfigRoom")?.addEventListener("click", () => {
       roomConfigPanel.classList.toggle("is-hidden");
-      if (!roomConfigPanel.classList.contains("is-hidden")) renderRoomConfig();
+      if (!roomConfigPanel.classList.contains("is-hidden")) {
+        renderRoomConfig();
+        initPanelControls(roomConfigPanel);
+        makeDraggable(roomConfigPanel);
+      }
     });
 
     // ── Fiches tables (1 page par table) ─────────────────────
@@ -2019,7 +2105,11 @@
     document.getElementById("btnPrintRoom")?.addEventListener("click", () => {
       // Capture le canvas au zoom minimum (salle entière visible)
       const savedZoom = roomZoom, savedPanX = roomPanX, savedPanY = roomPanY;
-      roomZoom = getMinZoom(); roomPanX = 0; roomPanY = 0;
+      roomZoom = getMinZoom();
+      const _pw = ROOM_WORLD_X*2 + ROOM_WORLD_W + getSceneDepthPx();
+      const _ph = ROOM_WORLD_Y*2 + getRoomWorldH();
+      roomPanX = Math.round((roomCanvas.width  - _pw * roomZoom) / 2);
+      roomPanY = Math.round((roomCanvas.height - _ph * roomZoom) / 2);
       renderRoom();
       const imgData = roomCanvas.toDataURL("image/png");
       // Restore
@@ -2049,9 +2139,11 @@
     // ── Table manage panel ────────────────────────────────────
     function openTableManagePanel(tableId) {
       selectedTableId = tableId;
+      _lastSeatCols = 0;
       renderTableManagePanel();
       tableManagePanel.classList.remove("is-hidden");
       renderRoom();
+      requestAnimationFrame(() => requestAnimationFrame(autoSizeTablePanel));
     }
 
     function closeTableManagePanel() {
@@ -2061,6 +2153,62 @@
     }
 
     tableManageClose?.addEventListener("click", closeTableManagePanel);
+
+    // ── Draggable & resizable panel ────────────────────────────
+    (function() {
+      const panel = tableManagePanel;
+      const header = panel.querySelector('.table-manage-header');
+      const resizeHandle = document.getElementById('panelResizeHandle');
+      const container = panel.closest('.pt-canvas-area') || panel.parentElement;
+
+      let dragState = null;
+      let resizeState = null;
+
+      function panelToLeftTop() {
+        const pr = panel.getBoundingClientRect();
+        const cr = container.getBoundingClientRect();
+        panel.style.right = 'auto';
+        panel.style.left = (pr.left - cr.left) + 'px';
+        panel.style.top  = (pr.top  - cr.top)  + 'px';
+      }
+
+      header.style.cursor = 'move';
+
+      header.addEventListener('mousedown', (e) => {
+        if (e.target.closest('button') || e.target.tagName === 'INPUT') return;
+        panelToLeftTop();
+        const pr = panel.getBoundingClientRect();
+        const cr = container.getBoundingClientRect();
+        dragState = { startX: e.clientX, startY: e.clientY,
+                      startLeft: pr.left - cr.left, startTop: pr.top - cr.top };
+        e.preventDefault();
+      });
+
+      resizeHandle?.addEventListener('mousedown', (e) => {
+        resizeState = { startX: e.clientX, startY: e.clientY,
+                        startW: panel.offsetWidth, startH: panel.offsetHeight };
+        e.preventDefault();
+        e.stopPropagation();
+      });
+
+      document.addEventListener('mousemove', (e) => {
+        if (dragState) {
+          const cr = container.getBoundingClientRect();
+          let l = dragState.startLeft + (e.clientX - dragState.startX);
+          let t = dragState.startTop  + (e.clientY - dragState.startY);
+          l = Math.max(0, Math.min(cr.width  - panel.offsetWidth,  l));
+          t = Math.max(0, Math.min(cr.height - 40, t));
+          panel.style.left = l + 'px'; panel.style.top = t + 'px';
+        }
+        if (resizeState) {
+          const w = Math.max(260, resizeState.startW + (e.clientX - resizeState.startX));
+          const h = Math.max(150, resizeState.startH + (e.clientY - resizeState.startY));
+          panel.style.width = w + 'px'; panel.style.maxHeight = h + 'px';
+        }
+      });
+
+      document.addEventListener('mouseup', () => { dragState = null; resizeState = null; });
+    })();
 
     function renderTableManagePanel() {
       if (!selectedTableId) return;
@@ -2109,6 +2257,16 @@
             ✂ Scinder en « ${table._splitInfo.leftName} » + « ${table._splitInfo.rightName} »
           </button>
         </div>`;
+      }
+
+      if (table.shape === "rect") {
+        const sides = table.seatSides || "both";
+        html += `<div class="tms-section">Côtés invités</div>
+          <div class="tms-sides-row">
+            <button class="tms-side-btn${sides === 'top'    ? ' is-active' : ''}" data-side="top">↑ Haut seul</button>
+            <button class="tms-side-btn${sides === 'both'   ? ' is-active' : ''}" data-side="both">↕ Les deux</button>
+            <button class="tms-side-btn${sides === 'bottom' ? ' is-active' : ''}" data-side="bottom">↓ Bas seul</button>
+          </div>`;
       }
 
       html += `<div class="tms-seats-list">`;
@@ -2188,6 +2346,10 @@
           </div>`;
       }
 
+      html += `<div class="tms-delete-row">
+        <button id="tmsDeleteBtn" type="button" class="tms-delete-btn">🗑 Supprimer la table</button>
+      </div>`;
+
       tableManageContent.innerHTML = html;
 
       tableManageContent.querySelectorAll(".tms-remove").forEach(btn => {
@@ -2240,6 +2402,10 @@
         saveTables(); renderRoom(); renderTableManagePanel();
       });
 
+      document.getElementById("tmsDeleteBtn")?.addEventListener("click", () => {
+        if (confirm(`Supprimer la table "${table.name}" ?`)) deleteTable(table.id);
+      });
+
       document.getElementById("tmsMergeBtn")?.addEventListener("click", (e) => {
         const otherId = e.currentTarget.dataset.other;
         mergeTables(table.id, otherId);
@@ -2249,17 +2415,127 @@
         splitTable(table.id);
       });
 
+      tableManageContent.querySelectorAll(".tms-side-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const newSide  = btn.dataset.side;
+          const prevSide = table.seatSides || "both";
+
+          if (prevSide === "both" && newSide !== "both") {
+            // Passage à un seul côté : mémoriser la capacité totale et diviser par 2
+            table._bothSidesCap = table.capacity;
+            table.capacity = Math.round(table.capacity / 2);
+          } else if (prevSide !== "both" && newSide === "both") {
+            // Retour sur les deux côtés : restaurer la capacité d'origine
+            table.capacity = table._bothSidesCap || table.capacity * 2;
+            delete table._bothSidesCap;
+          }
+
+          table.seatSides = newSide;
+          saveTables(); renderRoom(); renderTableManagePanel();
+        });
+      });
+
       document.getElementById("tmsTrimSeats")?.addEventListener("click", () => {
         trimEmptySeats(table.id);
       });
+
+      requestAnimationFrame(updateSeatsGrid);
+    }
+
+    // ── Colonnes adaptatives de la liste des sièges ────────────
+    let _seatsGridRO  = null;
+    let _lastSeatCols = 0;
+
+    function _nonSeatsHeight(seatsList) {
+      let h = 0;
+      Array.from(tableManageContent.children).forEach(el => {
+        if (el !== seatsList) h += el.offsetHeight + 4;
+      });
+      return h;
+    }
+
+    function updateSeatsGrid() {
+      const panel = tableManagePanel;
+      if (!panel || panel.classList.contains("is-hidden")) return;
+
+      const list = tableManageContent?.querySelector(".tms-seats-list");
+      if (!list || !list.children.length) return;
+      const n = list.children.length;
+
+      // N colonnes qui tiennent exactement : N × 160 + (N-1) × 4 ≤ listW
+      const listW = list.clientWidth;
+      if (listW === 0) return;
+      let cols = Math.min(n, Math.max(1, Math.floor((listW + 4) / 164)));
+
+      // Si le contenu scrolle encore, augmenter les colonnes pour l'éliminer
+      const ct = tableManageContent;
+      if (ct && ct.scrollHeight > ct.clientHeight + 2) {
+        const headerH    = panel.querySelector(".table-manage-header")?.offsetHeight ?? 52;
+        const seatsAreaH = panel.offsetHeight - headerH - _nonSeatsHeight(list) - 16;
+        const minColsByH = Math.ceil(n / Math.max(1, Math.floor(seatsAreaH / 38)));
+        if (minColsByH > cols) cols = Math.min(n, minColsByH);
+      }
+
+      if (cols !== _lastSeatCols) {
+        _lastSeatCols = cols;
+        list.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
+      }
+
+      if (!_seatsGridRO && window.ResizeObserver) {
+        _seatsGridRO = new ResizeObserver(() => requestAnimationFrame(updateSeatsGrid));
+        _seatsGridRO.observe(panel);
+      }
+    }
+
+    function autoSizeTablePanel() {
+      const panel = tableManagePanel;
+      if (!panel || panel.classList.contains("is-hidden")) return;
+
+      const container = panel.closest(".pt-canvas-area") || panel.parentElement;
+      if (!container) return;
+      const availH = container.clientHeight - 16;
+      const availW = container.clientWidth  - 16;
+
+      const seatsList = tableManageContent.querySelector(".tms-seats-list");
+      if (!seatsList || !seatsList.children.length) return;
+      const n = seatsList.children.length;
+
+      const headerH   = panel.querySelector(".table-manage-header")?.offsetHeight ?? 52;
+      const nonSeatsH = _nonSeatsHeight(seatsList);
+
+      // Colonnes nécessaires pour tenir sans scroll
+      const seatsAreaH = availH - headerH - nonSeatsH - 24;
+      const maxRows    = Math.max(1, Math.floor(seatsAreaH / 38));
+      const minCols    = Math.ceil(n / maxRows);
+      const maxCols    = Math.min(n, Math.max(1, Math.floor((availW * 0.9 - 48) / 164)));
+      const cols       = Math.max(minCols, Math.min(maxCols, minCols));
+
+      // Largeur exacte pour cols colonnes : N × 164 + 48
+      const targetW = Math.max(300, Math.min(availW * 0.9, cols * 164 + 48));
+
+      panel.style.width  = targetW + "px";
+      panel.style.height = "";
+      panel.style.right  = "8px";
+      panel.style.left   = "auto";
+      panel.style.top    = "8px";
+
+      updateSeatsGrid();
     }
 
     // ── Zoom ──────────────────────────────────────────────────
     function applyZoom(factor, centerX, centerY) {
-      const minZoom = getMinZoom();
+      const minZoom = 0.5;
       const newZoom = roomZoom * factor;
       if (newZoom <= minZoom) {
-        roomZoom = minZoom; roomPanX = 0; roomPanY = 0;
+        // Au minimum : centrer la salle dans la zone visible (entre les sidebars)
+        roomZoom = minZoom;
+        const cw2   = roomCanvas.width  || 800;
+        const ch2   = roomCanvas.height || 600;
+        const visW2 = getVisibleW();
+        const totalW2 = ROOM_WORLD_X * 2 + ROOM_WORLD_W + getSceneDepthPx();
+        const totalH2 = ROOM_WORLD_Y * 2 + getRoomWorldH();
+        roomPanX = Math.round(PT_SIDEBAR_L + (visW2 - totalW2 * minZoom) / 2);
+        roomPanY = Math.round((ch2 - totalH2 * minZoom) / 2);
       } else {
         const cx = centerX ?? roomCanvas.width  / 2;
         const cy = centerY ?? roomCanvas.height / 2;
@@ -2273,10 +2549,16 @@
       renderRoom();
     }
 
-    document.getElementById("btnZoomIn") ?.addEventListener("click", () => applyZoom(1.2));
-    document.getElementById("btnZoomOut")?.addEventListener("click", () => applyZoom(1 / 1.2));
+    document.getElementById("btnZoomIn")?.addEventListener("click", () => {
+      const t = Math.min(5.0, (Math.round(roomZoom * 100) + 1) / 100);
+      applyZoom(t / roomZoom);
+    });
+    document.getElementById("btnZoomOut")?.addEventListener("click", () => {
+      const t = Math.max(0.5, (Math.round(roomZoom * 100) - 1) / 100);
+      applyZoom(t / roomZoom);
+    });
     document.getElementById("btnZoomReset")?.addEventListener("click", () => {
-      roomZoom = getMinZoom(); roomPanX = 0; roomPanY = 0;
+      resetRoomView();
       renderRoom();
     });
 
@@ -2300,14 +2582,17 @@
     });
 
     // ── Dispositions prédéfinies ──────────────────────────────
-    const btnLayout  = document.getElementById("btnLayout");
-    const layoutMenu = document.getElementById("layoutMenu");
+    const btnLayout   = document.getElementById("btnLayout");
+    const layoutPanel = document.getElementById("layoutPanel");
 
-    btnLayout.addEventListener("click", (e) => {
-      e.stopPropagation();
-      layoutMenu.classList.toggle("is-hidden");
+    btnLayout.addEventListener("click", function() {
+      const visible = !layoutPanel.classList.contains("is-hidden");
+      if (visible) { layoutPanel.classList.add("is-hidden"); this.classList.remove("is-active"); return; }
+      this.classList.add("is-active");
+      layoutPanel.classList.remove("is-hidden");
+      initPanelControls(layoutPanel);
+      makeDraggable(layoutPanel);
     });
-    document.addEventListener("click", () => layoutMenu.classList.add("is-hidden"));
 
     function applyLayout(type) {
       if (!tables.length) return;
@@ -2409,14 +2694,16 @@
     document.querySelectorAll(".layout-menu-item").forEach(btn => {
       btn.addEventListener("click", (e) => {
         e.stopPropagation();
-        layoutMenu.classList.add("is-hidden");
+        layoutPanel.classList.add("is-hidden");
+        btnLayout.classList.remove("is-active");
         applyLayout(btn.dataset.layout);
       });
     });
 
     // ── Drag canvas ───────────────────────────────────────────
     let roomDragTable = null, roomDragOffX = 0, roomDragOffY = 0, roomDragMoved = false;
-    let roomDragEl    = null, roomDragElOffX = 0, roomDragElOffY = 0;
+    let roomDragEl    = null, roomDragElOffX = 0, roomDragElOffY = 0, roomDragElMoved = false;
+    let selectedRoomEl = null;
     let roomResizeEl  = null, roomResizeOrigW = 0, roomResizeOrigH = 0, roomResizeOrigMx = 0, roomResizeOrigMy = 0;
     let roomIsPanning = false, roomPanStartX = 0, roomPanStartY = 0, roomPanOffX = 0, roomPanOffY = 0;
     const ROOM_PAD = 30;
@@ -2445,6 +2732,18 @@
         return;
       }
 
+      // Bouton × de l'élément sélectionné (suppression)
+      if (selectedRoomEl) {
+        const el = selectedRoomEl;
+        const bx = (el.x ?? ROOM_WORLD_X) + (el.w ?? 80), by = el.y ?? ROOM_WORLD_Y;
+        const dr = 11 / roomZoom;
+        if (Math.sqrt((wx - bx)**2 + (wy - by)**2) < dr) {
+          roomConfig.elements = roomConfig.elements.filter(e => e.id !== el.id);
+          selectedRoomEl = null;
+          saveTables(); renderRoomConfig(); renderRoom(); return;
+        }
+      }
+
       // Poignée de redimensionnement (priorité sur le drag)
       for (const el of [...roomConfig.elements].reverse()) {
         if (isPointOnElemResizeHandle(wx, wy, el)) {
@@ -2464,6 +2763,7 @@
           roomDragEl     = el;
           roomDragElOffX = wx - el.x;
           roomDragElOffY = wy - el.y;
+          roomDragElMoved = false;
           el._drag = true;
           renderRoom();
           return;
@@ -2483,7 +2783,8 @@
         }
       }
 
-      // Pan
+      // Pan (clic dans le vide → désélectionne)
+      if (selectedRoomEl) { selectedRoomEl = null; renderRoom(); }
       roomIsPanning  = true;
       roomPanStartX  = e.clientX;
       roomPanStartY  = e.clientY;
@@ -2508,6 +2809,7 @@
         const maxRX = ROOM_WORLD_X + ROOM_WORLD_W + getSceneDepthPx();
         roomDragEl.x = Math.max(ROOM_WORLD_X, Math.min(maxRX - (roomDragEl.w ?? 80), wx - roomDragElOffX));
         roomDragEl.y = Math.max(ROOM_WORLD_Y, Math.min(ROOM_WORLD_Y + RH - (roomDragEl.h ?? 50), wy - roomDragElOffY));
+        roomDragElMoved = true;
         renderRoom();
         return;
       }
@@ -2529,6 +2831,16 @@
         roomPanY = roomPanOffY + (e.clientY - roomPanStartY) * scaleY;
         renderRoom();
       }
+      // Curseur pointer sur la croix × de l'élément sélectionné
+      if (!roomResizeEl && !roomDragEl && !roomDragTable && !roomIsPanning && selectedRoomEl) {
+        const pos2 = getRoomPos(e);
+        const { wx: wx2, wy: wy2 } = screenToWorld(pos2.x, pos2.y);
+        const el2 = selectedRoomEl;
+        const bx2 = (el2.x ?? ROOM_WORLD_X) + (el2.w ?? 80);
+        const by2 = el2.y ?? ROOM_WORLD_Y;
+        const dr2 = 11 / roomZoom;
+        roomCanvas.style.cursor = Math.sqrt((wx2 - bx2) ** 2 + (wy2 - by2) ** 2) < dr2 ? "pointer" : "";
+      }
     });
 
     function stopRoomDrag() {
@@ -2537,7 +2849,11 @@
       }
       if (roomDragEl) {
         delete roomDragEl._drag;
-        saveTables();
+        if (roomDragElMoved) {
+          saveTables();
+        } else {
+          selectedRoomEl = (selectedRoomEl === roomDragEl) ? null : roomDragEl;
+        }
         roomDragEl = null;
         renderRoom();
       } else if (roomDragTable) {
@@ -2604,6 +2920,24 @@
     });
 
     window.addEventListener("resize", () => { if (currentView === "room") renderRoom(); });
+
+    // ResizeObserver : redimensionne le canvas dès que son container a une vraie taille
+    ;(function() {
+      if (!window.ResizeObserver || !roomCanvas?.parentElement) return;
+      const obs = new ResizeObserver(entries => {
+        for (const e of entries) {
+          const w = Math.floor(e.contentRect.width);
+          const h = Math.floor(e.contentRect.height);
+          if (!w || !h) continue;
+          const changed = roomCanvas.width !== w || roomCanvas.height !== h;
+          roomCanvas.width  = w;
+          roomCanvas.height = h;
+          if (changed) { resetRoomView(); roomViewInitialized = true; }
+          if (currentView === 'room') renderRoom();
+        }
+      });
+      obs.observe(roomCanvas.parentElement);
+    })();
 
     // ── Drag invités → canvas ─────────────────────────────────
     roomCanvas.addEventListener("dragover", (e) => {
@@ -2693,8 +3027,60 @@
       for (const g of guestGroups) {
         entries.push({ color: g.color, label: "Groupe : " + g.name });
       }
-      panel.innerHTML = "<strong style='font-size:0.8rem;display:block;margin-bottom:6px;'>Légende</strong>"
-        + entries.map(e => `<span class="legend-item"><span class="legend-swatch" style="background:${e.color};${e.border ? "border:2px solid " + e.color + ";" : ""}"></span><span>${e.label}</span></span>`).join("");
+      panel.innerHTML =
+        `<div class="panel-titlebar" data-drag-target="roomLegendPanel">
+           📌 Légende
+           <button type="button" class="panel-close-btn" data-panel="roomLegendPanel">✕</button>
+         </div>
+         <div class="panel-body" style="display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;">`
+        + entries.map(e => `<span class="legend-item"><span class="legend-swatch" style="background:${e.color};${e.border ? "border:2px solid " + e.color + ";" : ""}"></span><span>${e.label}</span></span>`).join("")
+        + `</div>`;
+      initPanelControls(panel);
+      makeDraggable(panel);
+    }
+
+    function makeDraggable(el) {
+      const handle = el.querySelector(".panel-titlebar");
+      if (!handle || handle._draggable) return;
+      handle._draggable = true;
+      handle.style.cursor = "move";
+      handle.addEventListener("mousedown", e => {
+        if (e.target.closest(".panel-close-btn")) return;
+        e.preventDefault();
+        const area = el.closest(".pt-canvas-area") || el.parentElement;
+        const ar = area.getBoundingClientRect();
+        const er = el.getBoundingClientRect();
+        el.style.left   = (er.left - ar.left) + "px";
+        el.style.top    = (er.top  - ar.top)  + "px";
+        el.style.right  = "auto";
+        el.style.bottom = "auto";
+        let sx = e.clientX, sy = e.clientY;
+        let ox = parseFloat(el.style.left), oy = parseFloat(el.style.top);
+        const onMove = ev => {
+          el.style.left = (ox + ev.clientX - sx) + "px";
+          el.style.top  = (oy + ev.clientY - sy) + "px";
+        };
+        const onUp = () => {
+          document.removeEventListener("mousemove", onMove);
+          document.removeEventListener("mouseup", onUp);
+        };
+        document.addEventListener("mousemove", onMove);
+        document.addEventListener("mouseup", onUp);
+      });
+    }
+
+    function initPanelControls(panel) {
+      panel.querySelectorAll(".panel-close-btn").forEach(btn => {
+        btn.onclick = () => {
+          const target = btn.dataset.panel ? document.getElementById(btn.dataset.panel) : panel;
+          if (target) target.classList.add("is-hidden");
+          document.querySelectorAll(`.pt-sb-btn[id]`).forEach(b => {
+            if (b.id === "btnLegend" && btn.dataset.panel === "roomLegendPanel") b.classList.remove("is-active");
+            if (b.id === "btnConfigRoom" && btn.dataset.panel === "roomConfigPanel") b.classList.remove("is-active");
+            if (b.id === "btnLayout" && btn.dataset.panel === "layoutPanel") b.classList.remove("is-active");
+          });
+        };
+      });
     }
 
     // ── Export CSV ────────────────────────────────────────────
@@ -2857,6 +3243,18 @@
     });
 
     // ── Sidebar gauche : ajouter un élément de salle ──────────────
+    // Suppression élément sélectionné par clavier
+    document.addEventListener("keydown", (e) => {
+      if (!selectedRoomEl) return;
+      if (e.key !== "Delete" && e.key !== "Backspace") return;
+      const tag = document.activeElement?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      roomConfig.elements = roomConfig.elements.filter(el => el.id !== selectedRoomEl.id);
+      selectedRoomEl = null;
+      saveTables(); renderRoomConfig(); renderRoom();
+      e.preventDefault();
+    });
+
     document.querySelectorAll("[data-add-element]").forEach(btn => {
       btn.addEventListener("click", () => {
         const type = btn.dataset.addElement;

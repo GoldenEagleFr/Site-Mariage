@@ -22,6 +22,12 @@
   --shadow-card: 0 16px 28px rgba(224, 10, 38, 0.2);
   --ease-out-back: cubic-bezier(0.2, 0.75, 0.24, 1);
   --petal-slowdown: 3;
+  /* Variables utilitaires partagées */
+  --surface: #ffffff;
+  --surface-alt: rgba(74, 11, 20, 0.04);
+  --border: rgba(74, 11, 20, 0.12);
+  --font-ui: Manrope, "Segoe UI", sans-serif;
+  --bg: #f5f4f2;
 }
 
 * {
@@ -3827,7 +3833,7 @@ body[data-page="plan-table"] .panel:nth-child(3) {
 #roomCanvas {
   display: block;
   width: 100%;
-  height: 520px;
+  height: 100%;
 }
 
 /* Panel violations dans la vue salle */
@@ -4300,14 +4306,22 @@ body.dark-mode .table-violation-warning {
   margin-left: 2px;
 }
 .tms-rot-reset:hover { color: var(--ink); border-color: var(--ink-soft); }
-.tms-seats-list { display: flex; flex-direction: column; gap: 4px; }
+.tms-seats-list {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 4px;
+}
 .tms-seat {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 6px;
+  padding: 5px 6px;
   border-radius: 6px;
   font-size: 0.8rem;
+  min-height: 34px;
+  min-width: 0;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 .tms-occupied { background: var(--surface-alt); }
 .tms-empty    { background: var(--bg); border: 1px solid var(--border); }
@@ -4318,9 +4332,9 @@ body.dark-mode .table-violation-warning {
   font-size: 0.75rem;
   color: var(--ink-soft);
 }
-.tms-name { flex: 1; font-weight: 500; }
+.tms-name { flex: 1; min-width: 0; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tms-tag  { font-size: 0.72rem; color: var(--ink-soft); }
-.tms-assign { flex: 1; font-size: 0.75rem; }
+.tms-assign { flex: 1; min-width: 0; font-size: 0.75rem; width: 100%; }
 .tms-unseat, .tms-remove {
   background: none;
   border: none;
@@ -4384,6 +4398,19 @@ body.dark-mode .table-violation-warning {
   transition: background .15s;
 }
 .tms-split-btn:hover { background: #3a5fa0; color: #fff; }
+.tms-sides-row {
+  display: flex; gap: 4px; margin-bottom: 8px;
+}
+.tms-side-btn {
+  flex: 1; padding: 5px 4px; font-size: 0.72rem;
+  font-family: var(--font-ui); font-weight: 600;
+  background: none; border: 1.5px solid var(--border);
+  border-radius: 6px; cursor: pointer; color: var(--ink);
+  transition: background .12s, border-color .12s, color .12s;
+  box-shadow: none;
+}
+.tms-side-btn:hover { background: var(--surface-alt); border-color: var(--rose); }
+.tms-side-btn.is-active { background: var(--rose); border-color: var(--rose); color: #fff; }
 .tms-trim-row { margin-top: 4px; }
 .tms-trim-btn {
   width: 100%;
@@ -4404,6 +4431,31 @@ body.dark-mode .table-violation-warning {
 }
 .tms-trim-btn:hover { border-color: var(--accent); color: var(--accent); }
 .tms-trim-hint { font-size: 0.7rem; color: var(--ink-soft); }
+.tms-delete-row {
+  margin: 10px 12px 4px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+.tms-delete-btn {
+  width: 100%;
+  padding: 7px 10px;
+  font-size: 0.78rem;
+  font-family: var(--font-ui);
+  background: none;
+  border: 1px solid rgba(224,10,38,.3);
+  border-radius: 6px;
+  color: var(--danger);
+  cursor: pointer;
+  font-weight: 600;
+  transition: background .15s, border-color .15s;
+  box-shadow: none;
+}
+.tms-delete-btn:hover {
+  background: rgba(224,10,38,.07);
+  border-color: var(--danger);
+  box-shadow: none;
+  transform: none;
+}
 
 /* ═══════════════════════════════════════════════════════════
    FORMULAIRE D'ÉDITION DE TABLE (VUE LISTE)
@@ -4971,21 +5023,24 @@ body.dark-mode .guest-host-status { color: #6fcf97; }
 
 /* App shell plein écran */
 .pt-app {
-  display: flex; flex-direction: column;
   position: fixed; inset: 0; z-index: 100;
-  background: var(--bg);
+  background: #f5f4f2;
   overflow: hidden;
 }
+body.dark-mode .pt-app { background: #1a1612; }
 .pt-app.is-hidden { display: none; }
 
 /* ── Topbar ─────────────────────────────────────────────── */
 .pt-topbar {
-  display: flex; align-items: center; gap: 5px;
-  height: 52px; padding: 0 14px;
-  background: var(--card);
-  border-bottom: 1.5px solid var(--line);
-  flex-shrink: 0; overflow-x: auto; overflow-y: hidden;
+  display: flex; align-items: center; justify-content: center; gap: 5px;
+  position: absolute; top: 0; left: 0; right: 0; height: 52px;
+  padding: 0 14px;
+  background: #f5f4f2;
+  border-bottom: 1px solid rgba(0,0,0,.08);
+  overflow-x: auto; overflow-y: hidden;
+  z-index: 30;
 }
+body.dark-mode .pt-topbar { background: #1a1612; }
 .pt-back-btn {
   text-decoration: none; color: var(--ink-soft);
   font-size: 0.8rem; font-weight: 600; white-space: nowrap;
@@ -4999,6 +5054,7 @@ body.dark-mode .guest-host-status { color: #6fcf97; }
 .pt-sync-label {
   font-size: 0.72rem; color: var(--ink-soft);
   white-space: nowrap; min-width: 80px;
+  margin: 0;
 }
 .pt-topbar-sep {
   width: 1px; height: 22px; background: var(--line);
@@ -5038,20 +5094,23 @@ body.dark-mode .guest-host-status { color: #6fcf97; }
   text-align: center; color: var(--ink);
 }
 
-/* ── Workspace (3 colonnes) ─────────────────────────────── */
+/* ── Workspace ───────────────────────────────────────────── */
 .pt-workspace {
-  display: flex; flex: 1; min-height: 0; overflow: hidden;
+  position: absolute; top: 52px; left: 0; right: 0; bottom: 0;
+  overflow: hidden;
 }
 
-/* ── Sidebar gauche ─────────────────────────────────────── */
+/* ── Sidebar gauche (flottante sur le canvas) ────────────── */
 .pt-sidebar-left {
-  width: 80px; flex-shrink: 0;
+  position: absolute; left: 0; top: 0; bottom: 0;
+  width: 155px;
   background: var(--card);
-  border-right: 1.5px solid var(--line);
+  border-right: 1px solid rgba(0,0,0,.09);
   overflow-y: auto; overflow-x: hidden;
-  padding: 8px 6px 16px;
-  display: flex; flex-direction: column; gap: 3px;
-  position: relative;
+  padding: 4px 8px 18px;
+  display: flex; flex-direction: column; gap: 2px;
+  z-index: 10;
+  box-shadow: 2px 0 8px rgba(0,0,0,.06);
 }
 /* menu disposition inline dans la sidebar */
 .pt-sidebar-left .room-layout-menu {
@@ -5061,92 +5120,135 @@ body.dark-mode .guest-host-status { color: #6fcf97; }
   border-radius: 8px;
   background: var(--bg);
   margin: 2px 0 4px;
-  overflow: hidden;
+  overflow: visible;
 }
 .pt-sidebar-left .layout-menu-item {
   display: block; width: 100%; text-align: left;
   padding: 6px 10px; font-size: 0.75rem;
   border: none; background: none; cursor: pointer;
   color: var(--ink);
+  white-space: normal;
+  line-height: 1.3;
 }
 .pt-sidebar-left .layout-menu-item:hover { background: var(--line); }
 .pt-sb-group {
-  font-size: 0.62rem; font-weight: 800; letter-spacing: .08em;
-  color: var(--ink-soft); padding: 10px 4px 4px;
+  font-size: 0.62rem; font-weight: 800; letter-spacing: .07em;
+  color: var(--ink-soft); padding: 6px 10px 3px;
   text-transform: uppercase;
 }
 .pt-sb-btn {
-  display: flex; flex-direction: column; align-items: center; gap: 4px;
-  padding: 10px 4px; border-radius: 12px;
-  font-size: 0.68rem; text-align: center; line-height: 1.1;
-  background: none; border: 1.5px solid transparent;
-  font-size: 0.8rem; font-weight: 600; cursor: pointer;
-  color: var(--ink); width: 100%; text-align: left;
-  transition: background 0.12s, border-color 0.12s;
+  display: flex; flex-direction: row; align-items: center; gap: 8px;
+  padding: 11px 12px; border-radius: 8px;
+  font-size: 0.82rem; text-align: left; line-height: 1.2;
+  background: none; border: none;
+  font-weight: 500; cursor: pointer;
+  color: var(--ink); width: 100%;
+  transition: background 0.12s;
+}
+.pt-sb-btn.is-active {
+  background: rgba(156,53,85,.1); color: var(--rose); font-weight: 700;
 }
 .pt-sb-btn:hover {
   background: var(--line);
-  border-color: var(--rose);
 }
 .pt-sb-icon {
-  width: 22px; height: 22px; flex-shrink: 0; color: var(--rose);
+  width: 20px; height: 20px; flex-shrink: 0; color: var(--rose);
 }
-.pt-sb-emoji { font-size: 18px; line-height: 1; }
+.pt-sb-emoji { font-size: 19px; line-height: 1; flex-shrink: 0; width: 22px; text-align: center; }
 
-/* ── Zone canvas ─────────────────────────────────────────── */
+/* ── Zone canvas (plein écran) ───────────────────────────── */
 .pt-canvas-area {
-  flex: 1; min-width: 0;
-  display: flex; flex-direction: column;
-  position: relative; overflow: hidden;
-  background: var(--bg);
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #f5f4f2;
 }
 .pt-canvas-area .room-canvas-container {
-  flex: 1; min-height: 0;
-  position: relative; overflow: hidden;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #f5f4f2;
 }
 .pt-canvas-area canvas {
   display: block;
+  width: 100%;
+  height: 100%;
 }
 .pt-canvas-stats {
-  font-size: 0.78rem; color: var(--ink-soft);
-  padding: 4px 12px; background: var(--card);
-  border-bottom: 1px solid var(--line);
+  font-size: 0.75rem; color: var(--ink-soft);
+  padding: 4px 12px;
+  background: transparent;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  position: absolute; top: 6px; left: 165px; right: 220px; z-index: 2;
+  pointer-events: none;
 }
 /* Panels flottants sur le canvas */
 .pt-canvas-area .room-search-bar {
-  position: absolute; top: 40px; left: 50%; transform: translateX(-50%);
-  z-index: 15; width: min(400px, 80%);
+  position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
+  z-index: 20; width: min(400px, 80%);
 }
 .pt-canvas-area .room-legend-panel,
 .pt-canvas-area .room-config-panel {
-  position: absolute; top: 40px; left: 12px; z-index: 15;
-  max-width: 340px;
+  position: absolute; top: 8px; left: 165px; z-index: 20;
+  max-width: 360px;
+  min-width: 260px;
 }
 .pt-canvas-area .room-violations-panel {
   position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
-  z-index: 15; width: min(600px, 90%);
+  z-index: 20; width: min(600px, 90%);
 }
-/* Table manage panel flottant sur la canvas */
+/* Table manage panel flottant sur le canvas */
 .pt-canvas-area .table-manage-panel {
   position: absolute;
-  top: 0; right: 0; bottom: 0;
-  width: 220px; z-index: 20;
-  box-shadow: -2px 0 12px rgba(74,11,20,.12);
-}
-
-/* ── Sidebar droite ─────────────────────────────────────── */
-.pt-sidebar-right {
-  width: 210px; flex-shrink: 0;
-  background: var(--card);
-  border-left: 1.5px solid var(--line);
+  top: 8px; right: 8px;
+  width: 256px;
+  min-width: 260px;
+  max-height: calc(100% - 16px);
+  z-index: 20;
+  box-shadow: 0 10px 32px rgba(0,0,0,.18), 0 2px 8px rgba(0,0,0,.09);
+  border-radius: 18px;
   display: flex; flex-direction: column;
   overflow: hidden;
+  user-select: none;
+}
+.pt-canvas-area .table-manage-panel .table-manage-content {
+  overflow-y: auto; flex: 1;
+}
+.pt-canvas-area .table-manage-panel .table-manage-header {
+  position: relative; flex-shrink: 0;
+  /* was sticky in base — not needed with flex column layout */
+}
+.panel-resize-handle {
+  position: absolute;
+  bottom: 6px; right: 6px;
+  width: 14px; height: 14px;
+  cursor: se-resize;
+  z-index: 5;
+}
+.panel-resize-handle::after {
+  content: '';
+  position: absolute;
+  bottom: 0; right: 0;
+  width: 9px; height: 9px;
+  border-right: 2px solid rgba(0,0,0,.2);
+  border-bottom: 2px solid rgba(0,0,0,.2);
+  border-radius: 0 0 2px 0;
+}
+
+/* ── Sidebar droite (flottante sur le canvas) ────────────── */
+.pt-sidebar-right {
+  position: absolute; right: 0; top: 0; bottom: 0;
+  width: 210px;
+  background: var(--card);
+  border-left: 1px solid rgba(0,0,0,.09);
+  display: flex; flex-direction: column;
+  overflow: hidden; z-index: 10;
+  box-shadow: -2px 0 8px rgba(0,0,0,.06);
 }
 .pt-rhs-head {
   display: flex; align-items: center; justify-content: space-between;
   padding: 10px 12px 8px;
-  border-bottom: 1.5px solid var(--line);
+  box-shadow: 0 1px 0 var(--line);
   flex-shrink: 0;
 }
 .pt-rhs-title {
@@ -5213,4 +5315,65 @@ body[data-page="plan-table"] .room-search-bar:not(.pt-canvas-area .room-search-b
 /* admin-gate style de base */
 body[data-page="plan-table"] .admin-gate {
   border: none; background: none; padding: 0;
+}
+/* Suppression de toutes les ombres néon sur cette page */
+body[data-page="plan-table"] button {
+  box-shadow: none;
+}
+body[data-page="plan-table"] button:hover {
+  box-shadow: none;
+  transform: none;
+  filter: brightness(1.05);
+}
+/* Boutons de formulaire : couleur unie */
+body[data-page="plan-table"] .row-form button,
+body[data-page="plan-table"] .admin-login button,
+body[data-page="plan-table"] .room-config-dims button,
+body[data-page="plan-table"] .room-element-form button,
+body[data-page="plan-table"] .constraint-form button {
+  background: var(--rose);
+}
+
+/* ── Barres de titre des panneaux flottants ──────────────── */
+.panel-titlebar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 12px 7px;
+  background: var(--ink);
+  color: #fff;
+  border-radius: 10px 10px 0 0;
+  font-size: 0.78rem; font-weight: 700;
+  cursor: move;
+  user-select: none;
+  flex-shrink: 0;
+}
+.panel-close-btn {
+  background: none; border: none;
+  color: rgba(255,255,255,.6);
+  cursor: pointer; font-size: 1rem;
+  padding: 0 2px; line-height: 1;
+  box-shadow: none !important;
+  transform: none !important;
+  transition: color .12s;
+}
+.panel-close-btn:hover {
+  color: #fff;
+  box-shadow: none !important;
+  transform: none !important;
+  filter: none;
+}
+.panel-body {
+  padding: 12px 14px;
+}
+/* Panels avec barre de titre : pas de padding en haut */
+.room-legend-panel:has(.panel-titlebar),
+.room-config-panel:has(.panel-titlebar) {
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  flex-wrap: nowrap;
+}
+.room-config-panel .panel-body {
+  padding: 12px 14px;
 }
