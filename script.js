@@ -349,6 +349,8 @@ function bindPlannerEvents() {
         musicSuggestion: "",
         allergies: "",
         otherQuestion: "",
+        parentId: null,
+        colorGroupId: null,
       });
 
       guestForm.reset();
@@ -398,6 +400,8 @@ function bindPlannerEvents() {
             musicSuggestion: "",
             allergies: "",
             otherQuestion: "",
+            parentId: null,
+            colorGroupId: null,
           });
           added++;
         }
@@ -1450,11 +1454,33 @@ function renderGuests() {
     return;
   }
 
-  for (const [index, guest] of filteredGuests.entries()) {
+  // Babies with a parentId are rendered as sub-entries after their parent (only if parent is visible)
+  const filteredIds = new Set(filteredGuests.map(g => g.id));
+  const linkedBabyIds = new Set(
+    filteredGuests.filter(g => g.guestCategory === "baby" && g.parentId && filteredIds.has(g.parentId)).map(g => g.id)
+  );
+  const mainList = filteredGuests.filter(g => !linkedBabyIds.has(g.id));
+  const displayGuests = [];
+  for (const g of mainList) {
+    displayGuests.push(g);
+    const babies = filteredGuests.filter(b => b.guestCategory === "baby" && b.parentId === g.id);
+    displayGuests.push(...babies);
+  }
+
+  for (const [index, guest] of displayGuests.entries()) {
     const node = guestTemplate.content.firstElementChild.cloneNode(true);
     node.style.setProperty("--stagger", String(index));
     if (guest.guestCategory === "child") node.classList.add("guest-item-child");
+    if (guest.guestCategory === "baby") node.classList.add("guest-item-baby");
+    if (guest.allergies?.trim()) node.classList.add("has-allergy");
     node.querySelector(".main-text").textContent = guest.name;
+    if (guest.allergies?.trim()) {
+      const allergyBadge = document.createElement("span");
+      allergyBadge.className = "allergy-badge";
+      allergyBadge.title = guest.allergies;
+      allergyBadge.textContent = "🥗";
+      node.querySelector(".main-text").appendChild(allergyBadge);
+    }
     const attendanceType = normalizeGuestAttendanceType(guest.attendanceType);
     const groupMeta = node.querySelector(".guest-meta");
     if (groupMeta) {
@@ -1462,13 +1488,17 @@ function renderGuests() {
       const submittedPart = guest.rsvpSubmittedAt > 0
         ? ` — RSVP le ${new Date(guest.rsvpSubmittedAt).toLocaleDateString("fr-FR")}`
         : "";
-      groupMeta.textContent = `${catLabel} — ${getGuestAttendanceTypeLabel(attendanceType)}${submittedPart}`;
+      const parentPart = (guest.guestCategory === "baby" && guest.parentId)
+        ? ` — de ${state.guests.find(g => g.id === guest.parentId)?.name ?? "?"}`
+        : "";
+      groupMeta.textContent = `${catLabel}${parentPart} — ${getGuestAttendanceTypeLabel(attendanceType)}${submittedPart}`;
     }
 
     const categorySelect = node.querySelector("select.inline-category");
     if (categorySelect) {
       categorySelect.value = ["adult", "teen", "child", "baby"].includes(guest.guestCategory) ? guest.guestCategory : "adult";
       categorySelect.addEventListener("change", () => {
+        if (guest.guestCategory === "baby" && categorySelect.value !== "baby") guest.parentId = null;
         guest.guestCategory = categorySelect.value;
         refresh({ persist: false });
         persistNow();
@@ -1542,6 +1572,8 @@ function renderGuests() {
     const editPanel = node.querySelector(".guest-item-edit");
     const editNameInput = node.querySelector(".edit-guest-name");
     const editAttendanceSelect = node.querySelector(".edit-guest-attendance");
+    const editParentRow = node.querySelector(".edit-parent-row");
+    const editParentSelect = node.querySelector(".edit-guest-parent");
 
     if (editBtn && editPanel) {
       editBtn.addEventListener("click", () => {
@@ -1551,6 +1583,16 @@ function renderGuests() {
         } else {
           editNameInput.value = guest.name;
           editAttendanceSelect.value = normalizeGuestAttendanceType(guest.attendanceType);
+          if (editParentRow && editParentSelect && guest.guestCategory === "baby") {
+            editParentRow.classList.remove("is-hidden");
+            editParentSelect.innerHTML = `<option value="">— Aucun —</option>` +
+              state.guests
+                .filter(g => g.id !== guest.id && g.guestCategory !== "baby")
+                .map(g => `<option value="${g.id}"${g.id === guest.parentId ? " selected" : ""}>${escHtml(g.name)}</option>`)
+                .join("");
+          } else if (editParentRow) {
+            editParentRow.classList.add("is-hidden");
+          }
           editPanel.classList.remove("is-hidden");
           editNameInput.focus();
         }
@@ -1561,6 +1603,9 @@ function renderGuests() {
         if (!newName) { editNameInput.focus(); return; }
         guest.name = newName;
         guest.attendanceType = editAttendanceSelect.value;
+        if (guest.guestCategory === "baby" && editParentSelect) {
+          guest.parentId = editParentSelect.value || null;
+        }
         editPanel.classList.add("is-hidden");
         refresh({ persist: false });
         persistNow();
@@ -2044,11 +2089,12 @@ function normalizeState(candidate) {
           hebergement: Boolean(guest.hebergement),
           hebergementInfo: Boolean(guest.hebergementInfo),
           rsvpSubmittedAt: Number(guest.rsvpSubmittedAt) || 0,
-          guestCategory: ["adult", "teen", "child"].includes(guest.guestCategory) ? guest.guestCategory : "adult",
+          guestCategory: ["adult", "teen", "child", "baby"].includes(guest.guestCategory) ? guest.guestCategory : "adult",
           musicSuggestion: String(guest.musicSuggestion ?? "").trim(),
           allergies: String(guest.allergies ?? "").trim(),
           otherQuestion: String(guest.otherQuestion ?? "").trim(),
           colorGroupId: (typeof guest.colorGroupId === "string" && guest.colorGroupId && guest.colorGroupId !== "None") ? guest.colorGroupId : null,
+          parentId: (typeof guest.parentId === "string" && guest.parentId) ? guest.parentId : null,
         };
       })
       .filter((guest) => guest.name);

@@ -1589,6 +1589,15 @@ body::after {
 .guest-item-edit .edit-guest-attendance {
   font: 0.85rem 'Manrope', sans-serif;
 }
+.edit-parent-row {
+  flex: 1 1 100%;
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+}
+.edit-parent-row .edit-guest-parent {
+  font: 0.82rem 'Manrope', sans-serif;
+  margin-left: 4px;
+}
 .guest-edit-actions { display: flex; gap: 6px; }
 .save-guest-edit-btn {
   padding: 4px 12px;
@@ -1858,6 +1867,30 @@ button:hover {
 .guest-item-child {
   border-left: 3px solid #7db9e8;
   background: color-mix(in srgb, #7db9e8 6%, transparent);
+}
+.guest-item-baby {
+  border-left: 3px solid #f9a8d4;
+  background: color-mix(in srgb, #f9a8d4 6%, transparent);
+  margin-left: 16px;
+}
+.guest-item.has-allergy {
+  outline: 2px solid #f59e0b;
+  outline-offset: -1px;
+}
+.allergy-badge {
+  font-size: 0.8rem;
+  margin-left: 4px;
+  cursor: help;
+  vertical-align: middle;
+}
+.tms-seat.tms-has-allergy {
+  outline: 2px solid #f59e0b;
+  outline-offset: -2px;
+}
+.tms-allergy {
+  font-size: 0.72rem;
+  cursor: help;
+  flex-shrink: 0;
 }
 
 .guest-meta {

@@ -362,11 +362,12 @@ def normalize_data(candidate: object) -> dict:
                     "hebergement": bool(guest.get("hebergement", False)),
                     "hebergementInfo": bool(guest.get("hebergementInfo", False)),
                     "rsvpSubmittedAt": int(guest.get("rsvpSubmittedAt", 0) or 0),
-                    "guestCategory": str(guest.get("guestCategory", "")).strip() if str(guest.get("guestCategory", "")).strip() in {"adult", "teen", "child"} else "adult",
+                    "guestCategory": str(guest.get("guestCategory", "")).strip() if str(guest.get("guestCategory", "")).strip() in {"adult", "teen", "child", "baby"} else "adult",
                     "musicSuggestion": str(guest.get("musicSuggestion", "")).strip(),
                     "allergies": str(guest.get("allergies", "")).strip(),
                     "otherQuestion": str(guest.get("otherQuestion", "")).strip(),
                     "colorGroupId": (lambda v: str(v).strip() or None if isinstance(v, str) else None)(guest.get("colorGroupId")),
+                    "parentId": str(guest.get("parentId", "")).strip() or None,
                 }
             )
         normalized["guests"] = cleaned_guests

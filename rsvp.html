@@ -315,8 +315,8 @@
       // Badge type d'invitation
       if (formEventBadge) {
         formEventBadge.textContent = isVhOnly
-          ? "🥂 Vin d'honneur uniquement — à partir de 16h30"
-          : "🎉 Vin d'honneur, cocktail & dîner — journée complète";
+          ? "⛪ Cérémonies (14h) + 🥂 vin d'honneur (16h30)"
+          : "⛪ Cérémonies (14h) + 🎉 journée complète (cocktail & dîner)";
         show(formEventBadge);
       }
 
@@ -377,7 +377,7 @@
       // Construire le récapitulatif
       const rows = [];
       rows.push({ label: "Invité", value: formatName(currentGuest.name) });
-      rows.push({ label: "Événement", value: isVhOnly ? "🥂 Vin d'honneur uniquement" : "🎉 Journée complète" });
+      rows.push({ label: "Événement", value: isVhOnly ? "⛪ Cérémonies + 🥂 vin d'honneur" : "⛪ Cérémonies + 🎉 journée complète" });
       rows.push({ label: "Réponse", value: status === "yes" ? "✓ Présent(e)" : "✕ Absent(e)" });
       if (!isVhOnly && status === "yes") {
         const hLabels = { yes: "🏨 Dort sur place", no: "🚗 Rentre le soir", maybe: "🤔 À confirmer rapidement" };
