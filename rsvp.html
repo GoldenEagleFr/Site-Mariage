@@ -384,7 +384,7 @@
         rows.push({ label: "Hébergement", value: hLabels[hebergementChoice] || "—" });
       }
       if (musicSuggestion) rows.push({ label: "Musique", value: `🎵 ${musicSuggestion}` });
-      if (allergies)       rows.push({ label: "Allergies", value: `🥗 ${allergies}` });
+      if (allergies)       rows.push({ label: "Allergies / régime alimentaire", value: `🥗 ${allergies}` });
       if (otherQuestion)   rows.push({ label: "Question", value: `❓ ${otherQuestion}` });
 
       summaryBox.innerHTML = rows.map(r =>

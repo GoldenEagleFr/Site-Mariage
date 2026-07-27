@@ -53,6 +53,7 @@
           <button id="adminTabBtnTasks" class="admin-tab" type="button" data-admin-tab="tasks" role="tab" aria-selected="false" aria-controls="adminTabTasks">Tâches</button>
           <button id="adminTabBtnGuests" class="admin-tab" type="button" data-admin-tab="guests" role="tab" aria-selected="false" aria-controls="adminTabGuests">Invités</button>
           <button id="adminTabBtnTraiteur" class="admin-tab" type="button" data-admin-tab="traiteur" role="tab" aria-selected="false" aria-controls="adminTabTraiteur">Traiteur</button>
+          <a href="plan_table.html" class="admin-tab">🪑 Plan de table</a>
         </div>
 
         <section class="metrics">
@@ -98,6 +99,11 @@
               <p id="metricAllergies">0</p>
               <span class="metric-card-arrow">→ Voir le traiteur</span>
             </article>
+            <article class="metric-card" data-goto-tab="traiteur" tabindex="0" role="button" aria-label="Aller au traiteur">
+              <h2>Végétariens / vegan</h2>
+              <p id="metricVegetariens">0</p>
+              <span class="metric-card-arrow">→ Voir le traiteur</span>
+            </article>
             <article class="metric-card" data-goto-tab="guests" tabindex="0" role="button" aria-label="Aller aux invités">
               <h2>Hébergements demandés</h2>
               <p id="metricHebergements">0</p>
@@ -106,9 +112,11 @@
           </section>
 
         <section id="adminTabDashboard" class="admin-tab-panel is-active" data-admin-tab-panel="dashboard" role="tabpanel" aria-labelledby="adminTabBtnDashboard">
-          <div class="list-tools-actions" style="margin-top:8px;">
+          <div class="list-tools-actions" style="margin-top:8px;gap:8px;flex-wrap:wrap;">
             <button id="btnDownloadBackup" type="button" class="ghost-action">💾 Télécharger sauvegarde JSON</button>
+            <button id="btnToggleMaintenance" type="button" class="ghost-action">🔧 Activer maintenance</button>
           </div>
+          <p id="maintenanceStatus" style="font-size:0.8rem;color:var(--ink-soft);margin:4px 0 0 2px;"></p>
 
           <!-- Graphiques supplémentaires -->
           <div class="extra-charts-grid">
@@ -268,6 +276,7 @@
                     <option value="adult">Adultes</option>
                     <option value="teen">Ados</option>
                     <option value="child">Enfants</option>
+                    <option value="baby">Bébés</option>
                   </select>
                 </div>
 
@@ -289,6 +298,7 @@
                       <option value="adult">Adulte</option>
                       <option value="teen">Ado</option>
                       <option value="child">Enfant</option>
+                      <option value="baby">Bébé</option>
                     </select>
                     <select id="guestAttendanceType">
                       <option value="vin_repas">Vin d'honneur + repas</option>
@@ -318,9 +328,6 @@
               <div class="panel-list">
                 <ul id="guestList" class="data-list"></ul>
               </div>
-            </div>
-            <div class="plan-table-btn-wrap">
-              <a href="plan_table.html" class="cta cta-primary">🪑 Plan de table</a>
             </div>
           </section>
 
@@ -489,6 +496,7 @@
         <option value="adult">Adulte</option>
         <option value="teen">Ado</option>
         <option value="child">Enfant</option>
+        <option value="baby">Bébé</option>
       </select>
       <label class="guest-hebergement-label">
         <input type="checkbox" class="hebergement-check">

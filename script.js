@@ -112,8 +112,9 @@ const metricTasks = document.getElementById("metricTasks");
 const metricRsvp = document.getElementById("metricRsvp");
 const metricRsvpBreakdown = document.getElementById("metricRsvpBreakdown");
 const metricRsvpBreakdownPct = document.getElementById("metricRsvpBreakdownPct");
-const metricAllergies = document.getElementById("metricAllergies");
-const metricHebergements = document.getElementById("metricHebergements");
+const metricAllergies     = document.getElementById("metricAllergies");
+const metricVegetariens   = document.getElementById("metricVegetariens");
+const metricHebergements  = document.getElementById("metricHebergements");
 const syncStatus = document.getElementById("syncStatus");
 const budgetChartCanvas = document.getElementById("budgetChartCanvas");
 const budgetChartLegend = document.getElementById("budgetChartLegend");
@@ -337,7 +338,7 @@ function bindPlannerEvents() {
         id: createId(),
         name,
         groupType: "single",
-        guestCategory: ["adult", "teen", "child"].includes(guestCategory?.value) ? guestCategory.value : "adult",
+        guestCategory: ["adult", "teen", "child", "baby"].includes(guestCategory?.value) ? guestCategory.value : "adult",
         attendanceType,
         partySize: 1,
         status: VALID_GUEST_STATUS.has(status) ? status : "pending",
@@ -377,7 +378,7 @@ function bindPlannerEvents() {
           const name = cols[0];
           if (!name || name.toLowerCase() === "nom" || name.toLowerCase() === "name") continue;
           const rawCat = (cols[1] || "").toLowerCase();
-          const catMap = { enfant: "child", child: "child", kid: "child", ado: "teen", teen: "teen", adolescent: "teen" };
+          const catMap = { enfant: "child", child: "child", kid: "child", ado: "teen", teen: "teen", adolescent: "teen", baby: "baby", bebe: "baby", nourrisson: "baby" };
           const guestCategory = catMap[rawCat] || "adult";
           const rawStatus = (cols[2] || "").toLowerCase();
           const statusMap = { oui: "yes", yes: "yes", non: "no", no: "no" };
@@ -533,6 +534,7 @@ function bindAdminEvents() {
   bindAdminTabs();
   bindMetricCardNavigation();
   bindDownloadBackup();
+  bindMaintenanceToggle();
 }
 
 function bindBudgetChartResize() {
@@ -1414,10 +1416,13 @@ function renderGuests() {
     guestStats.textContent = `${filteredGuests.length}/${state.guests.length} affichés — ${confirmed} oui — ${pending} en attente (${invites.length} invités + ${state.guests.length - invites.length} marié${state.guests.length - invites.length > 1 ? "s" : ""})`;
   }
   if (guestCategoryStats) {
-    const adults = state.guests.filter((g) => !["child", "teen"].includes(g.guestCategory)).length;
-    const teens = state.guests.filter((g) => g.guestCategory === "teen").length;
+    const adults   = state.guests.filter((g) => !["child", "teen", "baby"].includes(g.guestCategory)).length;
+    const teens    = state.guests.filter((g) => g.guestCategory === "teen").length;
     const children = state.guests.filter((g) => g.guestCategory === "child").length;
-    guestCategoryStats.textContent = `Adultes: ${adults} — Ados: ${teens} — Enfants: ${children}`;
+    const babies   = state.guests.filter((g) => g.guestCategory === "baby").length;
+    const parts    = [`Adultes: ${adults}`, `Ados: ${teens}`, `Enfants: ${children}`];
+    if (babies > 0) parts.push(`Bébés: ${babies}`);
+    guestCategoryStats.textContent = parts.join(" — ");
   }
   if (guestVinStats) {
     const totalPersons = state.guests.reduce((s, g) => s + normalizeGuestPartySize(g.partySize, g.groupType), 0);
@@ -1453,7 +1458,7 @@ function renderGuests() {
     const attendanceType = normalizeGuestAttendanceType(guest.attendanceType);
     const groupMeta = node.querySelector(".guest-meta");
     if (groupMeta) {
-      const catLabel = guest.guestCategory === "child" ? "👶 Enfant" : guest.guestCategory === "teen" ? "🧑 Ado" : "Adulte";
+      const catLabel = guest.guestCategory === "baby" ? "🍼 Bébé" : guest.guestCategory === "child" ? "👶 Enfant" : guest.guestCategory === "teen" ? "🧑 Ado" : "Adulte";
       const submittedPart = guest.rsvpSubmittedAt > 0
         ? ` — RSVP le ${new Date(guest.rsvpSubmittedAt).toLocaleDateString("fr-FR")}`
         : "";
@@ -1462,7 +1467,7 @@ function renderGuests() {
 
     const categorySelect = node.querySelector("select.inline-category");
     if (categorySelect) {
-      categorySelect.value = ["adult", "teen", "child"].includes(guest.guestCategory) ? guest.guestCategory : "adult";
+      categorySelect.value = ["adult", "teen", "child", "baby"].includes(guest.guestCategory) ? guest.guestCategory : "adult";
       categorySelect.addEventListener("change", () => {
         guest.guestCategory = categorySelect.value;
         refresh({ persist: false });
@@ -1672,15 +1677,19 @@ function renderMetrics() {
 
   // Allergies / régimes
   const allergyCount = allGuests.filter((g) => g.status === "yes" && g.allergies?.trim()).length;
-  if (metricAllergies) {
-    metricAllergies.textContent = String(allergyCount);
-  }
+  if (metricAllergies) metricAllergies.textContent = String(allergyCount);
+
+  // Végétariens / vegan
+  const VEGGIE_KW = ["végétarien", "végétarienne", "vegan", "végane", "vegetar"];
+  const veggieCount = allGuests.filter((g) =>
+    g.status === "yes" && g.allergies &&
+    VEGGIE_KW.some((kw) => g.allergies.toLowerCase().includes(kw))
+  ).length;
+  if (metricVegetariens) metricVegetariens.textContent = String(veggieCount);
 
   // Hébergements
   const hebergCount = allGuests.filter((g) => g.status === "yes" && g.hebergement).length;
-  if (metricHebergements) {
-    metricHebergements.textContent = String(hebergCount);
-  }
+  if (metricHebergements) metricHebergements.textContent = String(hebergCount);
 
   // Rendu traiteur si tab actif
   if (activeAdminTab === "traiteur") {
@@ -2783,6 +2792,44 @@ function renderTraiteur() {
       <td style="padding:6px 10px;border-bottom:1px solid var(--border,#e5e5e5);">${heberg}</td>
     </tr>`;
   }).join("");
+}
+
+// ── Toggle maintenance ────────────────────────────────────────────
+function bindMaintenanceToggle() {
+  const btn    = document.getElementById("btnToggleMaintenance");
+  const status = document.getElementById("maintenanceStatus");
+  if (!btn) return;
+
+  async function refreshMaintenanceStatus() {
+    if (!isAdminUnlocked || !adminToken) return;
+    try {
+      const res  = await fetch("/api/admin/maintenance", { headers: { "X-Admin-Key": adminToken }, cache: "no-store" });
+      const data = await res.json();
+      const on   = data.active === true;
+      btn.textContent    = on ? "✅ Désactiver maintenance" : "🔧 Activer maintenance";
+      btn.style.color    = on ? "var(--rose)" : "";
+      if (status) status.textContent = on ? "⚠️ Site en maintenance — les invités voient la page de maintenance." : "";
+    } catch { /* ignore */ }
+  }
+
+  btn.addEventListener("click", async () => {
+    if (!isAdminUnlocked || !adminToken) return;
+    try {
+      const cur   = await fetch("/api/admin/maintenance", { headers: { "X-Admin-Key": adminToken }, cache: "no-store" });
+      const data  = await cur.json();
+      const newState = !data.active;
+      await fetch("/api/admin/maintenance", {
+        method: "POST",
+        headers: { "X-Admin-Key": adminToken, "Content-Type": "application/json" },
+        body: JSON.stringify({ active: newState }),
+      });
+      await refreshMaintenanceStatus();
+    } catch (err) {
+      alert("Erreur : " + err.message);
+    }
+  });
+
+  refreshMaintenanceStatus();
 }
 
 // ── Téléchargement sauvegarde JSON ───────────────────────────────
