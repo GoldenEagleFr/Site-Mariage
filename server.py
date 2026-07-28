@@ -913,8 +913,9 @@ class PlannerHandler(SimpleHTTPRequestHandler):
             "script-src 'self' 'unsafe-inline'; "
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
             "font-src 'self' https://fonts.gstatic.com; "
-            "img-src 'self' data:; "
+            "img-src 'self' data: https://maps.gstatic.com https://maps.googleapis.com; "
             "connect-src 'self'; "
+            "frame-src https://maps.google.com https://www.google.com; "
             "frame-ancestors 'none'; "
             "object-src 'none'"
         )
