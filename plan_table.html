@@ -9,7 +9,30 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
-  <style>html, body { overflow: hidden; }</style>
+  <style>
+    html, body { overflow: hidden; }
+    @media print {
+      html, body { overflow: visible !important; }
+      .pt-gate, .pt-topbar, .pt-sidebar-left, .pt-sidebar-right,
+      .pt-canvas-area, #guestDragSidebar, .table-manage-panel { display: none !important; }
+      .pt-workspace { display: block !important; overflow: visible !important; }
+      .pt-list-panel {
+        position: static !important;
+        width: 100% !important;
+        height: auto !important;
+        overflow: visible !important;
+        box-shadow: none !important;
+        border: none !important;
+      }
+      .pt-list-body {
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+      }
+      .pt-list-panel-head button, .pt-list-close { display: none !important; }
+      .panel { page-break-inside: avoid; }
+    }
+  </style>
 </head>
 <body data-page="plan-table">
 
@@ -385,7 +408,8 @@
       }
       loadTables();
       startSyncPolling(token);
-      requestAnimationFrame(() => switchView("room"));
+      const isMobile = window.innerWidth < 768 || "ontouchstart" in window;
+      requestAnimationFrame(() => switchView(isMobile ? "list" : "room"));
     }
 
     function startSyncPolling(token) {

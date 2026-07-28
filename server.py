@@ -1341,6 +1341,12 @@ class PlannerHandler(SimpleHTTPRequestHandler):
 def main() -> None:
     global ADMIN_PASSWORD, ACCESS_CODE
     ADMIN_PASSWORD = load_admin_password()
+    if ADMIN_PASSWORD == DEFAULT_ADMIN_PASSWORD:
+        print(
+            "\n⚠️  ATTENTION : mot de passe admin par défaut actif (\"mariage2026\").\n"
+            "   Définissez MARIAGE_ADMIN_PASSWORD avant la mise en ligne !\n",
+            flush=True,
+        )
     ACCESS_CODE = os.environ.get("MARIAGE_ACCESS_CODE", "").strip()
     if ACCESS_CODE:
         print(f"Protection par code d'accès ACTIVÉE (MARIAGE_ACCESS_CODE défini)", flush=True)

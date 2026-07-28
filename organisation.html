@@ -109,6 +109,12 @@
               <p id="metricHebergements">0</p>
               <span class="metric-card-arrow">→ Voir les invités</span>
             </article>
+            <article class="metric-card" data-goto-tab="guests" tabindex="0" role="button" aria-label="Aller aux invités">
+              <h2>Vin d'honneur seulement</h2>
+              <p id="metricVinOnly">0</p>
+              <span class="metric-sub" id="metricVinOnlySub"></span>
+              <span class="metric-card-arrow">→ Voir les invités</span>
+            </article>
           </section>
 
         <section id="adminTabDashboard" class="admin-tab-panel is-active" data-admin-tab-panel="dashboard" role="tabpanel" aria-labelledby="adminTabBtnDashboard">
@@ -134,6 +140,12 @@
           <div id="upcomingPaymentsPanel" class="upcoming-payments-panel is-hidden" style="margin-top:14px;">
             <p class="upcoming-payments-title">⏰ À régler prochainement</p>
             <div id="upcomingPaymentsList"></div>
+          </div>
+
+          <!-- Dernières réponses RSVP -->
+          <div id="latestRsvpPanel" class="upcoming-payments-panel" style="margin-top:14px;">
+            <p class="upcoming-payments-title">📬 Dernières réponses reçues</p>
+            <div id="latestRsvpList" style="font-size:0.84rem;"></div>
           </div>
         </section>
 

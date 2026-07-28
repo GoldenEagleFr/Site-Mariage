@@ -115,6 +115,8 @@ const metricRsvpBreakdownPct = document.getElementById("metricRsvpBreakdownPct")
 const metricAllergies     = document.getElementById("metricAllergies");
 const metricVegetariens   = document.getElementById("metricVegetariens");
 const metricHebergements  = document.getElementById("metricHebergements");
+const metricVinOnly       = document.getElementById("metricVinOnly");
+const metricVinOnlySub    = document.getElementById("metricVinOnlySub");
 const syncStatus = document.getElementById("syncStatus");
 const budgetChartCanvas = document.getElementById("budgetChartCanvas");
 const budgetChartLegend = document.getElementById("budgetChartLegend");
@@ -753,6 +755,9 @@ function setActiveAdminTab(tabId) {
     panel.classList.toggle("is-hidden", !isActive);
     panel.setAttribute("aria-hidden", String(!isActive));
   }
+
+  if (tabId === "dashboard") renderLatestRsvps();
+  if (tabId === "traiteur")   renderTraiteur();
 }
 
 function initCountdown() {
@@ -1750,9 +1755,21 @@ function renderMetrics() {
   const hebergCount = allGuests.filter((g) => g.status === "yes" && g.hebergement).length;
   if (metricHebergements) metricHebergements.textContent = String(hebergCount);
 
+  // Vin d'honneur seulement
+  const vinOnlyAll       = allGuests.filter((g) => normalizeGuestAttendanceType(g.attendanceType) === "vin_only");
+  const vinOnlyConfirmed = vinOnlyAll.filter((g) => g.status === "yes").length;
+  if (metricVinOnly) metricVinOnly.textContent = String(vinOnlyAll.length);
+  if (metricVinOnlySub && vinOnlyAll.length > 0) {
+    metricVinOnlySub.textContent = `${vinOnlyConfirmed} confirmé(s)`;
+  }
+
   // Rendu traiteur si tab actif
   if (activeAdminTab === "traiteur") {
     renderTraiteur();
+  }
+  // Rendu dashboard si tab actif
+  if (activeAdminTab === "dashboard") {
+    renderLatestRsvps();
   }
 }
 
@@ -1883,7 +1900,9 @@ function toSearchKey(value) {
 }
 
 function createId() {
-  return Math.random().toString(36).slice(2, 10);
+  const arr = new Uint8Array(8);
+  crypto.getRandomValues(arr);
+  return Array.from(arr, b => b.toString(16).padStart(2, "0")).join("");
 }
 
 function createGuestToken() {
@@ -2855,6 +2874,32 @@ function renderTraiteur() {
       <td style="padding:6px 10px;border-bottom:1px solid var(--border,#e5e5e5);${statusColor}">${statusLabel}</td>
       <td style="padding:6px 10px;border-bottom:1px solid var(--border,#e5e5e5);">${heberg}</td>
     </tr>`;
+  }).join("");
+}
+
+// ── Dernières réponses RSVP ───────────────────────────────────────
+function renderLatestRsvps() {
+  const el = document.getElementById("latestRsvpList");
+  if (!el) return;
+  const recent = state.guests
+    .filter((g) => !g.isHost && g.rsvpSubmittedAt > 0)
+    .sort((a, b) => b.rsvpSubmittedAt - a.rsvpSubmittedAt)
+    .slice(0, 8);
+  if (!recent.length) {
+    el.innerHTML = '<p style="color:var(--ink-soft);font-style:italic;">Aucune réponse reçue.</p>';
+    return;
+  }
+  el.innerHTML = recent.map((g) => {
+    const date = new Date(g.rsvpSubmittedAt).toLocaleDateString("fr-FR", {
+      day: "2-digit", month: "short", year: "numeric",
+    });
+    const icon  = g.status === "yes" ? "✓" : g.status === "no" ? "✕" : "?";
+    const color = g.status === "yes" ? "#1a6e3a" : g.status === "no" ? "#9b1c1c" : "var(--ink-soft)";
+    return `<div style="display:flex;gap:10px;align-items:center;padding:5px 2px;border-bottom:1px solid var(--line,#e5e5e5);">
+      <span style="color:${color};font-weight:700;width:14px;text-align:center;flex-shrink:0;">${icon}</span>
+      <span style="flex:1;">${escHtml(g.name)}</span>
+      <span style="font-size:0.78rem;color:var(--ink-soft);">${date}</span>
+    </div>`;
   }).join("");
 }
 
