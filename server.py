@@ -1138,6 +1138,9 @@ class PlannerHandler(SimpleHTTPRequestHandler):
             return
 
         if path == "/api/stats":
+            if not self._is_admin_authorized():
+                self._send_json({"ok": False, "error": "unauthorized"}, HTTPStatus.UNAUTHORIZED)
+                return
             data = load_data_file()
             guests_list = data.get("guests", [])
             total     = len(guests_list)
