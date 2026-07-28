@@ -349,7 +349,7 @@ function bindPlannerEvents() {
         musicSuggestion: "",
         allergies: "",
         otherQuestion: "",
-        parentId: null,
+        parentIds: [],
         colorGroupId: null,
       });
 
@@ -400,7 +400,7 @@ function bindPlannerEvents() {
             musicSuggestion: "",
             allergies: "",
             otherQuestion: "",
-            parentId: null,
+            parentIds: [],
             colorGroupId: null,
           });
           added++;
@@ -1454,16 +1454,24 @@ function renderGuests() {
     return;
   }
 
-  // Babies with a parentId are rendered as sub-entries after their parent (only if parent is visible)
+  // Babies with parentIds are rendered as sub-entries after their first visible parent
   const filteredIds = new Set(filteredGuests.map(g => g.id));
   const linkedBabyIds = new Set(
-    filteredGuests.filter(g => g.guestCategory === "baby" && g.parentId && filteredIds.has(g.parentId)).map(g => g.id)
+    filteredGuests.filter(g => {
+      if (g.guestCategory !== "baby") return false;
+      const ids = Array.isArray(g.parentIds) ? g.parentIds : [];
+      return ids.some(pid => pid && filteredIds.has(pid));
+    }).map(g => g.id)
   );
   const mainList = filteredGuests.filter(g => !linkedBabyIds.has(g.id));
   const displayGuests = [];
   for (const g of mainList) {
     displayGuests.push(g);
-    const babies = filteredGuests.filter(b => b.guestCategory === "baby" && b.parentId === g.id);
+    const babies = filteredGuests.filter(b => {
+      if (b.guestCategory !== "baby") return false;
+      const ids = Array.isArray(b.parentIds) ? b.parentIds : [];
+      return ids[0] === g.id || (ids[0] && !filteredIds.has(ids[0]) && ids[1] === g.id);
+    });
     displayGuests.push(...babies);
   }
 
@@ -1488,8 +1496,8 @@ function renderGuests() {
       const submittedPart = guest.rsvpSubmittedAt > 0
         ? ` — RSVP le ${new Date(guest.rsvpSubmittedAt).toLocaleDateString("fr-FR")}`
         : "";
-      const parentPart = (guest.guestCategory === "baby" && guest.parentId)
-        ? ` — de ${state.guests.find(g => g.id === guest.parentId)?.name ?? "?"}`
+      const parentPart = (guest.guestCategory === "baby" && Array.isArray(guest.parentIds) && guest.parentIds.length)
+        ? ` — de ${guest.parentIds.map(pid => state.guests.find(g => g.id === pid)?.name ?? "?").join(" & ")}`
         : "";
       groupMeta.textContent = `${catLabel}${parentPart} — ${getGuestAttendanceTypeLabel(attendanceType)}${submittedPart}`;
     }
@@ -1498,7 +1506,7 @@ function renderGuests() {
     if (categorySelect) {
       categorySelect.value = ["adult", "teen", "child", "baby"].includes(guest.guestCategory) ? guest.guestCategory : "adult";
       categorySelect.addEventListener("change", () => {
-        if (guest.guestCategory === "baby" && categorySelect.value !== "baby") guest.parentId = null;
+        if (guest.guestCategory === "baby" && categorySelect.value !== "baby") guest.parentIds = [];
         guest.guestCategory = categorySelect.value;
         refresh({ persist: false });
         persistNow();
@@ -1573,7 +1581,8 @@ function renderGuests() {
     const editNameInput = node.querySelector(".edit-guest-name");
     const editAttendanceSelect = node.querySelector(".edit-guest-attendance");
     const editParentRow = node.querySelector(".edit-parent-row");
-    const editParentSelect = node.querySelector(".edit-guest-parent");
+    const editParentSelect1 = node.querySelector(".edit-guest-parent1");
+    const editParentSelect2 = node.querySelector(".edit-guest-parent2");
 
     if (editBtn && editPanel) {
       editBtn.addEventListener("click", () => {
@@ -1583,13 +1592,18 @@ function renderGuests() {
         } else {
           editNameInput.value = guest.name;
           editAttendanceSelect.value = normalizeGuestAttendanceType(guest.attendanceType);
-          if (editParentRow && editParentSelect && guest.guestCategory === "baby") {
+          if (editParentRow && guest.guestCategory === "baby") {
             editParentRow.classList.remove("is-hidden");
-            editParentSelect.innerHTML = `<option value="">— Aucun —</option>` +
-              state.guests
-                .filter(g => g.id !== guest.id && g.guestCategory !== "baby")
-                .map(g => `<option value="${g.id}"${g.id === guest.parentId ? " selected" : ""}>${escHtml(g.name)}</option>`)
-                .join("");
+            const currentIds = Array.isArray(guest.parentIds) ? guest.parentIds : [];
+            const opts = state.guests
+              .filter(g => g.id !== guest.id && g.guestCategory !== "baby")
+              .map(g => `<option value="${g.id}">${escHtml(g.name)}</option>`)
+              .join("");
+            const none = `<option value="">— Aucun —</option>`;
+            editParentSelect1.innerHTML = none + opts;
+            editParentSelect2.innerHTML = none + opts;
+            editParentSelect1.value = currentIds[0] || "";
+            editParentSelect2.value = currentIds[1] || "";
           } else if (editParentRow) {
             editParentRow.classList.add("is-hidden");
           }
@@ -1603,8 +1617,8 @@ function renderGuests() {
         if (!newName) { editNameInput.focus(); return; }
         guest.name = newName;
         guest.attendanceType = editAttendanceSelect.value;
-        if (guest.guestCategory === "baby" && editParentSelect) {
-          guest.parentId = editParentSelect.value || null;
+        if (guest.guestCategory === "baby") {
+          guest.parentIds = [editParentSelect1?.value, editParentSelect2?.value].filter(Boolean);
         }
         editPanel.classList.add("is-hidden");
         refresh({ persist: false });
@@ -2094,7 +2108,11 @@ function normalizeState(candidate) {
           allergies: String(guest.allergies ?? "").trim(),
           otherQuestion: String(guest.otherQuestion ?? "").trim(),
           colorGroupId: (typeof guest.colorGroupId === "string" && guest.colorGroupId && guest.colorGroupId !== "None") ? guest.colorGroupId : null,
-          parentId: (typeof guest.parentId === "string" && guest.parentId) ? guest.parentId : null,
+          parentIds: (() => {
+            // Migration parentId → parentIds
+            const ids = Array.isArray(guest.parentIds) ? guest.parentIds : (guest.parentId ? [guest.parentId] : []);
+            return ids.filter(id => typeof id === "string" && id).slice(0, 2);
+          })(),
         };
       })
       .filter((guest) => guest.name);

@@ -367,7 +367,12 @@ def normalize_data(candidate: object) -> dict:
                     "allergies": str(guest.get("allergies", "")).strip(),
                     "otherQuestion": str(guest.get("otherQuestion", "")).strip(),
                     "colorGroupId": (lambda v: str(v).strip() or None if isinstance(v, str) else None)(guest.get("colorGroupId")),
-                    "parentId": str(guest.get("parentId", "")).strip() or None,
+                    "parentIds": [i for i in [
+                        str(x).strip() for x in (
+                            guest.get("parentIds") if isinstance(guest.get("parentIds"), list)
+                            else ([guest.get("parentId")] if guest.get("parentId") else [])
+                        )
+                    ] if i][:2],
                 }
             )
         normalized["guests"] = cleaned_guests

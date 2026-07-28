@@ -1593,10 +1593,17 @@ body::after {
   flex: 1 1 100%;
   font-size: 0.82rem;
   color: var(--ink-soft);
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
-.edit-parent-row .edit-guest-parent {
+.edit-parent-row label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.edit-parent-row select {
   font: 0.82rem 'Manrope', sans-serif;
-  margin-left: 4px;
 }
 .guest-edit-actions { display: flex; gap: 6px; }
 .save-guest-edit-btn {
