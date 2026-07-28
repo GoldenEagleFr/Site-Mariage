@@ -2282,7 +2282,7 @@
           html += `<div class="tms-seat tms-occupied${hasAllergy ? " tms-has-allergy" : ""}">
             <span class="tms-num">${i + 1}</span>
             <span class="tms-name">${guest.name}</span>
-            ${hasAllergy ? `<span class="tms-allergy" title="${(guest.allergies || "").replace(/"/g, "&quot;")}">🥗</span>` : ""}
+            ${hasAllergy ? `<span class="tms-allergy" title="${(guest.allergies || "").replace(/&/g, "&amp;").replace(/"/g, "&quot;")}">🥗</span>` : ""}
             ${isSpec ? `<button class="tms-unseat" data-seat="${i}" title="Retirer l'attribution de siège">⟳</button>` : `<span class="tms-tag">~</span>`}
             <button class="tms-remove" data-gid="${guest.id}" title="Retirer de la table">✕</button>
           </div>`;
