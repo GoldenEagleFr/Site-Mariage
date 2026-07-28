@@ -235,6 +235,15 @@
 
   <script>
   (() => {
+    function escHtml(s) {
+      return String(s ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
     const SERVER_ENDPOINT   = "/api/data";
     const ADMIN_CHECK       = "/api/admin/check";
     const ADMIN_SESSION_KEY = "plan_mariage_admin_token";
@@ -785,7 +794,7 @@
       const makeOpts = (selEl) => {
         const current = selEl.value;
         selEl.innerHTML = `<option value="">— Invité —</option>` +
-          guests.map(g => `<option value="${g.id}" ${g.id === current ? "selected" : ""}>${g.name}</option>`).join("");
+          guests.map(g => `<option value="${escHtml(g.id)}" ${g.id === current ? "selected" : ""}>${escHtml(g.name)}</option>`).join("");
       };
       makeOpts(constraintGuest1);
       makeOpts(constraintGuest2);
@@ -801,8 +810,8 @@
         if (!g1 || !g2) continue;
         const item = document.createElement("div");
         item.className = "constraint-item";
-        item.innerHTML = `<span><strong>${g1.name}</strong> ✕ <strong>${g2.name}</strong></span>
-          <button data-cid="${c.id}" title="Supprimer">×</button>`;
+        item.innerHTML = `<span><strong>${escHtml(g1.name)}</strong> ✕ <strong>${escHtml(g2.name)}</strong></span>
+          <button data-cid="${escHtml(c.id)}" title="Supprimer">×</button>`;
         item.querySelector("button").addEventListener("click", () => removeConstraint(c.id));
         constraintListEl.appendChild(item);
       }
@@ -847,8 +856,8 @@
         const guestsHtml = tableGuests.length
           ? tableGuests.map(g => `
               <div class="table-guest-badge">
-                <span>${g.name}</span>
-                <button class="table-guest-remove" data-gid="${g.id}" title="Retirer">×</button>
+                <span>${escHtml(g.name)}</span>
+                <button class="table-guest-remove" data-gid="${escHtml(g.id)}" title="Retirer">×</button>
               </div>`).join("")
           : '<span style="font-size:0.75rem;color:var(--ink-soft);font-style:italic;">Vide</span>';
 
@@ -869,11 +878,11 @@
 
         card.innerHTML = `
           <div class="table-card-header">
-            <span class="table-card-name">${shapeLabel} ${table.name}</span>
+            <span class="table-card-name">${escHtml(shapeLabel)} ${escHtml(table.name)}</span>
             <span class="table-card-capacity">${tableGuests.length}/${table.capacity}</span>
           </div>
           <div class="table-card-guests">${guestsHtml}</div>
-          ${violations.length ? `<div class="table-violation-warning">⚠️ ${violations.map(v => `${v.g1} & ${v.g2}`).join(" — ")}</div>` : ""}
+          ${violations.length ? `<div class="table-violation-warning">⚠️ ${violations.map(v => `${escHtml(v.g1)} &amp; ${escHtml(v.g2)}`).join(" — ")}</div>` : ""}
           ${editFormHtml}
           <div style="margin-top:8px;display:flex;justify-content:flex-end;gap:6px;">
             <button class="ghost-action edit-table-btn" data-tid="${table.id}" style="font-size:0.72rem;padding:3px 8px;">✏️</button>
@@ -946,9 +955,9 @@
         }).join("");
 
         row.innerHTML = `
-          <span class="unassigned-guest-name">${guest.name}</span>
-          ${currentTable ? `<span style="font-size:0.72rem;color:var(--ink-soft);">→ ${currentTable.name}</span>` : ""}
-          <select class="assign-table-select" data-gid="${guest.id}">
+          <span class="unassigned-guest-name">${escHtml(guest.name)}</span>
+          ${currentTable ? `<span style="font-size:0.72rem;color:var(--ink-soft);">→ ${escHtml(currentTable.name)}</span>` : ""}
+          <select class="assign-table-select" data-gid="${escHtml(guest.id)}">
             <option value="">— Non placé —</option>
             ${opts}
           </select>`;
@@ -1248,7 +1257,7 @@
       const makeOpts = (sel) => {
         const cur = sel.value;
         sel.innerHTML = `<option value="">— Invité —</option>` +
-          guests.map(g => `<option value="${g.id}" ${g.id === cur ? "selected" : ""}>${g.name}</option>`).join("");
+          guests.map(g => `<option value="${escHtml(g.id)}" ${g.id === cur ? "selected" : ""}>${escHtml(g.name)}</option>`).join("");
       };
       makeOpts(pairGuest1El); makeOpts(pairGuest2El);
       pairListEl.innerHTML = "";
@@ -1263,8 +1272,8 @@
         const isViol = getPairViolations().some(v => v === p);
         const item = document.createElement("div");
         item.className = "constraint-item";
-        item.innerHTML = `<span>${isViol ? "⚠️ " : "💑 "}<strong>${g1.name}</strong> + <strong>${g2.name}</strong></span>
-          <button data-pid="${p.id}" title="Supprimer">×</button>`;
+        item.innerHTML = `<span>${isViol ? "⚠️ " : "💑 "}<strong>${escHtml(g1.name)}</strong> + <strong>${escHtml(g2.name)}</strong></span>
+          <button data-pid="${escHtml(p.id)}" title="Supprimer">×</button>`;
         item.querySelector("button").addEventListener("click", () => removePair(p.id));
         pairListEl.appendChild(item);
       }
@@ -1725,7 +1734,7 @@
 
       // Violations
       const allViol = tables.flatMap(t =>
-        getTableViolations(t.id).map(v => `${t.name} : ${v.g1} & ${v.g2}`)
+        getTableViolations(t.id).map(v => `${escHtml(t.name)} : ${escHtml(v.g1)} &amp; ${escHtml(v.g2)}`)
       );
       if (allViol.length) {
         roomViolations.classList.remove("is-hidden");
@@ -2281,16 +2290,16 @@
           const hasAllergy = Boolean(guest.allergies?.trim());
           html += `<div class="tms-seat tms-occupied${hasAllergy ? " tms-has-allergy" : ""}">
             <span class="tms-num">${i + 1}</span>
-            <span class="tms-name">${guest.name}</span>
+            <span class="tms-name">${escHtml(guest.name)}</span>
             ${hasAllergy ? `<span class="tms-allergy" title="${(guest.allergies || "").replace(/&/g, "&amp;").replace(/"/g, "&quot;")}">🥗</span>` : ""}
             ${isSpec ? `<button class="tms-unseat" data-seat="${i}" title="Retirer l'attribution de siège">⟳</button>` : `<span class="tms-tag">~</span>`}
             <button class="tms-remove" data-gid="${guest.id}" title="Retirer de la table">✕</button>
           </div>`;
         } else {
           const opts = [
-            unassigned.map(g => `<option value="${g.id}">${g.name}</option>`).join(""),
+            unassigned.map(g => `<option value="${escHtml(g.id)}">${escHtml(g.name)}</option>`).join(""),
             unspecific.slice(uIdx).length
-              ? `<optgroup label="Déjà à la table">${unspecific.slice(uIdx).map(g => `<option value="${g.id}__at">${g.name}</option>`).join("")}</optgroup>`
+              ? `<optgroup label="Déjà à la table">${unspecific.slice(uIdx).map(g => `<option value="${escHtml(g.id)}__at">${escHtml(g.name)}</option>`).join("")}</optgroup>`
               : ""
           ].join("");
           html += `<div class="tms-seat tms-empty">
@@ -2307,8 +2316,8 @@
         html += `<div class="tms-section">Sans siège fixe</div>`;
         for (const g of unspecific.slice(uIdx)) {
           html += `<div class="tms-unspecific-row">
-            <span>${g.name}</span>
-            <button class="tms-remove" data-gid="${g.id}">Retirer</button>
+            <span>${escHtml(g.name)}</span>
+            <button class="tms-remove" data-gid="${escHtml(g.id)}">Retirer</button>
           </div>`;
         }
       }
@@ -2318,7 +2327,7 @@
           <div class="tms-add-row">
             <select id="tmsAddSel">
               <option value="">— Choisir —</option>
-              ${unassigned.map(g => `<option value="${g.id}">${g.name}</option>`).join("")}
+              ${unassigned.map(g => `<option value="${escHtml(g.id)}">${escHtml(g.name)}</option>`).join("")}
             </select>
             <button id="tmsAddBtn" type="button">Ajouter</button>
           </div>`;

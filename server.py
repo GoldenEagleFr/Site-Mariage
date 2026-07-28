@@ -38,6 +38,8 @@ MAINTENANCE_FILE = BASE_DIR / "maintenance.html"
 
 _RATE_LIMIT: defaultdict = defaultdict(list)
 _RATE_LIMIT_LOCK = threading.Lock()
+_SEARCH_RATE_LIMIT: defaultdict = defaultdict(list)
+_SEARCH_RATE_LIMIT_LOCK = threading.Lock()
 
 
 # ── Backup périodique ───────────────────────────────────────────
@@ -903,8 +905,19 @@ class PlannerHandler(SimpleHTTPRequestHandler):
 
     def end_headers(self) -> None:
         self.send_header("X-Content-Type-Options", "nosniff")
-        self.send_header("X-Frame-Options", "SAMEORIGIN")
+        self.send_header("X-Frame-Options", "DENY")
         self.send_header("Referrer-Policy", "strict-origin-when-cross-origin")
+        self.send_header(
+            "Content-Security-Policy",
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline'; "
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+            "font-src 'self' https://fonts.gstatic.com; "
+            "img-src 'self' data:; "
+            "connect-src 'self'; "
+            "frame-ancestors 'none'; "
+            "object-src 'none'"
+        )
         super().end_headers()
 
     def send_error(self, code, message=None, explain=None) -> None:
@@ -926,6 +939,17 @@ class PlannerHandler(SimpleHTTPRequestHandler):
             calls = _RATE_LIMIT[ip]
             calls[:] = [t for t in calls if now - t < 3600]
             if len(calls) >= 10:
+                return False
+            calls.append(now)
+            return True
+
+    def _check_search_rate_limit(self) -> bool:
+        ip = self.client_address[0]
+        now = time.time()
+        with _SEARCH_RATE_LIMIT_LOCK:
+            calls = _SEARCH_RATE_LIMIT[ip]
+            calls[:] = [t for t in calls if now - t < 3600]
+            if len(calls) >= 30:
                 return False
             calls.append(now)
             return True
@@ -1135,6 +1159,9 @@ class PlannerHandler(SimpleHTTPRequestHandler):
             return
 
         if path == "/api/rsvp/search":
+            if not self._check_search_rate_limit():
+                self._send_json({"ok": False, "error": "rate_limit"}, HTTPStatus.TOO_MANY_REQUESTS)
+                return
             q = str(query.get("q", [""])[0]).strip()
             if not q or len(q) < 2:
                 self._send_json({"ok": True, "results": []})
@@ -1155,7 +1182,6 @@ class PlannerHandler(SimpleHTTPRequestHandler):
                     results.append({
                         "id": g["id"],
                         "name": g["name"],
-                        "rsvpToken": g.get("rsvpToken", ""),
                         "groupType": g.get("groupType", "single"),
                         "attendanceType": g.get("attendanceType", "vin_repas"),
                         "partySize": g.get("partySize", 1),
@@ -1171,8 +1197,12 @@ class PlannerHandler(SimpleHTTPRequestHandler):
             return
 
         # Bloquer l'accès direct aux fichiers sensibles sans auth admin
-        BLOCKED_PATHS = {"/data.json", "/data.backup.json", "/budget_mariage.xlsx"}
-        if path in BLOCKED_PATHS or path.startswith("/backups/"):
+        BLOCKED_PATHS = {
+            "/data.json", "/data.backup.json", "/budget_mariage.xlsx",
+            "/server.py", "/requirements.txt", "/.env", "/.gitignore",
+            "/maintenance.html",
+        }
+        if path in BLOCKED_PATHS or path.startswith("/backups/") or path.startswith("/.git"):
             if not self._is_admin_authorized():
                 self.send_error(HTTPStatus.FORBIDDEN, "Accès refusé")
                 return
@@ -1213,7 +1243,7 @@ class PlannerHandler(SimpleHTTPRequestHandler):
                 self.send_header("Content-Length", str(len(body)))
                 self.send_header(
                     "Set-Cookie",
-                    f"{ACCESS_COOKIE_NAME}={token}; Max-Age=2592000; Path=/; HttpOnly; SameSite=Strict",
+                    f"{ACCESS_COOKIE_NAME}={token}; Max-Age=2592000; Path=/; HttpOnly; Secure; SameSite=Strict",
                 )
                 self.end_headers()
                 self.wfile.write(body)
@@ -1242,17 +1272,22 @@ class PlannerHandler(SimpleHTTPRequestHandler):
             data = load_data_file()
             found = False
             for g in data.get("guests", []):
+                if g["id"] != guest_id:
+                    continue
                 stored_token = str(g.get("rsvpToken", "")).strip()
-                if g["id"] == guest_id and stored_token and stored_token == token:
-                    g["status"] = status
-                    g["hebergement"] = hebergement
-                    g["hebergementInfo"] = bool(payload.get("hebergementInfo", False))
-                    g["musicSuggestion"] = str(payload.get("musicSuggestion", "")).strip()
-                    g["allergies"] = str(payload.get("allergies", "")).strip()
-                    g["otherQuestion"] = str(payload.get("otherQuestion", "")).strip()
-                    g["rsvpSubmittedAt"] = int(time.time() * 1000)
-                    found = True
-                    break
+                # If a token is provided (direct QR-code link), it must match.
+                # If no token is provided (name-search flow), accept based on ID + rate limit.
+                if token and stored_token and stored_token != token:
+                    continue
+                g["status"] = status
+                g["hebergement"] = hebergement
+                g["hebergementInfo"] = bool(payload.get("hebergementInfo", False))
+                g["musicSuggestion"] = str(payload.get("musicSuggestion", "")).strip()
+                g["allergies"] = str(payload.get("allergies", "")).strip()
+                g["otherQuestion"] = str(payload.get("otherQuestion", "")).strip()
+                g["rsvpSubmittedAt"] = int(time.time() * 1000)
+                found = True
+                break
             if not found:
                 self._send_json({"ok": False, "error": "not found"}, HTTPStatus.NOT_FOUND)
                 return
