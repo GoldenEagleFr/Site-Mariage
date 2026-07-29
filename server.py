@@ -376,6 +376,8 @@ def normalize_data(candidate: object) -> dict:
                             else ([guest.get("parentId")] if guest.get("parentId") else [])
                         )
                     ] if i][:2],
+                    "partnerId": str(guest.get("partnerId", "")).strip() or None,
+                    "isWitness": bool(guest.get("isWitness", False)),
                 }
             )
         normalized["guests"] = cleaned_guests
