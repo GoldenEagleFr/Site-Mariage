@@ -10,6 +10,9 @@
  * @param {string} [currentId] — ID pré-sélectionné
  */
 function buildParentAutocomplete(wrap, candidates, currentId, opts = {}) {
+  // Détruire un éventuel dropdown précédent rattaché au body
+  wrap._acDropdown?.remove();
+
   wrap.innerHTML = "";
   wrap.classList.add("parent-ac-wrap");
 
@@ -24,19 +27,29 @@ function buildParentAutocomplete(wrap, candidates, currentId, opts = {}) {
   hidden.type = "hidden";
   hidden.value = currentId || "";
 
+  // Le dropdown est rattaché au <body> pour échapper à tout overflow:hidden/auto parent
   const dropdown = document.createElement("ul");
   dropdown.className = "parent-ac-dropdown is-hidden";
+  document.body.appendChild(dropdown);
+  wrap._acDropdown = dropdown;
 
   wrap.appendChild(input);
   wrap.appendChild(hidden);
-  wrap.appendChild(dropdown);
 
   if (currentId) {
     const found = candidates.find(c => c.id === currentId);
     if (found) input.value = found.name;
   }
 
+  function positionDropdown() {
+    const rect = input.getBoundingClientRect();
+    dropdown.style.top   = (rect.bottom + 3) + "px";
+    dropdown.style.left  = rect.left + "px";
+    dropdown.style.width = rect.width + "px";
+  }
+
   function renderDropdown(q) {
+    positionDropdown();
     const lower = (q || "").toLowerCase();
     const filtered = lower.length === 0
       ? candidates
