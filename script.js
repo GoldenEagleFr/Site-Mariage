@@ -9,14 +9,14 @@
  * @param {Array<{id:string,name:string}>} candidates — liste des parents possibles
  * @param {string} [currentId] — ID pré-sélectionné
  */
-function buildParentAutocomplete(wrap, candidates, currentId) {
+function buildParentAutocomplete(wrap, candidates, currentId, opts = {}) {
   wrap.innerHTML = "";
   wrap.classList.add("parent-ac-wrap");
 
   const input = document.createElement("input");
   input.type = "text";
   input.className = "parent-ac-input";
-  input.placeholder = "Chercher un parent…";
+  input.placeholder = opts.placeholder ?? "Chercher…";
   input.autocomplete = "off";
   input.spellcheck = false;
 
@@ -46,7 +46,7 @@ function buildParentAutocomplete(wrap, candidates, currentId) {
 
     const noneItem = document.createElement("li");
     noneItem.className = "parent-ac-option parent-ac-none";
-    noneItem.textContent = "— Aucun parent —";
+    noneItem.textContent = opts.noneLabel ?? "— Aucun —";
     noneItem.addEventListener("mousedown", e => {
       e.preventDefault();
       input.value = "";
@@ -433,7 +433,8 @@ function bindPlannerEvents() {
           const candidates = state.guests
             .filter(g => !MINOR_CATS.has(g.guestCategory) && !g.isHost)
             .sort((a, b) => a.name.localeCompare(b.name, "fr"));
-          _addFormParentAc = buildParentAutocomplete(guestParentWrap, candidates, null);
+          _addFormParentAc = buildParentAutocomplete(guestParentWrap, candidates, null,
+            { placeholder: "Chercher un parent…", noneLabel: "— Aucun parent —" });
         }
       }
 
@@ -442,16 +443,18 @@ function bindPlannerEvents() {
         guestPartnerWrap.style.display = isMinor ? "none" : "";
         if (!isMinor) {
           const candidates = state.guests
-            .filter(g => !MINOR_CATS.has(g.guestCategory) && !g.isHost)
+            .filter(g => !MINOR_CATS.has(g.guestCategory))
             .sort((a, b) => a.name.localeCompare(b.name, "fr"));
-          _addFormPartnerAc = buildParentAutocomplete(guestPartnerWrap, candidates, null);
+          _addFormPartnerAc = buildParentAutocomplete(guestPartnerWrap, candidates, null,
+            { placeholder: "Chercher un(e) conjoint(e)…", noneLabel: "— Aucun(e) conjoint(e) —" });
         }
       }
-      if (guestWitnessLabel) guestWitnessLabel.style.display = isMinor ? "none" : "";
+      if (guestWitnessLabel) guestWitnessLabel.style.display = isMinor ? "none" : "flex";
     }
 
     if (guestCategory) {
       guestCategory.addEventListener("change", refreshGuestAddFields);
+      refreshGuestAddFields();
     }
 
     guestForm.addEventListener("submit", (event) => {
@@ -1805,8 +1808,10 @@ function renderGuests() {
             const candidates = state.guests
               .filter(g => g.id !== guest.id && !MINOR_CAT_SET.has(g.guestCategory) && !g.isHost)
               .sort((a, b) => a.name.localeCompare(b.name, "fr"));
-            _editParentAc1 = buildParentAutocomplete(editParent1Wrap, candidates, currentIds[0] || "");
-            _editParentAc2 = buildParentAutocomplete(editParent2Wrap, candidates, currentIds[1] || "");
+            _editParentAc1 = buildParentAutocomplete(editParent1Wrap, candidates, currentIds[0] || "",
+              { placeholder: "Chercher un parent…", noneLabel: "— Aucun parent —" });
+            _editParentAc2 = buildParentAutocomplete(editParent2Wrap, candidates, currentIds[1] || "",
+              { placeholder: "Chercher un parent…", noneLabel: "— Aucun parent —" });
           } else if (editParentRow) {
             editParentRow.classList.add("is-hidden");
           }
@@ -1816,10 +1821,11 @@ function renderGuests() {
           if (editPartnerRow) {
             if (!MINOR_CAT_SET.has(guest.guestCategory) && !guest.isHost) {
               editPartnerRow.classList.remove("is-hidden");
-              const adultCandidates = state.guests
-                .filter(g => g.id !== guest.id && !MINOR_CAT_SET.has(g.guestCategory) && !g.isHost)
+              const partnerCandidates = state.guests
+                .filter(g => g.id !== guest.id && !MINOR_CAT_SET.has(g.guestCategory))
                 .sort((a, b) => a.name.localeCompare(b.name, "fr"));
-              _editPartnerAc = buildParentAutocomplete(editPartnerWrap, adultCandidates, guest.partnerId || "");
+              _editPartnerAc = buildParentAutocomplete(editPartnerWrap, partnerCandidates, guest.partnerId || "",
+                { placeholder: "Chercher un(e) conjoint(e)…", noneLabel: "— Aucun(e) conjoint(e) —" });
             } else {
               editPartnerRow.classList.add("is-hidden");
             }
@@ -1827,7 +1833,7 @@ function renderGuests() {
           if (editWitnessCheck) {
             editWitnessCheck.checked = Boolean(guest.isWitness);
             const wLabel = node.querySelector(".edit-witness-label");
-            if (wLabel) wLabel.style.display = (!MINOR_CAT_SET.has(guest.guestCategory) && !guest.isHost) ? "" : "none";
+            if (wLabel) wLabel.style.display = (!MINOR_CAT_SET.has(guest.guestCategory) && !guest.isHost) ? "flex" : "none";
           }
 
           editPanel.classList.remove("is-hidden");
