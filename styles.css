@@ -28,6 +28,11 @@
   --border: rgba(74, 11, 20, 0.12);
   --font-ui: Manrope, "Segoe UI", sans-serif;
   --bg: #f5f4f2;
+  /* Accent = alias de rose, utilisé dans tout le site */
+  --accent: #f03f59;
+  --accent-pale: rgba(240, 63, 89, 0.1);
+  /* Alias carte */
+  --card-bg: #ffffff;
 }
 
 * {
