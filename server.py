@@ -40,6 +40,7 @@ _RATE_LIMIT: defaultdict = defaultdict(list)
 _RATE_LIMIT_LOCK = threading.Lock()
 _SEARCH_RATE_LIMIT: defaultdict = defaultdict(list)
 _SEARCH_RATE_LIMIT_LOCK = threading.Lock()
+_MAINTENANCE_MODE: bool = False
 
 
 # ── Backup périodique ───────────────────────────────────────────
@@ -1074,7 +1075,7 @@ class PlannerHandler(SimpleHTTPRequestHandler):
         return ""
 
     def _is_maintenance_mode(self) -> bool:
-        return os.getenv("MARIAGE_MAINTENANCE", "").strip() == "1"
+        return _MAINTENANCE_MODE
 
     def _is_access_authorized(self) -> bool:
         if not ACCESS_CODE:
@@ -1160,6 +1161,13 @@ class PlannerHandler(SimpleHTTPRequestHandler):
                 "total": total, "confirmed": confirmed, "declined": declined, "pending": pending,
                 "totalPersons": total_persons, "confirmedPersons": confirmed_persons,
             })
+            return
+
+        if path == "/api/admin/maintenance":
+            if not self._is_admin_authorized():
+                self._send_json({"ok": False, "error": "unauthorized"}, HTTPStatus.UNAUTHORIZED)
+                return
+            self._send_json({"ok": True, "active": _MAINTENANCE_MODE})
             return
 
         if path == "/api/rsvp/search":
@@ -1304,6 +1312,22 @@ class PlannerHandler(SimpleHTTPRequestHandler):
             self._send_json({"ok": True})
             return
 
+        if self.path == "/api/admin/maintenance":
+            if not self._is_admin_authorized():
+                self._send_json({"ok": False, "error": "unauthorized"}, HTTPStatus.UNAUTHORIZED)
+                return
+            content_length = int(self.headers.get("Content-Length", "0"))
+            raw_body = self.rfile.read(content_length)
+            try:
+                payload = json.loads(raw_body.decode("utf-8"))
+            except json.JSONDecodeError:
+                self.send_error(HTTPStatus.BAD_REQUEST, "Invalid JSON")
+                return
+            global _MAINTENANCE_MODE
+            _MAINTENANCE_MODE = bool(payload.get("active", False))
+            self._send_json({"ok": True, "active": _MAINTENANCE_MODE})
+            return
+
         if self.path != "/api/data":
             self.send_error(HTTPStatus.NOT_FOUND, "Endpoint not found")
             return
@@ -1340,7 +1364,8 @@ class PlannerHandler(SimpleHTTPRequestHandler):
 
 
 def main() -> None:
-    global ADMIN_PASSWORD, ACCESS_CODE
+    global ADMIN_PASSWORD, ACCESS_CODE, _MAINTENANCE_MODE
+    _MAINTENANCE_MODE = os.getenv("MARIAGE_MAINTENANCE", "").strip() == "1"
     ADMIN_PASSWORD = load_admin_password()
     if ADMIN_PASSWORD == DEFAULT_ADMIN_PASSWORD:
         print(
@@ -1363,7 +1388,7 @@ def main() -> None:
     print(f"Serveur actif sur http://{host}:{port}")
     print(f"Fichier de données: {DATA_FILE}")
     print(f"Fichier budget Excel: {BUDGET_EXCEL_FILE}")
-    if os.getenv("MARIAGE_MAINTENANCE", "").strip() == "1":
+    if _MAINTENANCE_MODE:
         print("Mode maintenance ACTIVÉ (MARIAGE_MAINTENANCE=1)", flush=True)
     server.serve_forever()
 
