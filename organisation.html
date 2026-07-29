@@ -312,9 +312,7 @@
                       <option value="child">Enfant</option>
                       <option value="baby">Bébé</option>
                     </select>
-                    <select id="guestParentSelect" style="display:none;" title="Parent de cet enfant">
-                      <option value="">— Parent (optionnel) —</option>
-                    </select>
+                    <div id="guestParentWrap" style="display:none;position:relative;"></div>
                     <select id="guestAttendanceType">
                       <option value="vin_repas">Vin d'honneur + repas</option>
                       <option value="vin_only">Vin d'honneur uniquement</option>
@@ -533,8 +531,8 @@
           <option value="vin_only">Vin d'honneur seul</option>
         </select>
         <div class="edit-parent-row is-hidden">
-          <label>Parent 1 : <select class="edit-guest-parent1"><option value="">— Aucun —</option></select></label>
-          <label>Parent 2 : <select class="edit-guest-parent2"><option value="">— Aucun —</option></select></label>
+          <label style="display:block;margin-bottom:4px;">Parent 1 :<div class="edit-parent1-wrap" style="position:relative;margin-top:3px;"></div></label>
+          <label style="display:block;">Parent 2 :<div class="edit-parent2-wrap" style="position:relative;margin-top:3px;"></div></label>
         </div>
         <div class="guest-edit-actions">
           <button class="save-guest-edit-btn" type="button">✓ Enregistrer</button>

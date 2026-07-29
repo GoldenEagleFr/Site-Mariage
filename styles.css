@@ -3605,6 +3605,60 @@ body.rsvp-page {
   align-items: flex-start;
 }
 
+/* ── Parent autocomplete ──────────────────────────────── */
+.parent-ac-wrap {
+  position: relative;
+}
+.parent-ac-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.88rem;
+  background: var(--bg);
+  color: var(--ink);
+}
+.parent-ac-input:focus {
+  outline: none;
+  border-color: var(--rose);
+}
+.parent-ac-dropdown {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  z-index: 200;
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+  max-height: 220px;
+  overflow-y: auto;
+}
+.parent-ac-option {
+  padding: 8px 12px;
+  font-size: 0.87rem;
+  cursor: pointer;
+  color: var(--ink);
+}
+.parent-ac-option:hover {
+  background: color-mix(in srgb, var(--rose) 8%, transparent);
+}
+.parent-ac-none {
+  color: var(--ink-soft);
+  font-style: italic;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 2px;
+}
+.parent-ac-empty {
+  color: var(--ink-soft);
+  font-style: italic;
+}
+
 .rsvp-child-row {
   padding: 10px 12px;
   border: 1px solid var(--border);

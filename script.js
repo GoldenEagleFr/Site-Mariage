@@ -2,6 +2,97 @@
   return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
+/**
+ * Transforme un wrapper div en champ autocomplete pour choisir un parent.
+ * Retourne { getValue() } pour lire l'ID sélectionné.
+ * @param {HTMLElement} wrap  — le conteneur à remplir
+ * @param {Array<{id:string,name:string}>} candidates — liste des parents possibles
+ * @param {string} [currentId] — ID pré-sélectionné
+ */
+function buildParentAutocomplete(wrap, candidates, currentId) {
+  wrap.innerHTML = "";
+  wrap.classList.add("parent-ac-wrap");
+
+  const input = document.createElement("input");
+  input.type = "text";
+  input.className = "parent-ac-input";
+  input.placeholder = "Chercher un parent…";
+  input.autocomplete = "off";
+  input.spellcheck = false;
+
+  const hidden = document.createElement("input");
+  hidden.type = "hidden";
+  hidden.value = currentId || "";
+
+  const dropdown = document.createElement("ul");
+  dropdown.className = "parent-ac-dropdown is-hidden";
+
+  wrap.appendChild(input);
+  wrap.appendChild(hidden);
+  wrap.appendChild(dropdown);
+
+  if (currentId) {
+    const found = candidates.find(c => c.id === currentId);
+    if (found) input.value = found.name;
+  }
+
+  function renderDropdown(q) {
+    const lower = (q || "").toLowerCase();
+    const filtered = lower.length === 0
+      ? candidates
+      : candidates.filter(c => c.name.toLowerCase().includes(lower));
+
+    dropdown.innerHTML = "";
+
+    const noneItem = document.createElement("li");
+    noneItem.className = "parent-ac-option parent-ac-none";
+    noneItem.textContent = "— Aucun parent —";
+    noneItem.addEventListener("mousedown", e => {
+      e.preventDefault();
+      input.value = "";
+      hidden.value = "";
+      dropdown.classList.add("is-hidden");
+    });
+    dropdown.appendChild(noneItem);
+
+    filtered.slice(0, 10).forEach(c => {
+      const li = document.createElement("li");
+      li.className = "parent-ac-option";
+      li.textContent = c.name;
+      li.addEventListener("mousedown", e => {
+        e.preventDefault();
+        input.value = c.name;
+        hidden.value = c.id;
+        dropdown.classList.add("is-hidden");
+      });
+      dropdown.appendChild(li);
+    });
+
+    if (filtered.length === 0) {
+      const empty = document.createElement("li");
+      empty.className = "parent-ac-option parent-ac-empty";
+      empty.textContent = "Aucun résultat";
+      dropdown.appendChild(empty);
+    }
+
+    dropdown.classList.remove("is-hidden");
+  }
+
+  input.addEventListener("focus", () => renderDropdown(input.value));
+  input.addEventListener("input", () => {
+    hidden.value = "";
+    renderDropdown(input.value);
+  });
+  input.addEventListener("blur", () => {
+    setTimeout(() => {
+      dropdown.classList.add("is-hidden");
+      if (!hidden.value) input.value = "";
+    }, 150);
+  });
+
+  return { getValue: () => hidden.value };
+}
+
 const STORAGE_KEY = "plan_mariage_data_v1";
 const SERVER_ENDPOINT = "/api/data";
 const ADMIN_CHECK_ENDPOINT = "/api/admin/check";
@@ -323,26 +414,19 @@ function bindPlannerEvents() {
   }
 
   if (guestForm) {
-    const guestParentSelect = document.getElementById("guestParentSelect");
+    const guestParentWrap = document.getElementById("guestParentWrap");
     const MINOR_CATS = new Set(["teen", "child", "baby"]);
+    let _addFormParentAc = null;
 
     function refreshGuestParentSelect() {
-      if (!guestParentSelect) return;
+      if (!guestParentWrap) return;
       const isMinor = MINOR_CATS.has(guestCategory?.value);
-      guestParentSelect.style.display = isMinor ? "" : "none";
+      guestParentWrap.style.display = isMinor ? "" : "none";
       if (!isMinor) return;
-      const currentVal = guestParentSelect.value;
-      guestParentSelect.innerHTML = '<option value="">— Parent (optionnel) —</option>';
-      state.guests
+      const candidates = state.guests
         .filter(g => !MINOR_CATS.has(g.guestCategory) && !g.isHost)
-        .sort((a, b) => a.name.localeCompare(b.name, "fr"))
-        .forEach(g => {
-          const opt = document.createElement("option");
-          opt.value = g.id;
-          opt.textContent = g.name;
-          guestParentSelect.appendChild(opt);
-        });
-      guestParentSelect.value = currentVal;
+        .sort((a, b) => a.name.localeCompare(b.name, "fr"));
+      _addFormParentAc = buildParentAutocomplete(guestParentWrap, candidates, null);
     }
 
     if (guestCategory) {
@@ -363,7 +447,7 @@ function bindPlannerEvents() {
       }
 
       const cat = ["adult", "teen", "child", "baby"].includes(guestCategory?.value) ? guestCategory.value : "adult";
-      const parentId = (MINOR_CATS.has(cat) && guestParentSelect?.value) ? guestParentSelect.value : null;
+      const parentId = (MINOR_CATS.has(cat) && _addFormParentAc?.getValue()) ? _addFormParentAc.getValue() : null;
 
       state.guests.push({
         id: createId(),
@@ -385,7 +469,8 @@ function bindPlannerEvents() {
       });
 
       guestForm.reset();
-      if (guestParentSelect) guestParentSelect.style.display = "none";
+      _addFormParentAc = null;
+      if (guestParentWrap) guestParentWrap.style.display = "none";
       refresh();
     });
   }
@@ -1618,8 +1703,10 @@ function renderGuests() {
     const editNameInput = node.querySelector(".edit-guest-name");
     const editAttendanceSelect = node.querySelector(".edit-guest-attendance");
     const editParentRow = node.querySelector(".edit-parent-row");
-    const editParentSelect1 = node.querySelector(".edit-guest-parent1");
-    const editParentSelect2 = node.querySelector(".edit-guest-parent2");
+    const editParent1Wrap = node.querySelector(".edit-parent1-wrap");
+    const editParent2Wrap = node.querySelector(".edit-parent2-wrap");
+    let _editParentAc1 = null;
+    let _editParentAc2 = null;
 
     if (editBtn && editPanel) {
       editBtn.addEventListener("click", () => {
@@ -1632,15 +1719,11 @@ function renderGuests() {
           if (editParentRow && MINOR_CAT_SET.has(guest.guestCategory)) {
             editParentRow.classList.remove("is-hidden");
             const currentIds = Array.isArray(guest.parentIds) ? guest.parentIds : [];
-            const opts = state.guests
-              .filter(g => g.id !== guest.id && !MINOR_CAT_SET.has(g.guestCategory))
-              .map(g => `<option value="${g.id}">${escHtml(g.name)}</option>`)
-              .join("");
-            const none = `<option value="">— Aucun —</option>`;
-            editParentSelect1.innerHTML = none + opts;
-            editParentSelect2.innerHTML = none + opts;
-            editParentSelect1.value = currentIds[0] || "";
-            editParentSelect2.value = currentIds[1] || "";
+            const candidates = state.guests
+              .filter(g => g.id !== guest.id && !MINOR_CAT_SET.has(g.guestCategory) && !g.isHost)
+              .sort((a, b) => a.name.localeCompare(b.name, "fr"));
+            _editParentAc1 = buildParentAutocomplete(editParent1Wrap, candidates, currentIds[0] || "");
+            _editParentAc2 = buildParentAutocomplete(editParent2Wrap, candidates, currentIds[1] || "");
           } else if (editParentRow) {
             editParentRow.classList.add("is-hidden");
           }
@@ -1655,7 +1738,7 @@ function renderGuests() {
         guest.name = newName;
         guest.attendanceType = editAttendanceSelect.value;
         if (MINOR_CAT_SET.has(guest.guestCategory)) {
-          guest.parentIds = [editParentSelect1?.value, editParentSelect2?.value].filter(Boolean);
+          guest.parentIds = [_editParentAc1?.getValue(), _editParentAc2?.getValue()].filter(Boolean);
         }
         editPanel.classList.add("is-hidden");
         refresh({ persist: false });
