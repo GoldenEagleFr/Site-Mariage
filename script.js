@@ -323,6 +323,32 @@ function bindPlannerEvents() {
   }
 
   if (guestForm) {
+    const guestParentSelect = document.getElementById("guestParentSelect");
+    const MINOR_CATS = new Set(["teen", "child", "baby"]);
+
+    function refreshGuestParentSelect() {
+      if (!guestParentSelect) return;
+      const isMinor = MINOR_CATS.has(guestCategory?.value);
+      guestParentSelect.style.display = isMinor ? "" : "none";
+      if (!isMinor) return;
+      const currentVal = guestParentSelect.value;
+      guestParentSelect.innerHTML = '<option value="">— Parent (optionnel) —</option>';
+      state.guests
+        .filter(g => !MINOR_CATS.has(g.guestCategory) && !g.isHost)
+        .sort((a, b) => a.name.localeCompare(b.name, "fr"))
+        .forEach(g => {
+          const opt = document.createElement("option");
+          opt.value = g.id;
+          opt.textContent = g.name;
+          guestParentSelect.appendChild(opt);
+        });
+      guestParentSelect.value = currentVal;
+    }
+
+    if (guestCategory) {
+      guestCategory.addEventListener("change", refreshGuestParentSelect);
+    }
+
     guestForm.addEventListener("submit", (event) => {
       event.preventDefault();
       if (!isAdminUnlocked) {
@@ -336,11 +362,14 @@ function bindPlannerEvents() {
         return;
       }
 
+      const cat = ["adult", "teen", "child", "baby"].includes(guestCategory?.value) ? guestCategory.value : "adult";
+      const parentId = (MINOR_CATS.has(cat) && guestParentSelect?.value) ? guestParentSelect.value : null;
+
       state.guests.push({
         id: createId(),
         name,
         groupType: "single",
-        guestCategory: ["adult", "teen", "child", "baby"].includes(guestCategory?.value) ? guestCategory.value : "adult",
+        guestCategory: cat,
         attendanceType,
         partySize: 1,
         status: VALID_GUEST_STATUS.has(status) ? status : "pending",
@@ -351,11 +380,12 @@ function bindPlannerEvents() {
         musicSuggestion: "",
         allergies: "",
         otherQuestion: "",
-        parentIds: [],
+        parentIds: parentId ? [parentId] : [],
         colorGroupId: null,
       });
 
       guestForm.reset();
+      if (guestParentSelect) guestParentSelect.style.display = "none";
       refresh();
     });
   }
@@ -1459,32 +1489,34 @@ function renderGuests() {
     return;
   }
 
-  // Babies with parentIds are rendered as sub-entries after their first visible parent
+  // Mineurs liés (child/teen/baby avec parentIds) : affichés sous leur parent
   const filteredIds = new Set(filteredGuests.map(g => g.id));
-  const linkedBabyIds = new Set(
+  const MINOR_CAT_SET = new Set(["baby", "child", "teen"]);
+  const linkedMinorIds = new Set(
     filteredGuests.filter(g => {
-      if (g.guestCategory !== "baby") return false;
+      if (!MINOR_CAT_SET.has(g.guestCategory)) return false;
       const ids = Array.isArray(g.parentIds) ? g.parentIds : [];
       return ids.some(pid => pid && filteredIds.has(pid));
     }).map(g => g.id)
   );
-  const mainList = filteredGuests.filter(g => !linkedBabyIds.has(g.id));
+  const mainList = filteredGuests.filter(g => !linkedMinorIds.has(g.id));
   const displayGuests = [];
   for (const g of mainList) {
     displayGuests.push(g);
-    const babies = filteredGuests.filter(b => {
-      if (b.guestCategory !== "baby") return false;
-      const ids = Array.isArray(b.parentIds) ? b.parentIds : [];
+    const minors = filteredGuests.filter(m => {
+      if (!MINOR_CAT_SET.has(m.guestCategory)) return false;
+      const ids = Array.isArray(m.parentIds) ? m.parentIds : [];
       return ids[0] === g.id || (ids[0] && !filteredIds.has(ids[0]) && ids[1] === g.id);
     });
-    displayGuests.push(...babies);
+    displayGuests.push(...minors);
   }
 
   for (const [index, guest] of displayGuests.entries()) {
     const node = guestTemplate.content.firstElementChild.cloneNode(true);
     node.style.setProperty("--stagger", String(index));
     if (guest.guestCategory === "child") node.classList.add("guest-item-child");
-    if (guest.guestCategory === "baby") node.classList.add("guest-item-baby");
+    if (guest.guestCategory === "teen")  node.classList.add("guest-item-teen");
+    if (guest.guestCategory === "baby")  node.classList.add("guest-item-baby");
     if (guest.allergies?.trim()) node.classList.add("has-allergy");
     node.querySelector(".main-text").textContent = guest.name;
     if (guest.allergies?.trim()) {
@@ -1501,7 +1533,7 @@ function renderGuests() {
       const submittedPart = guest.rsvpSubmittedAt > 0
         ? ` — RSVP le ${new Date(guest.rsvpSubmittedAt).toLocaleDateString("fr-FR")}`
         : "";
-      const parentPart = (guest.guestCategory === "baby" && Array.isArray(guest.parentIds) && guest.parentIds.length)
+      const parentPart = (MINOR_CAT_SET.has(guest.guestCategory) && Array.isArray(guest.parentIds) && guest.parentIds.length)
         ? ` — de ${guest.parentIds.map(pid => state.guests.find(g => g.id === pid)?.name ?? "?").join(" & ")}`
         : "";
       groupMeta.textContent = `${catLabel}${parentPart} — ${getGuestAttendanceTypeLabel(attendanceType)}${submittedPart}`;
@@ -1511,7 +1543,7 @@ function renderGuests() {
     if (categorySelect) {
       categorySelect.value = ["adult", "teen", "child", "baby"].includes(guest.guestCategory) ? guest.guestCategory : "adult";
       categorySelect.addEventListener("change", () => {
-        if (guest.guestCategory === "baby" && categorySelect.value !== "baby") guest.parentIds = [];
+        if (!MINOR_CAT_SET.has(categorySelect.value)) guest.parentIds = [];
         guest.guestCategory = categorySelect.value;
         refresh({ persist: false });
         persistNow();
@@ -1597,11 +1629,11 @@ function renderGuests() {
         } else {
           editNameInput.value = guest.name;
           editAttendanceSelect.value = normalizeGuestAttendanceType(guest.attendanceType);
-          if (editParentRow && guest.guestCategory === "baby") {
+          if (editParentRow && MINOR_CAT_SET.has(guest.guestCategory)) {
             editParentRow.classList.remove("is-hidden");
             const currentIds = Array.isArray(guest.parentIds) ? guest.parentIds : [];
             const opts = state.guests
-              .filter(g => g.id !== guest.id && g.guestCategory !== "baby")
+              .filter(g => g.id !== guest.id && !MINOR_CAT_SET.has(g.guestCategory))
               .map(g => `<option value="${g.id}">${escHtml(g.name)}</option>`)
               .join("");
             const none = `<option value="">— Aucun —</option>`;
@@ -1622,7 +1654,7 @@ function renderGuests() {
         if (!newName) { editNameInput.focus(); return; }
         guest.name = newName;
         guest.attendanceType = editAttendanceSelect.value;
-        if (guest.guestCategory === "baby") {
+        if (MINOR_CAT_SET.has(guest.guestCategory)) {
           guest.parentIds = [editParentSelect1?.value, editParentSelect2?.value].filter(Boolean);
         }
         editPanel.classList.add("is-hidden");

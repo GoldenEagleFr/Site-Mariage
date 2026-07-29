@@ -1185,10 +1185,33 @@ class PlannerHandler(SimpleHTTPRequestHandler):
 
             q_words = _norm(q).split()
             data = load_data_file()
+            all_guests = data.get("guests", [])
+
+            # Index parent→enfants (mineurs liés via parentIds)
+            MINOR_CATS = {"baby", "child", "teen"}
+            children_by_parent: dict = {}
+            linked_minor_ids: set = set()
+            for g in all_guests:
+                if g.get("guestCategory") in MINOR_CATS:
+                    pids = g.get("parentIds") or []
+                    if pids:
+                        linked_minor_ids.add(g["id"])
+                        for pid in pids:
+                            if pid:
+                                children_by_parent.setdefault(pid, []).append({
+                                    "id": g["id"],
+                                    "name": g["name"],
+                                    "guestCategory": g.get("guestCategory", "child"),
+                                    "allergies": g.get("allergies", ""),
+                                    "otherQuestion": g.get("otherQuestion", ""),
+                                })
+
             results = []
-            for g in data.get("guests", []):
+            for g in all_guests:
                 if g.get("isHost"):
                     continue
+                if g["id"] in linked_minor_ids:
+                    continue  # les mineurs liés répondent via leur parent
                 name_norm = _norm(str(g.get("name", "")))
                 if all(w in name_norm for w in q_words):
                     results.append({
@@ -1204,6 +1227,7 @@ class PlannerHandler(SimpleHTTPRequestHandler):
                         "allergies": g.get("allergies", ""),
                         "otherQuestion": g.get("otherQuestion", ""),
                         "rsvpSubmittedAt": g.get("rsvpSubmittedAt", 0),
+                        "children": children_by_parent.get(g["id"], []),
                     })
             self._send_json({"ok": True, "results": results})
             return
@@ -1300,6 +1324,22 @@ class PlannerHandler(SimpleHTTPRequestHandler):
                 g["rsvpSubmittedAt"] = int(time.time() * 1000)
                 found = True
                 break
+            # Mettre à jour les enfants liés
+            if found:
+                children_answers = payload.get("childrenAnswers", [])
+                if isinstance(children_answers, list):
+                    MINOR_CATS = {"baby", "child", "teen"}
+                    now_ms = int(time.time() * 1000)
+                    for ca in children_answers:
+                        child_id = str(ca.get("id", "")).strip()
+                        for g in data.get("guests", []):
+                            if g["id"] == child_id and g.get("guestCategory") in MINOR_CATS:
+                                if guest_id in (g.get("parentIds") or []):
+                                    g["status"] = status
+                                    g["allergies"] = str(ca.get("allergies", "")).strip()
+                                    g["otherQuestion"] = str(ca.get("otherQuestion", "")).strip()
+                                    g["rsvpSubmittedAt"] = now_ms
+                                    break
             if not found:
                 self._send_json({"ok": False, "error": "not found"}, HTTPStatus.NOT_FOUND)
                 return

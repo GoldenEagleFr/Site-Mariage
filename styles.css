@@ -1874,6 +1874,12 @@ button:hover {
 .guest-item-child {
   border-left: 3px solid #7db9e8;
   background: color-mix(in srgb, #7db9e8 6%, transparent);
+  margin-left: 16px;
+}
+.guest-item-teen {
+  border-left: 3px solid #86efac;
+  background: color-mix(in srgb, #86efac 6%, transparent);
+  margin-left: 16px;
 }
 .guest-item-baby {
   border-left: 3px solid #f9a8d4;
@@ -3597,6 +3603,19 @@ body.rsvp-page {
 .rsvp-choice-col {
   flex-direction: column;
   align-items: flex-start;
+}
+
+.rsvp-child-row {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-bottom: 10px;
+  background: var(--card-bg);
+}
+.rsvp-child-name {
+  margin: 0 0 4px;
+  font-size: 0.92rem;
+  color: var(--ink);
 }
 
 .rsvp-form-actions {

@@ -111,6 +111,12 @@
           </div>
         </fieldset>
 
+        <!-- Section enfants liés -->
+        <fieldset id="rsvpChildrenSection" class="rsvp-fieldset is-hidden">
+          <legend>Vos enfants</legend>
+          <div id="rsvpChildrenList"></div>
+        </fieldset>
+
         <div class="rsvp-extra-fields" id="rsvpExtraFields">
           <div class="rsvp-field">
             <label for="rsvpMusic">Je propose une musique <span class="rsvp-field-hint">(titre et artiste — facultatif)</span></label>
@@ -205,6 +211,8 @@
     const confirmYes     = document.getElementById("rsvpConfirmYes");
     const confirmNo      = document.getElementById("rsvpConfirmNo");
     const confirmYesTxt  = document.getElementById("rsvpConfirmYesText");
+    const childrenSection = document.getElementById("rsvpChildrenSection");
+    const childrenList    = document.getElementById("rsvpChildrenList");
 
     const STEPS = [stepSearch, stepForm, stepReview, stepDone];
     let currentGuest = null;
@@ -300,6 +308,48 @@
       }
     });
 
+    function escHtml(s) {
+      return String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+
+    const CAT_LABEL = { baby: "🍼 Bébé", child: "👧 Enfant", teen: "🧑 Ado" };
+
+    function renderChildren(children) {
+      if (!childrenSection || !childrenList) return;
+      if (!children || children.length === 0) {
+        hide(childrenSection);
+        return;
+      }
+      childrenList.innerHTML = "";
+      children.forEach(child => {
+        const wrap = document.createElement("div");
+        wrap.className = "rsvp-child-row";
+        wrap.dataset.childId = child.id;
+        const catLabel = CAT_LABEL[child.guestCategory] || "👧 Enfant";
+        wrap.innerHTML = `
+          <p class="rsvp-child-name">${catLabel} <strong>${escHtml(child.name)}</strong></p>
+          <div class="rsvp-field" style="margin-top:6px;">
+            <label>Allergies / régimes <span class="rsvp-field-hint">(facultatif)</span></label>
+            <input type="text" class="rsvp-child-allergies" value="${escHtml(child.allergies || "")}" placeholder="Ex : sans gluten, végétarien…">
+          </div>
+          <div class="rsvp-field" style="margin-top:4px;">
+            <label>Message <span class="rsvp-field-hint">(facultatif)</span></label>
+            <input type="text" class="rsvp-child-question" value="${escHtml(child.otherQuestion || "")}" placeholder="Une remarque ?">
+          </div>`;
+        childrenList.appendChild(wrap);
+      });
+      show(childrenSection);
+    }
+
+    function collectChildrenAnswers() {
+      if (!childrenList) return [];
+      return Array.from(childrenList.querySelectorAll(".rsvp-child-row")).map(row => ({
+        id: row.dataset.childId,
+        allergies: row.querySelector(".rsvp-child-allergies")?.value.trim() ?? "",
+        otherQuestion: row.querySelector(".rsvp-child-question")?.value.trim() ?? "",
+      }));
+    }
+
     // ── Formulaire ───────────────────────────────────────────────
     let isVhOnly = false;
 
@@ -322,6 +372,9 @@
 
       // Pour vin d'honneur : uniquement le oui/non, rien d'autre
       if (extraFields) extraFields.style.display = isVhOnly ? "none" : "";
+
+      // Enfants liés
+      renderChildren(isVhOnly ? [] : (guest.children || []));
 
       const radios = document.querySelectorAll("input[name='rsvpStatus']");
       radios.forEach(r => { r.checked = r.value === guest.status; });
@@ -370,9 +423,10 @@
       const hebergementInfo = hebergementChoice === "maybe";
       const musicSuggestion = isVhOnly ? "" : (musicInput?.value ?? "").trim();
       const allergies       = isVhOnly ? "" : (allergiesInput?.value ?? "").trim();
-      const otherQuestion   = (questionInput?.value ?? "").trim();
+      const otherQuestion    = (questionInput?.value ?? "").trim();
+      const childrenAnswers  = collectChildrenAnswers();
 
-      pendingPayload = { id: guestIdField.value, token: currentGuest.rsvpToken || "", status, hebergement, hebergementInfo, musicSuggestion, allergies, otherQuestion };
+      pendingPayload = { id: guestIdField.value, token: currentGuest.rsvpToken || "", status, hebergement, hebergementInfo, musicSuggestion, allergies, otherQuestion, childrenAnswers };
 
       // Construire le récapitulatif
       const rows = [];
@@ -386,6 +440,12 @@
       if (musicSuggestion) rows.push({ label: "Musique", value: `🎵 ${musicSuggestion}` });
       if (allergies)       rows.push({ label: "Allergies / régime alimentaire", value: `🥗 ${allergies}` });
       if (otherQuestion)   rows.push({ label: "Question", value: `❓ ${otherQuestion}` });
+      childrenAnswers.forEach(ca => {
+        const child = (currentGuest.children || []).find(c => c.id === ca.id);
+        if (!child) return;
+        const catLabel = CAT_LABEL[child.guestCategory] || "Enfant";
+        rows.push({ label: `${catLabel} ${child.name}`, value: ca.allergies ? `🥗 ${ca.allergies}` : (status === "yes" ? "✓ Présent(e)" : "✕ Absent(e)") });
+      });
 
       summaryBox.innerHTML = rows.map(r =>
         `<div class="rsvp-summary-row">
