@@ -2480,8 +2480,11 @@ button:hover {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   padding: 10px 20px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
   background: rgba(255, 248, 247, 0);
   backdrop-filter: blur(0px);
   border-bottom: 1px solid rgba(224, 10, 38, 0);
@@ -2517,9 +2520,25 @@ button:hover {
   transition: background 0.2s, transform 0.2s;
 }
 
+.nav-sticky::-webkit-scrollbar { display: none; }
+
 .nav-sticky a:hover {
   background: rgba(255, 183, 182, 0.3);
   transform: translateY(-1px);
+}
+
+@media (max-width: 600px) {
+  .nav-sticky {
+    justify-content: flex-start;
+    padding: 8px 12px;
+    gap: 5px;
+  }
+  .nav-sticky a {
+    font-size: 0.72rem;
+    padding: 5px 9px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -2942,7 +2961,7 @@ body.dark-mode .section-head .panel-kicker { color: #e8a0a8; }
 
 .rsvp-summary-row {
   display: grid;
-  grid-template-columns: 100px 1fr;
+  grid-template-columns: minmax(min-content, 130px) 1fr;
   gap: 0.5rem;
   align-items: baseline;
   padding: 0.4rem 0;
@@ -2961,6 +2980,18 @@ body.dark-mode .section-head .panel-kicker { color: #e8a0a8; }
   font-size: 0.78rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  word-break: break-word;
+}
+
+@media (max-width: 420px) {
+  .rsvp-summary-row {
+    grid-template-columns: 1fr;
+    gap: 0.1rem;
+  }
+  .rsvp-summary-label { padding-bottom: 0; }
+  .rsvp-progress-dot { width: 24px; height: 24px; font-size: 0.76rem; }
+  .rsvp-progress-connector { width: 18px; }
+  .rsvp-progress-label { font-size: 0.52rem; }
 }
 
 .rsvp-summary-value {
@@ -3258,8 +3289,11 @@ body.dark-mode .extra-chart-title { color: #e8a0a8; }
 
   .admin-tab {
     text-align: center;
-    padding: 10px 8px;
-    font-size: 0.82rem;
+    padding: 9px 6px;
+    font-size: 0.78rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .metrics {
@@ -4923,11 +4957,65 @@ body.dark-mode .guest-host-status { color: #6fcf97; }
 /* ── Mobile : stats budget, listes ───────────────────────────── */
 @media (max-width: 600px) {
   .panel-list {
-    overflow-x: auto;
+    overflow-x: hidden;
   }
-  .budget-data-item,
+  /* Budget items : scroll horizontal conservé (densité d'infos) */
+  .budget-data-item {
+    min-width: 420px;
+  }
+  /* Guest items : vue carte empilée */
   .guest-item {
-    min-width: 480px;
+    min-width: 0 !important;
+  }
+  .guest-item .guest-main {
+    flex: 0 0 100%;
+    min-width: 0;
+  }
+  .guest-item .inline-category,
+  .guest-item .inline-status {
+    flex: 1 1 auto;
+    font-size: 0.76rem;
+    padding: 3px 5px;
+    min-width: 0;
+  }
+  .guest-item .guest-hebergement-label {
+    font-size: 0.74rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .guest-item .guest-edit-btn {
+    flex-shrink: 0;
+  }
+  .guest-item button.danger {
+    margin-left: auto;
+    flex-shrink: 0;
+    font-size: 0;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+  }
+  .guest-item button.danger::before {
+    content: "✕";
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .guest-item .guest-color-group-wrap {
+    flex: 0 0 100%;
+  }
+  .guest-item .guest-item-edit,
+  .guest-item .guest-rsvp-details {
+    flex: 0 0 100%;
+  }
+  /* Budget item-edit : bouton save sur toute la largeur */
+  .budget-item-edit {
+    grid-template-columns: 1fr 1fr;
+  }
+  .budget-item-edit > *:last-child {
+    grid-column: 1 / -1;
   }
 }
 
@@ -5515,3 +5603,89 @@ body[data-page="plan-table"] .constraint-form button {
 .room-config-panel .panel-body {
   padding: 12px 14px;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   PLAN DE TABLE — MOBILE RESPONSIVE
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Boutons tiroir mobile — cachés sur desktop */
+.pt-mobile-toggle { display: none !important; }
+
+/* Backdrop pour fermer les tiroirs */
+.pt-mobile-backdrop {
+  display: none;
+  position: fixed; top: 52px; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,.45);
+  z-index: 39;
+}
+.pt-mobile-backdrop.is-visible { display: block; }
+
+@media (max-width: 768px) {
+  /* Topbar : défilement horizontal, alignement gauche */
+  .pt-topbar {
+    justify-content: flex-start;
+    gap: 3px;
+    padding: 0 6px;
+  }
+  .pt-topbar-sep { display: none; }
+
+  /* Boutons tiroir : affichés sur mobile */
+  .pt-mobile-toggle { display: inline-flex !important; }
+
+  /* Sidebar gauche : tiroir coulissant depuis la gauche */
+  .pt-sidebar-left {
+    position: fixed;
+    left: 0; top: 52px; bottom: 0;
+    width: min(75vw, 180px);
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    z-index: 40;
+    box-shadow: 4px 0 20px rgba(0,0,0,.22);
+  }
+  .pt-sidebar-left.is-mobile-open {
+    transform: translateX(0);
+  }
+
+  /* Sidebar droite : tiroir coulissant depuis la droite */
+  .pt-sidebar-right {
+    position: fixed;
+    right: 0; top: 52px; bottom: 0;
+    width: min(75vw, 230px);
+    transform: translateX(100%);
+    transition: transform 0.25s ease;
+    z-index: 40;
+    box-shadow: -4px 0 20px rgba(0,0,0,.22);
+  }
+  .pt-sidebar-right.is-mobile-open {
+    transform: translateX(0);
+  }
+
+  /* Canvas : prend toute la largeur */
+  .pt-canvas-stats {
+    left: 10px !important;
+    right: 10px !important;
+  }
+  .pt-canvas-area .room-legend-panel,
+  .pt-canvas-area .room-config-panel {
+    left: 10px !important;
+    max-width: calc(100vw - 24px);
+  }
+  .pt-canvas-area .table-manage-panel {
+    right: 8px;
+    width: min(256px, calc(100vw - 16px));
+    min-width: 0;
+  }
+
+  /* Vue liste : colonnes empilées */
+  .pt-list-body {
+    flex-wrap: wrap;
+  }
+  .pt-col-left {
+    width: 100%;
+    flex-shrink: 1;
+  }
+  .pt-list-panel {
+    width: 100vw;
+  }
+}
+

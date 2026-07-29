@@ -55,6 +55,9 @@
 
     <!-- ── Barre du haut ─────────────────────────────────────── -->
     <header class="pt-topbar">
+      <!-- Boutons tiroirs mobiles (cachés sur desktop via CSS) -->
+      <button id="btnMobileSideLeft" class="pt-topbar-btn pt-mobile-toggle" type="button" title="Tables &amp; salle">☰</button>
+      <button id="btnMobileSideRight" class="pt-topbar-btn pt-mobile-toggle" type="button" title="Invités non placés">👥</button>
       <a href="organisation.html" class="pt-back-btn" title="Retour à l'organisation">← Org.</a>
       <span class="pt-app-title">Plan de table</span>
       <p id="syncStatus" class="pt-sync-label"></p>
@@ -192,6 +195,9 @@
       </aside>
 
     </div><!-- /pt-workspace -->
+
+    <!-- Backdrop mobile pour fermer les tiroirs -->
+    <div id="ptMobileBackdrop" class="pt-mobile-backdrop"></div>
 
     <!-- ── Vue liste (overlay latéral) ──────────────────────────── -->
     <div id="viewList" class="pt-list-overlay is-hidden">
@@ -3310,6 +3316,46 @@
         renderRoomConfig();
         renderRoom();
       });
+    });
+  })();
+
+  // ── Tiroirs mobiles (sidebars) ────────────────────────────────
+  (function() {
+    const btnLeft    = document.getElementById('btnMobileSideLeft');
+    const btnRight   = document.getElementById('btnMobileSideRight');
+    const backdrop   = document.getElementById('ptMobileBackdrop');
+    const sideLeft   = document.querySelector('.pt-sidebar-left');
+    const sideRight  = document.querySelector('.pt-sidebar-right');
+
+    function closeAll() {
+      sideLeft?.classList.remove('is-mobile-open');
+      sideRight?.classList.remove('is-mobile-open');
+      backdrop?.classList.remove('is-visible');
+    }
+
+    btnLeft?.addEventListener('click', () => {
+      const opening = !sideLeft.classList.contains('is-mobile-open');
+      closeAll();
+      if (opening) {
+        sideLeft.classList.add('is-mobile-open');
+        backdrop.classList.add('is-visible');
+      }
+    });
+
+    btnRight?.addEventListener('click', () => {
+      const opening = !sideRight.classList.contains('is-mobile-open');
+      closeAll();
+      if (opening) {
+        sideRight.classList.add('is-mobile-open');
+        backdrop.classList.add('is-visible');
+      }
+    });
+
+    backdrop?.addEventListener('click', closeAll);
+
+    // Fermer les tiroirs si la fenêtre est redimensionnée au-delà de 768px
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 768) closeAll();
     });
   })();
   </script>
