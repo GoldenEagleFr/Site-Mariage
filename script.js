@@ -1236,8 +1236,8 @@ function renderPayments(item, container) {
   toggleBtn.type = "button";
   toggleBtn.className = "payments-toggle-btn";
   toggleBtn.textContent = payments.length
-    ? `🔸 ${payments.length} versement${payments.length > 1 ? "s" : ""}`
-    : "＋ Ajouter versements";
+    ? `${payments.length} versement${payments.length > 1 ? "s" : ""}`
+    : "Versements";
   container.appendChild(toggleBtn);
 
   const inner = document.createElement("div");
@@ -1287,7 +1287,7 @@ function renderPayments(item, container) {
       <input type="number" class="pmt-amount" placeholder="Montant versé (€)" min="0" step="0.01">
       <input type="date"   class="pmt-due"    title="Date du versement">
       <input type="text"   class="pmt-payer"  placeholder="Payé par (optionnel)">
-      <button type="button" class="pmt-add-btn">Ajouter</button>`;
+      <button type="button" class="pmt-add-btn">＋ Valider</button>`;
     form.querySelector(".pmt-add-btn").addEventListener("click", () => {
       const lbl    = form.querySelector(".pmt-label").value.trim() || "Versement";
       const amount = Math.max(0, Number(form.querySelector(".pmt-amount").value) || 0);

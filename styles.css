@@ -4784,82 +4784,145 @@ body.dark-mode .table-violation-warning {
    ══════════════════════════════════════��════════════════════ */
 .budget-payments-wrap { margin-top: 6px; }
 
+/* ── Bouton toggle versements ─────────────────────────────── */
 .payments-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   background: none;
-  border: none;
+  border: 1px solid var(--border);
+  border-radius: 20px;
   cursor: pointer;
-  font: 0.78rem 'Manrope', sans-serif;
-  color: var(--accent);
-  padding: 2px 0;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-  transition: color .12s;
+  font: 600 0.74rem 'Manrope', sans-serif;
+  color: var(--ink-soft);
+  padding: 3px 10px 3px 7px;
+  margin-top: 4px;
+  transition: background .12s, color .12s, border-color .12s;
 }
-.payments-toggle-btn:hover { color: var(--accent-dark, #b06820); }
-.payments-toggle-btn.is-active { color: var(--ink-soft); }
+.payments-toggle-btn::before { content: "＋"; font-size: 0.9em; }
+.payments-toggle-btn.is-active::before { content: "−"; }
+.payments-toggle-btn:hover {
+  background: var(--surface-alt);
+  color: var(--ink);
+  border-color: rgba(74,11,20,.22);
+}
+.payments-toggle-btn.is-active { color: var(--ink); border-color: rgba(74,11,20,.22); }
 
-.payments-inner { margin-top: 6px; display: flex; flex-direction: column; gap: 4px; }
+/* ── Liste des versements existants ──────────────────────── */
+.payments-inner {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
 .payments-inner.is-hidden { display: none; }
 
 .payment-row {
   display: flex;
-  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--gold-dark);
+  border-radius: 8px;
+  padding: 7px 10px;
+  font-size: 0.82rem;
+  transition: box-shadow .12s;
+}
+.payment-row:hover { box-shadow: 0 2px 8px rgba(74,11,20,.06); }
+body.dark-mode .payment-row { background: rgba(255,255,255,.05); }
+
+.payment-label {
+  font-weight: 700;
+  color: var(--ink);
+  flex: 1;
+  min-width: 70px;
+}
+.payment-payer {
+  font-weight: 400;
+  font-size: 0.85em;
+  color: var(--ink-soft);
+  margin-left: 2px;
+}
+.payment-amounts {
+  display: flex;
   align-items: center;
   gap: 6px;
-  background: var(--surface-alt, #f9f7f4);
-  border: 1px solid var(--border);
-  border-radius: 7px;
-  padding: 5px 8px;
-  font-size: 0.8rem;
+  flex-shrink: 0;
 }
-.dark-mode .payment-row { background: rgba(255,255,255,0.04); }
-.payment-label { font-weight: 600; color: var(--ink); flex: 1; min-width: 80px; }
-.payment-payer { font-weight: 400; font-size: 0.85em; color: var(--ink-soft); }
-.payment-amounts { display: flex; flex-wrap: wrap; gap: 4px; color: var(--ink-soft); align-items: center; }
-.payment-rest  { color: #c05621; font-weight: 600; }
-.payment-solde { color: #1e8449; font-weight: 600; }
-.payment-due   { font-size: 0.73rem; }
+.payment-amounts strong { color: var(--ink); }
+.payment-due {
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+  background: var(--surface-alt);
+  border-radius: 4px;
+  padding: 1px 5px;
+}
 .payment-del-btn {
-  background: none; border: none; cursor: pointer;
-  font-size: 1rem; color: var(--ink-soft); padding: 0 3px;
-  line-height: 1; border-radius: 4px;
-  transition: color .1s;
+  background: none;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  padding: 2px 6px;
+  border-radius: 5px;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: color .1s, background .1s, border-color .1s;
 }
-.payment-del-btn:hover { color: #b91c1c; }
+.payment-del-btn:hover {
+  color: #b91c1c;
+  background: rgba(185,28,28,.07);
+  border-color: rgba(185,28,28,.2);
+}
 
+/* ── Formulaire ajout versement ──────────────────────────── */
 .payment-add-form {
   display: flex;
   flex-wrap: wrap;
-  gap: 5px;
-  margin-top: 4px;
-  padding: 6px 8px;
-  background: var(--surface);
-  border: 1px dashed var(--border);
-  border-radius: 7px;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 10px 12px;
+  background: color-mix(in srgb, var(--gold-dark) 4%, var(--bg));
+  border: 1.5px dashed color-mix(in srgb, var(--gold-dark) 30%, transparent);
+  border-radius: 9px;
 }
 .payment-add-form input {
   font: 0.8rem 'Manrope', sans-serif;
   color: var(--ink);
-  background: var(--surface);
+  background: var(--card);
   border: 1px solid var(--border);
   border-radius: 6px;
-  padding: 4px 7px;
+  padding: 5px 8px;
   outline: none;
-  transition: border-color .12s;
+  transition: border-color .15s, box-shadow .15s;
 }
-.payment-add-form input[type="text"]   { flex: 1; min-width: 110px; }
-.payment-add-form input[type="number"] { width: 90px; }
-.payment-add-form input[type="date"]   { width: 130px; }
-.payment-add-form input:focus { border-color: var(--accent); }
+.payment-add-form input[type="text"]   { flex: 1 1 110px; min-width: 90px; }
+.payment-add-form input[type="number"] { width: 100px; flex-shrink: 0; }
+.payment-add-form input[type="date"]   { width: 130px; flex-shrink: 0; }
+.payment-add-form input:focus {
+  border-color: var(--gold-dark);
+  box-shadow: 0 0 0 3px rgba(224,10,38,.1);
+}
 .payment-add-form .pmt-add-btn {
-  font: 0.8rem 'Manrope', sans-serif;
-  background: var(--accent);
+  font: 700 0.8rem 'Manrope', sans-serif;
+  background: linear-gradient(135deg, var(--sun), var(--gold-dark));
   color: #fff;
-  border: none; border-radius: 6px;
-  padding: 5px 10px; cursor: pointer;
-  transition: opacity .12s;
+  border: none;
+  border-radius: 7px;
+  padding: 6px 14px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(224,10,38,.22);
+  transition: opacity .15s, transform .15s;
 }
-.payment-add-form .pmt-add-btn:hover { opacity: 0.88; }
+.payment-add-form .pmt-add-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+.payment-add-form .pmt-add-btn:active { transform: translateY(0); }
 
 /* ═══════════════════════════════════════════════════════════
    COMPTEUR CONFIRMATIONS (index.html)
