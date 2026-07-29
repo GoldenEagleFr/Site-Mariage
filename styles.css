@@ -1610,6 +1610,24 @@ body::after {
 .edit-parent-row select {
   font: 0.82rem 'Manrope', sans-serif;
 }
+.edit-allergy-label {
+  flex: 1 1 100%;
+  display: block;
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+}
+.edit-allergy-label .edit-guest-allergies {
+  display: block;
+  margin-top: 3px;
+  width: 100%;
+  font: 0.85rem 'Manrope', sans-serif;
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--ink);
+  box-shadow: none;
+}
 .guest-edit-actions { display: flex; gap: 6px; }
 .save-guest-edit-btn {
   padding: 4px 12px;

@@ -427,31 +427,40 @@ function bindPlannerEvents() {
   }
 
   if (guestForm) {
-    const guestParentWrap  = document.getElementById("guestParentWrap");
-    const guestPartnerWrap = document.getElementById("guestPartnerWrap");
+    const guestParentWrap   = document.getElementById("guestParentWrap");
+    const guestParent2Wrap  = document.getElementById("guestParent2Wrap");
+    const guestPartnerWrap  = document.getElementById("guestPartnerWrap");
     const guestWitnessCheck = document.getElementById("guestWitnessCheck");
     const guestWitnessLabel = document.getElementById("guestWitnessLabel");
     const MINOR_CATS = new Set(["teen", "child", "baby"]);
     let _addFormParentAc  = null;
+    let _addFormParentAc2 = null;
     let _addFormPartnerAc = null;
 
     function refreshGuestAddFields() {
       if (!guestCategory) return;
       const isMinor = MINOR_CATS.has(guestCategory.value);
 
-      // Select parent (mineurs uniquement)
+      // Parents 1 & 2 (mineurs uniquement)
+      const parentCandidates = isMinor
+        ? state.guests.filter(g => !MINOR_CATS.has(g.guestCategory) && !g.isHost).sort((a, b) => a.name.localeCompare(b.name, "fr"))
+        : [];
       if (guestParentWrap) {
         guestParentWrap.style.display = isMinor ? "" : "none";
         if (isMinor) {
-          const candidates = state.guests
-            .filter(g => !MINOR_CATS.has(g.guestCategory) && !g.isHost)
-            .sort((a, b) => a.name.localeCompare(b.name, "fr"));
-          _addFormParentAc = buildParentAutocomplete(guestParentWrap, candidates, null,
-            { placeholder: "Chercher un parent…", noneLabel: "— Aucun parent —" });
+          _addFormParentAc = buildParentAutocomplete(guestParentWrap, parentCandidates, null,
+            { placeholder: "Parent 1…", noneLabel: "— Aucun parent —" });
+        }
+      }
+      if (guestParent2Wrap) {
+        guestParent2Wrap.style.display = isMinor ? "" : "none";
+        if (isMinor) {
+          _addFormParentAc2 = buildParentAutocomplete(guestParent2Wrap, parentCandidates, null,
+            { placeholder: "Parent 2 (optionnel)…", noneLabel: "— Aucun 2ᵉ parent —" });
         }
       }
 
-      // Autocomplete conjoint + checkbox témoin (adultes uniquement)
+      // Conjoint + témoin (adultes uniquement)
       if (guestPartnerWrap) {
         guestPartnerWrap.style.display = isMinor ? "none" : "";
         if (!isMinor) {
@@ -481,7 +490,8 @@ function bindPlannerEvents() {
 
       const cat = ["adult", "teen", "child", "baby"].includes(guestCategory?.value) ? guestCategory.value : "adult";
       const isMinor = MINOR_CATS.has(cat);
-      const parentId  = (isMinor && _addFormParentAc?.getValue())  ? _addFormParentAc.getValue()  : null;
+      const parentId1 = (isMinor && _addFormParentAc?.getValue())  ? _addFormParentAc.getValue()  : null;
+      const parentId2 = (isMinor && _addFormParentAc2?.getValue()) ? _addFormParentAc2.getValue() : null;
       const partnerId = (!isMinor && _addFormPartnerAc?.getValue()) ? _addFormPartnerAc.getValue() : null;
       const isWitness = !isMinor && Boolean(guestWitnessCheck?.checked);
       const newId = createId();
@@ -501,13 +511,13 @@ function bindPlannerEvents() {
         musicSuggestion: "",
         allergies: "",
         otherQuestion: "",
-        parentIds: parentId ? [parentId] : [],
+        parentIds: [parentId1, parentId2].filter(Boolean),
         colorGroupId: null,
         partnerId: partnerId || null,
         isWitness,
       });
 
-      // Lien bidirectionnel : mettre à jour le partnerId du conjoint choisi
+      // Lien bidirectionnel conjoint
       if (partnerId) {
         const partner = state.guests.find(g => g.id === partnerId);
         if (partner) partner.partnerId = newId;
@@ -515,10 +525,9 @@ function bindPlannerEvents() {
 
       guestForm.reset();
       if (guestWitnessCheck) guestWitnessCheck.checked = false;
-      _addFormParentAc = _addFormPartnerAc = null;
-      if (guestParentWrap)  guestParentWrap.style.display  = "none";
-      if (guestPartnerWrap) guestPartnerWrap.style.display = "none";
-      if (guestWitnessLabel) guestWitnessLabel.style.display = "none";
+      _addFormParentAc = _addFormParentAc2 = _addFormPartnerAc = null;
+      // Rappel pour remettre les champs dans le bon état pour le prochain invité
+      refreshGuestAddFields();
       refresh();
     });
   }
@@ -1800,11 +1809,12 @@ function renderGuests() {
     const editPanel = node.querySelector(".guest-item-edit");
     const editNameInput = node.querySelector(".edit-guest-name");
     const editAttendanceSelect = node.querySelector(".edit-guest-attendance");
-    const editParentRow = node.querySelector(".edit-parent-row");
-    const editParent1Wrap  = node.querySelector(".edit-parent1-wrap");
-    const editParent2Wrap  = node.querySelector(".edit-parent2-wrap");
-    const editPartnerWrap  = node.querySelector(".edit-partner-wrap");
-    const editWitnessCheck = node.querySelector(".edit-witness-check");
+    const editParentRow     = node.querySelector(".edit-parent-row");
+    const editParent1Wrap   = node.querySelector(".edit-parent1-wrap");
+    const editParent2Wrap   = node.querySelector(".edit-parent2-wrap");
+    const editPartnerWrap   = node.querySelector(".edit-partner-wrap");
+    const editWitnessCheck  = node.querySelector(".edit-witness-check");
+    const editAllergiesInput = node.querySelector(".edit-guest-allergies");
     let _editParentAc1  = null;
     let _editParentAc2  = null;
     let _editPartnerAc  = null;
@@ -1817,6 +1827,8 @@ function renderGuests() {
         } else {
           editNameInput.value = guest.name;
           editAttendanceSelect.value = normalizeGuestAttendanceType(guest.attendanceType);
+          if (editAllergiesInput) editAllergiesInput.value = guest.allergies || "";
+
           // Parents (mineurs uniquement)
           if (editParentRow && MINOR_CAT_SET.has(guest.guestCategory)) {
             editParentRow.classList.remove("is-hidden");
@@ -1862,6 +1874,7 @@ function renderGuests() {
         if (!newName) { editNameInput.focus(); return; }
         guest.name = newName;
         guest.attendanceType = editAttendanceSelect.value;
+        if (editAllergiesInput) guest.allergies = editAllergiesInput.value.trim();
 
         if (MINOR_CAT_SET.has(guest.guestCategory)) {
           guest.parentIds = [_editParentAc1?.getValue(), _editParentAc2?.getValue()].filter(Boolean);
