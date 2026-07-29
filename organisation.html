@@ -537,24 +537,39 @@
       <button class="danger" type="button">Supprimer</button>
       <div class="guest-rsvp-details is-hidden"></div>
       <div class="guest-item-edit is-hidden">
-        <input class="edit-guest-name" type="text" placeholder="Prénom Nom" required>
-        <select class="edit-guest-attendance">
-          <option value="vin_repas">Vin d'honneur + repas</option>
-          <option value="vin_only">Vin d'honneur seul</option>
-        </select>
+        <div class="edit-row-main">
+          <input class="edit-guest-name" type="text" placeholder="Prénom Nom" required>
+          <select class="edit-guest-category">
+            <option value="adult">Adulte</option>
+            <option value="teen">Ado</option>
+            <option value="child">Enfant</option>
+            <option value="baby">Bébé</option>
+          </select>
+          <select class="edit-guest-status">
+            <option value="pending">⏳ En attente</option>
+            <option value="yes">✓ Confirmé(e)</option>
+            <option value="no">✕ Décliné(e)</option>
+          </select>
+          <select class="edit-guest-attendance">
+            <option value="vin_repas">Vin + repas</option>
+            <option value="vin_only">Vin seul</option>
+          </select>
+        </div>
         <div class="edit-parent-row is-hidden">
-          <label style="display:block;margin-bottom:4px;">Parent 1 :<div class="edit-parent1-wrap" style="position:relative;margin-top:3px;"></div></label>
-          <label style="display:block;">Parent 2 :<div class="edit-parent2-wrap" style="position:relative;margin-top:3px;"></div></label>
+          <label>Parent 1 :<div class="edit-parent1-wrap" style="position:relative;margin-top:3px;"></div></label>
+          <label>Parent 2 :<div class="edit-parent2-wrap" style="position:relative;margin-top:3px;"></div></label>
         </div>
         <div class="edit-partner-row is-hidden">
-          <label style="display:block;">Conjoint(e) :<div class="edit-partner-wrap" style="position:relative;margin-top:3px;"></div></label>
+          <label>Conjoint(e) :<div class="edit-partner-wrap" style="position:relative;margin-top:3px;"></div></label>
         </div>
-        <label class="edit-witness-label" style="display:none;align-items:center;gap:6px;font-size:0.87rem;margin-top:6px;cursor:pointer;">
-          <input type="checkbox" class="edit-witness-check"> 👑 Témoin
-        </label>
-        <label class="edit-allergy-label">🥗 Allergie / régime :
-          <input type="text" class="edit-guest-allergies" placeholder="Ex : sans gluten, végétarien…">
-        </label>
+        <div class="edit-witness-allergy-row">
+          <label class="edit-witness-label" style="display:none;align-items:center;gap:6px;font-size:0.87rem;cursor:pointer;">
+            <input type="checkbox" class="edit-witness-check"> 👑 Témoin
+          </label>
+          <label class="edit-allergy-label">🥗 Allergie / régime :
+            <input type="text" class="edit-guest-allergies" placeholder="Ex : sans gluten, végétarien…">
+          </label>
+        </div>
         <div class="guest-edit-actions">
           <button class="save-guest-edit-btn" type="button">✓ Enregistrer</button>
           <button class="cancel-guest-edit-btn" type="button">Annuler</button>

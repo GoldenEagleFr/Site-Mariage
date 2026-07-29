@@ -1578,24 +1578,30 @@ body::after {
 .guest-item-edit {
   grid-column: 1 / -1;
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 8px;
   margin-top: 8px;
-  padding-top: 10px;
+  padding: 12px;
   border-top: 1px solid rgba(240, 63, 89, 0.2);
-  align-items: center;
+  background: var(--surface-alt);
+  border-radius: 0 0 10px 10px;
 }
 .guest-item-edit.is-hidden { display: none !important; }
-.guest-item-edit .edit-guest-name {
-  flex: 1;
-  min-width: 140px;
+.edit-row-main {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.edit-row-main .edit-guest-name {
+  flex: 1 1 160px;
+  min-width: 120px;
   font: 0.85rem 'Manrope', sans-serif;
 }
-.guest-item-edit .edit-guest-attendance {
+.edit-row-main select {
   font: 0.85rem 'Manrope', sans-serif;
 }
 .edit-parent-row {
-  flex: 1 1 100%;
   font-size: 0.82rem;
   color: var(--ink-soft);
   display: flex;
@@ -1603,16 +1609,31 @@ body::after {
   flex-wrap: wrap;
 }
 .edit-parent-row label {
+  flex: 1 1 160px;
   display: flex;
-  align-items: center;
-  gap: 4px;
+  flex-direction: column;
+  gap: 2px;
 }
-.edit-parent-row select {
-  font: 0.82rem 'Manrope', sans-serif;
+.edit-partner-row {
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+}
+.edit-partner-row label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.edit-witness-allergy-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
 }
 .edit-allergy-label {
-  flex: 1 1 100%;
-  display: block;
+  flex: 1 1 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
   font-size: 0.82rem;
   color: var(--ink-soft);
 }

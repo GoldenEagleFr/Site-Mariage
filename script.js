@@ -1805,19 +1805,59 @@ function renderGuests() {
       groupBadgeWrap.classList.remove("is-hidden");
     }
 
-    const editBtn = node.querySelector(".guest-edit-btn");
-    const editPanel = node.querySelector(".guest-item-edit");
-    const editNameInput = node.querySelector(".edit-guest-name");
+    const editBtn            = node.querySelector(".guest-edit-btn");
+    const editPanel          = node.querySelector(".guest-item-edit");
+    const editNameInput      = node.querySelector(".edit-guest-name");
+    const editCategorySelect = node.querySelector(".edit-guest-category");
+    const editStatusSelect   = node.querySelector(".edit-guest-status");
     const editAttendanceSelect = node.querySelector(".edit-guest-attendance");
-    const editParentRow     = node.querySelector(".edit-parent-row");
-    const editParent1Wrap   = node.querySelector(".edit-parent1-wrap");
-    const editParent2Wrap   = node.querySelector(".edit-parent2-wrap");
-    const editPartnerWrap   = node.querySelector(".edit-partner-wrap");
-    const editWitnessCheck  = node.querySelector(".edit-witness-check");
+    const editParentRow      = node.querySelector(".edit-parent-row");
+    const editParent1Wrap    = node.querySelector(".edit-parent1-wrap");
+    const editParent2Wrap    = node.querySelector(".edit-parent2-wrap");
+    const editPartnerRow     = node.querySelector(".edit-partner-row");
+    const editPartnerWrap    = node.querySelector(".edit-partner-wrap");
+    const editWitnessCheck   = node.querySelector(".edit-witness-check");
+    const editWitnessLabel   = node.querySelector(".edit-witness-label");
     const editAllergiesInput = node.querySelector(".edit-guest-allergies");
-    let _editParentAc1  = null;
-    let _editParentAc2  = null;
-    let _editPartnerAc  = null;
+    let _editParentAc1 = null;
+    let _editParentAc2 = null;
+    let _editPartnerAc = null;
+
+    // Met à jour la visibilité des champs parent/conjoint/témoin selon la catégorie choisie
+    function refreshEditConditionalFields(cat, currentParentIds, currentPartnerId) {
+      const isMinor = MINOR_CAT_SET.has(cat);
+      if (editParentRow) {
+        if (isMinor) {
+          editParentRow.classList.remove("is-hidden");
+          const candidates = state.guests
+            .filter(g => g.id !== guest.id && !MINOR_CAT_SET.has(g.guestCategory) && !g.isHost)
+            .sort((a, b) => a.name.localeCompare(b.name, "fr"));
+          _editParentAc1 = buildParentAutocomplete(editParent1Wrap, candidates, currentParentIds?.[0] || "",
+            { placeholder: "Chercher un parent…", noneLabel: "— Aucun parent —" });
+          _editParentAc2 = buildParentAutocomplete(editParent2Wrap, candidates, currentParentIds?.[1] || "",
+            { placeholder: "Chercher un parent…", noneLabel: "— Aucun parent —" });
+        } else {
+          editParentRow.classList.add("is-hidden");
+          _editParentAc1 = _editParentAc2 = null;
+        }
+      }
+      if (editPartnerRow) {
+        if (!isMinor && !guest.isHost) {
+          editPartnerRow.classList.remove("is-hidden");
+          const partnerCandidates = state.guests
+            .filter(g => g.id !== guest.id && !MINOR_CAT_SET.has(g.guestCategory))
+            .sort((a, b) => a.name.localeCompare(b.name, "fr"));
+          _editPartnerAc = buildParentAutocomplete(editPartnerWrap, partnerCandidates, currentPartnerId || "",
+            { placeholder: "Chercher un(e) conjoint(e)…", noneLabel: "— Aucun(e) conjoint(e) —" });
+        } else {
+          editPartnerRow.classList.add("is-hidden");
+          _editPartnerAc = null;
+        }
+      }
+      if (editWitnessLabel) {
+        editWitnessLabel.style.display = (!isMinor && !guest.isHost) ? "flex" : "none";
+      }
+    }
 
     if (editBtn && editPanel) {
       editBtn.addEventListener("click", () => {
@@ -1825,70 +1865,71 @@ function renderGuests() {
         if (isOpen) {
           editPanel.classList.add("is-hidden");
         } else {
+          // Pré-remplir tous les champs
           editNameInput.value = guest.name;
+          if (editCategorySelect) editCategorySelect.value = guest.guestCategory || "adult";
+          if (editStatusSelect && !guest.isHost) editStatusSelect.value = guest.status || "pending";
+          if (editStatusSelect && guest.isHost)  { editStatusSelect.value = "yes"; editStatusSelect.disabled = true; }
           editAttendanceSelect.value = normalizeGuestAttendanceType(guest.attendanceType);
           if (editAllergiesInput) editAllergiesInput.value = guest.allergies || "";
+          if (editWitnessCheck) editWitnessCheck.checked = Boolean(guest.isWitness);
 
-          // Parents (mineurs uniquement)
-          if (editParentRow && MINOR_CAT_SET.has(guest.guestCategory)) {
-            editParentRow.classList.remove("is-hidden");
-            const currentIds = Array.isArray(guest.parentIds) ? guest.parentIds : [];
-            const candidates = state.guests
-              .filter(g => g.id !== guest.id && !MINOR_CAT_SET.has(g.guestCategory) && !g.isHost)
-              .sort((a, b) => a.name.localeCompare(b.name, "fr"));
-            _editParentAc1 = buildParentAutocomplete(editParent1Wrap, candidates, currentIds[0] || "",
-              { placeholder: "Chercher un parent…", noneLabel: "— Aucun parent —" });
-            _editParentAc2 = buildParentAutocomplete(editParent2Wrap, candidates, currentIds[1] || "",
-              { placeholder: "Chercher un parent…", noneLabel: "— Aucun parent —" });
-          } else if (editParentRow) {
-            editParentRow.classList.add("is-hidden");
-          }
-
-          // Conjoint(e) + témoin (adultes uniquement)
-          const editPartnerRow = node.querySelector(".edit-partner-row");
-          if (editPartnerRow) {
-            if (!MINOR_CAT_SET.has(guest.guestCategory) && !guest.isHost) {
-              editPartnerRow.classList.remove("is-hidden");
-              const partnerCandidates = state.guests
-                .filter(g => g.id !== guest.id && !MINOR_CAT_SET.has(g.guestCategory))
-                .sort((a, b) => a.name.localeCompare(b.name, "fr"));
-              _editPartnerAc = buildParentAutocomplete(editPartnerWrap, partnerCandidates, guest.partnerId || "",
-                { placeholder: "Chercher un(e) conjoint(e)…", noneLabel: "— Aucun(e) conjoint(e) —" });
-            } else {
-              editPartnerRow.classList.add("is-hidden");
-            }
-          }
-          if (editWitnessCheck) {
-            editWitnessCheck.checked = Boolean(guest.isWitness);
-            const wLabel = node.querySelector(".edit-witness-label");
-            if (wLabel) wLabel.style.display = (!MINOR_CAT_SET.has(guest.guestCategory) && !guest.isHost) ? "flex" : "none";
-          }
+          refreshEditConditionalFields(
+            guest.guestCategory,
+            Array.isArray(guest.parentIds) ? guest.parentIds : [],
+            guest.partnerId || ""
+          );
 
           editPanel.classList.remove("is-hidden");
           editNameInput.focus();
         }
       });
 
+      // Changement de catégorie en temps réel → reconstruire les champs conditionnels
+      if (editCategorySelect) {
+        editCategorySelect.addEventListener("change", () => {
+          refreshEditConditionalFields(editCategorySelect.value, [], null);
+        });
+      }
+
       node.querySelector(".save-guest-edit-btn").addEventListener("click", () => {
         const newName = editNameInput.value.trim();
         if (!newName) { editNameInput.focus(); return; }
+
         guest.name = newName;
         guest.attendanceType = editAttendanceSelect.value;
         if (editAllergiesInput) guest.allergies = editAllergiesInput.value.trim();
+        if (editStatusSelect && !guest.isHost) guest.status = editStatusSelect.value;
 
-        if (MINOR_CAT_SET.has(guest.guestCategory)) {
+        // Changement de catégorie
+        const newCat = editCategorySelect?.value || guest.guestCategory;
+        const wasMinor = MINOR_CAT_SET.has(guest.guestCategory);
+        const isNowMinor = MINOR_CAT_SET.has(newCat);
+
+        if (newCat !== guest.guestCategory) {
+          // Si passage adulte → mineur : couper le lien conjoint existant
+          if (!wasMinor && isNowMinor && guest.partnerId) {
+            const oldPartner = state.guests.find(g => g.id === guest.partnerId);
+            if (oldPartner && oldPartner.partnerId === guest.id) oldPartner.partnerId = null;
+            guest.partnerId = null;
+            guest.isWitness = false;
+          }
+          // Si passage mineur → adulte : vider les parents
+          if (wasMinor && !isNowMinor) guest.parentIds = [];
+          guest.guestCategory = newCat;
+        }
+
+        if (isNowMinor) {
           guest.parentIds = [_editParentAc1?.getValue(), _editParentAc2?.getValue()].filter(Boolean);
         } else if (!guest.isHost) {
           // Conjoint(e) — lien bidirectionnel
           const newPartnerId = _editPartnerAc?.getValue() || null;
           const oldPartnerId = guest.partnerId;
-          // Retirer le lien chez l'ancien conjoint
           if (oldPartnerId && oldPartnerId !== newPartnerId) {
             const oldPartner = state.guests.find(g => g.id === oldPartnerId);
             if (oldPartner && oldPartner.partnerId === guest.id) oldPartner.partnerId = null;
           }
           guest.partnerId = newPartnerId;
-          // Établir le lien chez le nouveau conjoint
           if (newPartnerId) {
             const newPartner = state.guests.find(g => g.id === newPartnerId);
             if (newPartner) newPartner.partnerId = guest.id;
@@ -1896,12 +1937,14 @@ function renderGuests() {
           guest.isWitness = Boolean(editWitnessCheck?.checked);
         }
 
+        if (editStatusSelect) editStatusSelect.disabled = false;
         editPanel.classList.add("is-hidden");
         refresh({ persist: false });
         persistNow();
       });
 
       node.querySelector(".cancel-guest-edit-btn").addEventListener("click", () => {
+        if (editStatusSelect) editStatusSelect.disabled = false;
         editPanel.classList.add("is-hidden");
       });
     }
