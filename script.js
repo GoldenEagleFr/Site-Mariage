@@ -1256,20 +1256,24 @@ function renderPayments(item, container) {
     for (const pmt of pmts) {
       const row = document.createElement("div");
       row.className = "payment-row";
-      const rest = Math.max(0, pmt.amountTotal - pmt.amountPaid);
+      // Compatibilité ascendante : anciens versements stockaient amountPaid, nouveaux stockent amount
+      const pmtAmount = pmt.amount ?? pmt.amountPaid ?? 0;
+      const dateStr = pmt.dueDate
+        ? new Date(pmt.dueDate + "T00:00:00").toLocaleDateString("fr-FR", { day: "numeric", month: "short" })
+        : "";
       row.innerHTML = `
         <span class="payment-label">${pmt.label}${pmt.payer ? ` <span class="payment-payer">— ${pmt.payer}</span>` : ""}</span>
         <span class="payment-amounts">
-          ${formatMoney(pmt.amountTotal)} — payé ${formatMoney(pmt.amountPaid)}
-          ${rest > 0 ? `<span class="payment-rest">(reste ${formatMoney(rest)})</span>` : `<span class="payment-solde">✓</span>`}
-          ${pmt.dueDate ? `<span class="payment-due">📅 ${new Date(pmt.dueDate + "T00:00:00").toLocaleDateString("fr-FR", {day:"numeric",month:"short"})}</span>` : ""}
+          <strong>${formatMoney(pmtAmount)}</strong>
+          ${dateStr ? `<span class="payment-due">📅 ${dateStr}</span>` : ""}
         </span>
         <button type="button" class="payment-del-btn" title="Supprimer ce versement">×</button>`;
       row.querySelector(".payment-del-btn").addEventListener("click", () => {
         item.payments = item.payments.filter(p => p.id !== pmt.id);
         if (item.payments.length === 0) delete item.payments;
-        item.amountTotal = item.payments ? item.payments.reduce((s,p) => s+p.amountTotal, 0) : item.amountTotal;
-        item.amountPaid  = item.payments ? item.payments.reduce((s,p) => s+p.amountPaid,  0) : item.amountPaid;
+        // Soustraire seulement le montant du versement supprimé — ne pas toucher amountTotal
+        item.amountPaid = Math.max(0, (item.amountPaid || 0) - pmtAmount);
+        item.solde = item.amountTotal > 0 && item.amountPaid >= item.amountTotal;
         refresh();
       });
       inner.appendChild(row);
@@ -1279,22 +1283,21 @@ function renderPayments(item, container) {
     const form = document.createElement("div");
     form.className = "payment-add-form";
     form.innerHTML = `
-      <input type="text"   class="pmt-label"   placeholder="Ex : Acompte" value="">
-      <input type="number" class="pmt-total"   placeholder="Montant (€)" min="0" step="0.01">
-      <input type="number" class="pmt-paid"    placeholder="Déjà payé (€)" min="0" step="0.01">
-      <input type="date"   class="pmt-due"     title="Échéance">
-      <input type="text"   class="pmt-payer"   placeholder="Payé par (optionnel)">
+      <input type="text"   class="pmt-label"  placeholder="Ex : Acompte" value="">
+      <input type="number" class="pmt-amount" placeholder="Montant versé (€)" min="0" step="0.01">
+      <input type="date"   class="pmt-due"    title="Date du versement">
+      <input type="text"   class="pmt-payer"  placeholder="Payé par (optionnel)">
       <button type="button" class="pmt-add-btn">Ajouter</button>`;
     form.querySelector(".pmt-add-btn").addEventListener("click", () => {
-      const lbl   = form.querySelector(".pmt-label").value.trim() || "Versement";
-      const total = Math.max(0, Number(form.querySelector(".pmt-total").value) || 0);
-      const paid  = Math.max(0, Number(form.querySelector(".pmt-paid").value)  || 0);
-      const due   = form.querySelector(".pmt-due").value;
-      const payer = form.querySelector(".pmt-payer").value.trim();
+      const lbl    = form.querySelector(".pmt-label").value.trim() || "Versement";
+      const amount = Math.max(0, Number(form.querySelector(".pmt-amount").value) || 0);
+      const due    = form.querySelector(".pmt-due").value;
+      const payer  = form.querySelector(".pmt-payer").value.trim();
+      if (amount === 0) { form.querySelector(".pmt-amount").focus(); return; }
       if (!item.payments) item.payments = [];
-      item.payments.push({ id: createId(), label: lbl, amountTotal: total, amountPaid: paid, dueDate: due, payer, solde: total > 0 && paid >= total });
-      item.amountTotal = item.payments.reduce((s,p) => s+p.amountTotal, 0);
-      item.amountPaid  = item.payments.reduce((s,p) => s+p.amountPaid,  0);
+      // Stocker le versement avec son montant — ne touche pas amountTotal de l'item
+      item.payments.push({ id: createId(), label: lbl, amount, dueDate: due, payer });
+      item.amountPaid = (item.amountPaid || 0) + amount;
       item.solde = item.amountTotal > 0 && item.amountPaid >= item.amountTotal;
       refresh();
       // Rouvrir la section
@@ -2289,19 +2292,19 @@ function normalizeState(candidate) {
           payments = item.payments
             .filter((p) => p && typeof p === "object")
             .map((p) => ({
-              id:          typeof p.id === "string" && p.id ? p.id : createId(),
-              label:       String(p.label ?? "Versement").trim(),
-              amountTotal: Math.max(0, Number(p.amountTotal) || 0),
-              amountPaid:  Math.max(0, Number(p.amountPaid)  || 0),
-              dueDate:     typeof p.dueDate === "string" ? p.dueDate : "",
-              solde:       Boolean(p.solde),
+              id:      typeof p.id === "string" && p.id ? p.id : createId(),
+              label:   String(p.label ?? "Versement").trim(),
+              // Compat ascendante : anciens versements utilisaient amountPaid
+              amount:  Math.max(0, Number(p.amount ?? p.amountPaid ?? 0)),
+              dueDate: typeof p.dueDate === "string" ? p.dueDate : "",
+              payer:   String(p.payer ?? "").trim(),
             }));
         }
-        const amountTotal = payments
-          ? payments.reduce((s, p) => s + p.amountTotal, 0)
-          : Math.max(0, Number(item.amountTotal ?? item.amount ?? 0));
+        // amountTotal = toujours depuis l'item, jamais dérivé des versements
+        const amountTotal = Math.max(0, Number(item.amountTotal ?? item.amount ?? 0));
+        // amountPaid = somme des versements si présents, sinon valeur directe
         const amountPaid = payments
-          ? payments.reduce((s, p) => s + p.amountPaid, 0)
+          ? payments.reduce((s, p) => s + p.amount, 0)
           : Math.max(0, Number(item.amountPaid ?? 0));
         const entry = {
           id:          typeof item.id === "string" && item.id ? item.id : createId(),

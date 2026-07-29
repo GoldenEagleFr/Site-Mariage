@@ -262,29 +262,26 @@ def normalize_data(candidate: object) -> dict:
                     if not isinstance(pmt, dict):
                         continue
                     pmt_label = str(pmt.get("label", "")).strip() or "Versement"
-                    pmt_total_raw = pmt.get("amountTotal", 0)
-                    pmt_paid_raw  = pmt.get("amountPaid", 0)
-                    pmt_total = float(pmt_total_raw) if isinstance(pmt_total_raw, (int, float)) else 0.0
-                    pmt_paid  = float(pmt_paid_raw)  if isinstance(pmt_paid_raw,  (int, float)) else 0.0
+                    # Compat ascendante : anciens versements utilisaient amountPaid
+                    pmt_amount_raw = pmt.get("amount", pmt.get("amountPaid", 0))
+                    pmt_amount = float(pmt_amount_raw) if isinstance(pmt_amount_raw, (int, float)) else 0.0
                     cleaned_payments.append({
-                        "id":          str(pmt.get("id", "")).strip() or "pmt",
-                        "label":       pmt_label,
-                        "amountTotal": max(0.0, pmt_total),
-                        "amountPaid":  max(0.0, pmt_paid),
-                        "dueDate":     str(pmt.get("dueDate", "")).strip(),
-                        "payer":       str(pmt.get("payer", "")).strip(),
-                        "solde":       bool(pmt.get("solde", False)),
+                        "id":      str(pmt.get("id", "")).strip() or "pmt",
+                        "label":   pmt_label,
+                        "amount":  max(0.0, pmt_amount),
+                        "dueDate": str(pmt.get("dueDate", "")).strip(),
+                        "payer":   str(pmt.get("payer", "")).strip(),
                     })
 
-            # Totaux calculés depuis les versements si présents, sinon flat
+            # amountTotal toujours depuis l'item — jamais dérivé des versements
+            amount_total_raw = item.get("amountTotal", item.get("amount", 0))
+            amount_total = float(amount_total_raw) if isinstance(amount_total_raw, (int, float)) else 0.0
+            # amountPaid = somme des versements si présents, sinon valeur directe de l'item
             if cleaned_payments:
-                amount_total = sum(p["amountTotal"] for p in cleaned_payments)
-                amount_paid  = sum(p["amountPaid"]  for p in cleaned_payments)
+                amount_paid = sum(p["amount"] for p in cleaned_payments)
             else:
-                amount_total_raw = item.get("amountTotal", item.get("amount", 0))
-                amount_paid_raw  = item.get("amountPaid", 0)
-                amount_total = float(amount_total_raw) if isinstance(amount_total_raw, (int, float)) else 0.0
-                amount_paid  = float(amount_paid_raw)  if isinstance(amount_paid_raw,  (int, float)) else 0.0
+                amount_paid_raw = item.get("amountPaid", 0)
+                amount_paid = float(amount_paid_raw) if isinstance(amount_paid_raw, (int, float)) else 0.0
 
             entry = {
                 "id": identifier,
