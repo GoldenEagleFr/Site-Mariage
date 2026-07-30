@@ -241,6 +241,17 @@
     .ch-room-card.is-compact { padding: 8px 8px 6px; border-radius: 9px; }
     .ch-room-card.is-compact .ch-room-sdb { display: none; }
 
+    /* Drag and drop */
+    .ch-guest-item { cursor: grab; }
+    .ch-guest-item.is-dragging,
+    .ch-occupant-row.is-dragging { opacity: 0.35; cursor: grabbing; }
+    .ch-occupant-row[draggable="true"] { cursor: grab; }
+    .ch-room-card.drag-over {
+      border-color: var(--rose) !important;
+      border-style: dashed !important;
+      box-shadow: 0 4px 16px rgba(240,63,89,.18);
+    }
+
     /* ── Gate connexion ──────────────────────────────────────── */
     .ch-gate {
       position: fixed; inset: 0; z-index: 100;
@@ -435,6 +446,7 @@ let chAdminToken = "";
 let chGuests     = [];     // tous les guests chargés
 let chAssign     = {};     // { guestId: roomId }
 let selectedGuestId = null;
+let dragGuestId     = null;
 let lastKnownUpdatedAt = 0;
 let syncTimer = null;
 let syncPending = false;
@@ -623,12 +635,30 @@ function renderSidebar() {
     </div>`;
   }).join("");
 
-  chGuestList.querySelectorAll(".ch-guest-item:not(.is-placed)").forEach(el => {
-    el.addEventListener("click", () => {
-      const gid = el.dataset.gid;
-      selectedGuestId = selectedGuestId === gid ? null : gid;
-      renderSidebar();
-      renderRooms();
+  chGuestList.querySelectorAll(".ch-guest-item").forEach(el => {
+    const gid = el.dataset.gid;
+
+    // Clic pour sélectionner (invités non placés uniquement)
+    if (!el.classList.contains("is-placed")) {
+      el.addEventListener("click", () => {
+        selectedGuestId = selectedGuestId === gid ? null : gid;
+        renderSidebar();
+        renderRooms();
+      });
+    }
+
+    // Drag
+    el.setAttribute("draggable", "true");
+    el.addEventListener("dragstart", (e) => {
+      dragGuestId = gid;
+      e.dataTransfer.setData("text/plain", gid);
+      e.dataTransfer.effectAllowed = "move";
+      requestAnimationFrame(() => el.classList.add("is-dragging"));
+    });
+    el.addEventListener("dragend", () => {
+      el.classList.remove("is-dragging");
+      dragGuestId = null;
+      document.querySelectorAll(".ch-room-card.drag-over").forEach(c => c.classList.remove("drag-over"));
     });
   });
 }
@@ -664,16 +694,61 @@ function renderRooms() {
       const occs = roomOccupants[rid] || [];
       const isFull = occs.length >= room.capacity;
 
+      // Clic pour assigner l'invité sélectionné
       card.addEventListener("click", () => {
         if (!selectedGuestId || isFull) return;
         assignGuest(selectedGuestId, rid);
       });
 
+      // Boutons retirer
       card.querySelectorAll(".ch-occupant-remove").forEach(btn => {
         btn.addEventListener("click", (e) => {
           e.stopPropagation();
           removeGuest(btn.dataset.gid);
         });
+      });
+
+      // Drag — invités occupants (pour déplacer vers une autre chambre)
+      card.querySelectorAll(".ch-occupant-row").forEach(row => {
+        const gid = row.querySelector(".ch-occupant-remove")?.dataset.gid;
+        if (!gid) return;
+        row.setAttribute("draggable", "true");
+        row.addEventListener("dragstart", (e) => {
+          e.stopPropagation();
+          dragGuestId = gid;
+          e.dataTransfer.setData("text/plain", gid);
+          e.dataTransfer.effectAllowed = "move";
+          requestAnimationFrame(() => row.classList.add("is-dragging"));
+        });
+        row.addEventListener("dragend", () => {
+          row.classList.remove("is-dragging");
+          dragGuestId = null;
+          document.querySelectorAll(".ch-room-card.drag-over").forEach(c => c.classList.remove("drag-over"));
+        });
+      });
+
+      // Drop — recevoir un invité
+      card.addEventListener("dragover", (e) => {
+        if (!dragGuestId) return;
+        if (chAssign[dragGuestId] === rid) return; // déjà dans cette chambre
+        const liveCount = Object.values(chAssign).filter(r => r === rid).length;
+        if (liveCount >= room.capacity) return; // pleine
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        card.classList.add("drag-over");
+      });
+
+      card.addEventListener("dragleave", (e) => {
+        if (!card.contains(e.relatedTarget)) card.classList.remove("drag-over");
+      });
+
+      card.addEventListener("drop", (e) => {
+        e.preventDefault();
+        card.classList.remove("drag-over");
+        const gid = e.dataTransfer.getData("text/plain") || dragGuestId;
+        if (!gid) return;
+        assignGuest(gid, rid);
+        dragGuestId = null;
       });
     });
   });
