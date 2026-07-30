@@ -307,10 +307,6 @@
         <p class="ch-floor-title">2ème étage — salle de bain privée</p>
         <div class="ch-rooms-grid" data-floor="manoir-2">
         </div>
-
-        <p class="ch-floor-title">Chambre des mariés</p>
-        <div class="ch-rooms-grid" data-floor="manoir-bridal">
-        </div>
       </div>
 
       <!-- ── CARAVELLE ────────────────────────────────────────── -->
@@ -351,7 +347,7 @@ const ROOMS = [
   { id:"manoir-1-hippolyte",     name:"Chez Hippolyte",       floor:"manoir-1",      sdb:"Privée",    beds:"2 lits simples",             capacity:2 },
   { id:"manoir-1-leon",          name:"Chez Léon",            floor:"manoir-1",      sdb:"Privée",    beds:"2 lits simples",             capacity:2 },
   { id:"manoir-1-gilberte",      name:"Chez Gilberte",        floor:"manoir-1",      sdb:"Privée",    beds:"2 lits simples",             capacity:2 },
-  { id:"manoir-1-simone",        name:"Chez Simone & J-Paul", floor:"manoir-1",      sdb:"Privée",    beds:"1 lit double + 2 lits simples", capacity:4 },
+  { id:"manoir-1-simone",        name:"Chez Simone et Jean-Paul", floor:"manoir-1",  sdb:"Privée",    beds:"1 lit double + 2 lits simples", capacity:4, bridal:true },
   { id:"manoir-1-dolores",       name:"Chez Dolores",         floor:"manoir-1",      sdb:"Privée",    beds:"4 lits simples",             capacity:4 },
   { id:"manoir-1-jeanne",        name:"Chez Jeanne",          floor:"manoir-1",      sdb:"Privée",    beds:"4 lits simples",             capacity:4 },
   { id:"manoir-1-antoinette",    name:"Chez Antoinette",      floor:"manoir-1",      sdb:"Privée",    beds:"1 lit double + 3 lits simples", capacity:5 },
@@ -363,8 +359,6 @@ const ROOMS = [
   { id:"manoir-2-isaure",        name:"Chez Isaure",          floor:"manoir-2",      sdb:"Privée",    beds:"2 lits simples",             capacity:2 },
   { id:"manoir-2-alain-1",       name:"Chez Alain — ch.1",   floor:"manoir-2",      sdb:"Privée",    beds:"1 lit double + 1 lit simple", capacity:3 },
   { id:"manoir-2-alain-2",       name:"Chez Alain — ch.2",   floor:"manoir-2",      sdb:"Privée",    beds:"1 lit double + 1 lit simple", capacity:3 },
-  // ── Chambre des mariés ───────────────────────────────────
-  { id:"manoir-bridal",          name:"Chambre des mariés",   floor:"manoir-bridal", sdb:"Privée",    beds:"Lit double",                 capacity:2, bridal:true },
   // ── Caravelle 1er étage ──────────────────────────────────
   { id:"caravelle-1-albert",     name:"Chez Albert",          floor:"caravelle-1",   sdb:"Partagée",  beds:"2 lits simples",             capacity:2, note:"SYFCO" },
   { id:"caravelle-1-philomene",  name:"Chez Philomène",       floor:"caravelle-1",   sdb:"Partagée",  beds:"1 lit double",               capacity:2 },
@@ -375,16 +369,16 @@ const ROOMS = [
   { id:"caravelle-rdc-dimitri",  name:"Chez Dimitri",         floor:"caravelle-rdc", sdb:"Partagée",  beds:"1 lit double + 1 lit simple", capacity:3 },
   // ── Chalets A (avec salon) ───────────────────────────────
   { id:"chalet-camille-ch1",     name:"Camille — Chambre 1",  floor:"chalets-a",     sdb:"Partagée",  beds:"1 lit double",               capacity:2 },
-  { id:"chalet-camille-ch2",     name:"Camille — Chambre 2",  floor:"chalets-a",     sdb:"Partagée",  beds:"2 lits simples",             capacity:2 },
+  { id:"chalet-camille-ch2",     name:"Camille — Chambre 2",  floor:"chalets-a",     sdb:"Partagée",  beds:"2 lits simples (superposés)", capacity:2 },
   { id:"chalet-camille-salon",   name:"Camille — Salon",      floor:"chalets-a",     sdb:"Partagée",  beds:"Canapé-lit double (clic-clac)", capacity:2 },
   { id:"chalet-bernard-ch1",     name:"Bernard — Chambre 1",  floor:"chalets-a",     sdb:"Partagée",  beds:"1 lit double",               capacity:2 },
-  { id:"chalet-bernard-ch2",     name:"Bernard — Chambre 2",  floor:"chalets-a",     sdb:"Partagée",  beds:"2 lits simples",             capacity:2 },
+  { id:"chalet-bernard-ch2",     name:"Bernard — Chambre 2",  floor:"chalets-a",     sdb:"Partagée",  beds:"2 lits simples (superposés)", capacity:2 },
   { id:"chalet-bernard-salon",   name:"Bernard — Salon",      floor:"chalets-a",     sdb:"Partagée",  beds:"Canapé-lit double (clic-clac)", capacity:2 },
   { id:"chalet-justine-ch1",     name:"Justine — Chambre 1",  floor:"chalets-a",     sdb:"Partagée",  beds:"1 lit double",               capacity:2 },
-  { id:"chalet-justine-ch2",     name:"Justine — Chambre 2",  floor:"chalets-a",     sdb:"Partagée",  beds:"2 lits simples",             capacity:2 },
+  { id:"chalet-justine-ch2",     name:"Justine — Chambre 2",  floor:"chalets-a",     sdb:"Partagée",  beds:"2 lits simples (superposés)", capacity:2 },
   { id:"chalet-justine-salon",   name:"Justine — Salon",      floor:"chalets-a",     sdb:"Partagée",  beds:"Canapé-lit double (clic-clac)", capacity:2 },
   { id:"chalet-iris-ch1",        name:"Iris — Chambre 1",     floor:"chalets-a",     sdb:"Partagée",  beds:"1 lit double",               capacity:2 },
-  { id:"chalet-iris-ch2",        name:"Iris — Chambre 2",     floor:"chalets-a",     sdb:"Partagée",  beds:"2 lits simples",             capacity:2 },
+  { id:"chalet-iris-ch2",        name:"Iris — Chambre 2",     floor:"chalets-a",     sdb:"Partagée",  beds:"2 lits simples (superposés)", capacity:2 },
   { id:"chalet-iris-salon",      name:"Iris — Salon",         floor:"chalets-a",     sdb:"Partagée",  beds:"Canapé-lit double (clic-clac)", capacity:2 },
   // ── Chalets B (doubles) ──────────────────────────────────
   { id:"chalet-juliette-g",      name:"Juliette — Gauche",    floor:"chalets-b",     sdb:"Privée",    beds:"2 lits simples",             capacity:2 },
