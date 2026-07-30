@@ -304,6 +304,13 @@
     let lastKnownUpdatedAt = 0;
     let syncPollTimer = null;
 
+    // ── Animation canvas ──────────────────────────────────────
+    let dragHoverProgress = 0;   // 0→1 : fondu animé du halo cible
+    let chairFlashes      = [];  // [{ tableId, seatIdx, t0, duration, color }]
+    let _animRafId        = null;
+    let _dragRafPending   = false;
+    let _lastDragPos      = null;
+
     // ── DOM ───────────────────────────────────────────────────
     const adminGate         = document.getElementById("adminGate");
     const adminContent      = document.getElementById("adminContent");
@@ -551,6 +558,15 @@
     }
 
     function removeGuestFromTable(guestId) {
+      // Flash rouge sur la chaise libérée
+      for (const [k, gid] of Object.entries(seatMap)) {
+        if (gid === guestId) {
+          const [tid, sidxStr] = k.split(":");
+          chairFlashes.push({ tableId: tid, seatIdx: parseInt(sidxStr, 10), t0: performance.now(), duration: 450, color: "red" });
+          startAnimLoop();
+          break;
+        }
+      }
       delete assignments[guestId];
       for (const k of Object.keys(seatMap)) {
         if (seatMap[k] === guestId) delete seatMap[k];
@@ -1252,6 +1268,9 @@
       delete assignments[guestId];
       assignments[guestId] = tableId;
       seatMap[`${tableId}:${seatIdx}`] = guestId;
+      // Flash vert sur la chaise assignée
+      chairFlashes.push({ tableId, seatIdx, t0: performance.now(), duration: 550, color: "green" });
+      startAnimLoop();
       saveTables();
       render();
       renderGuestDragSidebar();
@@ -1309,6 +1328,34 @@
       }
     }
 
+    // ── Boucle d'animation canvas ─────────────────────────────
+    function _animLoop(now) {
+      let needsMore = false;
+
+      // Fondu du halo cible (0→1 ou 1→0)
+      const haloTarget = dragHoverChair ? 1 : 0;
+      if (Math.abs(dragHoverProgress - haloTarget) > 0.006) {
+        dragHoverProgress += (haloTarget - dragHoverProgress) * 0.2;
+        if (Math.abs(dragHoverProgress - haloTarget) < 0.006) dragHoverProgress = haloTarget;
+        needsMore = true;
+      }
+
+      // Flashs actifs
+      chairFlashes = chairFlashes.filter(f => now - f.t0 < f.duration);
+      if (chairFlashes.length) needsMore = true;
+
+      // Drag en cours → on reste actif pour le prochain hover
+      if (dragGuestId) needsMore = true;
+
+      renderRoom();
+
+      _animRafId = needsMore ? requestAnimationFrame(_animLoop) : null;
+    }
+
+    function startAnimLoop() {
+      if (!_animRafId) _animRafId = requestAnimationFrame(_animLoop);
+    }
+
     // ── Sidebar drag invités ──────────────────────────────────
     function renderGuestDragSidebar() {
       const sidebar = document.getElementById("guestDragSidebar");
@@ -1335,13 +1382,21 @@
           dragGuestId = guest.id; selectedGuestId = null;
           e.dataTransfer.setData("text/plain", guest.id);
           e.dataTransfer.effectAllowed = "move";
+          // Pastille sans fond blanc comme image de drag
+          const ghost = document.createElement("div");
+          ghost.textContent = guest.name;
+          ghost.style.cssText = "position:fixed;top:-200px;left:-200px;background:#f03f59;color:#fff;padding:5px 14px;border-radius:99px;font:600 0.82rem/1.4 Manrope,sans-serif;pointer-events:none;white-space:nowrap;box-shadow:0 4px 14px rgba(240,63,89,.4);";
+          document.body.appendChild(ghost);
+          e.dataTransfer.setDragImage(ghost, ghost.offsetWidth / 2, ghost.offsetHeight / 2);
+          setTimeout(() => ghost.remove(), 0);
           item.classList.add("dragging");
-          renderRoom();
+          startAnimLoop();
         });
         item.addEventListener("dragend", () => {
           dragGuestId = null; dragHoverChair = null;
           item.classList.remove("dragging");
-          renderRoom();
+          roomCanvas.style.cursor = "";
+          startAnimLoop(); // laisse le fondu se terminer
         });
         item.addEventListener("click", () => {
           selectedGuestId = selectedGuestId === guest.id ? null : guest.id;
@@ -1413,12 +1468,13 @@
           ctx.stroke();
         }
 
-        // Halo cible drag-and-drop
-        if (dragHoverChair && dragHoverChair.tableId === table.id && dragHoverChair.seatIdx === i) {
+        // Halo cible drag-and-drop (fondu animé)
+        if (dragHoverChair && dragHoverChair.tableId === table.id && dragHoverChair.seatIdx === i && dragHoverProgress > 0.01) {
+          const p = dragHoverProgress;
           ctx.beginPath();
-          ctx.arc(cx, cy, r + 5, 0, Math.PI * 2);
-          ctx.strokeStyle = "#22c55e";
-          ctx.lineWidth = 3;
+          ctx.arc(cx, cy, r + 5 * p, 0, Math.PI * 2);
+          ctx.strokeStyle = `rgba(34,197,94,${p})`;
+          ctx.lineWidth = 3 * p;
           ctx.stroke();
         }
 
@@ -1437,6 +1493,18 @@
         ctx.strokeStyle = strokeC;
         ctx.lineWidth = 2.5;
         ctx.stroke();
+
+        // Flash assignation (vert) / retrait (rouge)
+        const flash = chairFlashes.find(f => f.tableId === table.id && f.seatIdx === i);
+        if (flash) {
+          const prog  = Math.min(1, (performance.now() - flash.t0) / flash.duration);
+          const scale = 1 + 0.2 * Math.sin(prog * Math.PI);
+          const alpha = (1 - prog) * 0.7;
+          ctx.beginPath();
+          ctx.arc(cx, cy, r * scale, 0, Math.PI * 2);
+          ctx.fillStyle = flash.color === "green" ? `rgba(34,197,94,${alpha})` : `rgba(220,38,38,${alpha})`;
+          ctx.fill();
+        }
 
         // Initiales sur siège occupé, numéro sur siège libre
         if (isOcc && guest && !showNames) {
@@ -2984,15 +3052,28 @@
     roomCanvas.addEventListener("dragover", (e) => {
       e.preventDefault();
       if (!dragGuestId && !selectedGuestId) return;
-      const pos = getRoomPos(e);
-      const { wx, wy } = screenToWorld(pos.x, pos.y);
-      dragHoverChair = findNearestChair(wx, wy);
-      renderRoom();
+      // Capture la position immédiatement (l'event est synthétique, ne pas accéder dans RAF)
+      _lastDragPos = getRoomPos(e);
+      e.dataTransfer.dropEffect = "move";
+      if (_dragRafPending) return;
+      _dragRafPending = true;
+      requestAnimationFrame(() => {
+        _dragRafPending = false;
+        if (!_lastDragPos) return;
+        const { wx, wy } = screenToWorld(_lastDragPos.x, _lastDragPos.y);
+        const newHover = findNearestChair(wx, wy);
+        const changed  = newHover?.tableId !== dragHoverChair?.tableId ||
+                         newHover?.seatIdx  !== dragHoverChair?.seatIdx;
+        dragHoverChair = newHover;
+        roomCanvas.style.cursor = newHover ? "copy" : "grabbing";
+        if (changed) startAnimLoop();
+      });
     });
 
     roomCanvas.addEventListener("dragleave", () => {
       dragHoverChair = null;
-      renderRoom();
+      roomCanvas.style.cursor = "";
+      startAnimLoop();
     });
 
     roomCanvas.addEventListener("drop", (e) => {
@@ -3002,7 +3083,8 @@
         assignGuestToChair(gId, dragHoverChair.tableId, dragHoverChair.seatIdx);
       }
       dragHoverChair = null; dragGuestId = null;
-      renderRoom();
+      roomCanvas.style.cursor = "";
+      startAnimLoop();
     });
 
     // ── Snap to grid ─────────────────────────────────────────
