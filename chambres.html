@@ -137,7 +137,8 @@
     .ch-room-card {
       background: var(--card); border: 2px solid var(--border);
       border-radius: 12px; padding: 12px;
-      cursor: pointer; transition: border-color .15s, box-shadow .15s;
+      cursor: pointer;
+      transition: border-color .15s, box-shadow .15s, transform .12s ease;
       position: relative;
     }
     .ch-room-card:hover { border-color: var(--rose); box-shadow: 0 4px 14px rgba(240,63,89,.12); }
@@ -171,6 +172,7 @@
     }
     .ch-room-bar {
       height: 100%; border-radius: 99px;
+      transition: width 0.4s cubic-bezier(.4,0,.2,1);
       background: var(--rose);
       transition: width .3s ease;
     }
@@ -250,7 +252,24 @@
       border-color: var(--rose) !important;
       border-style: dashed !important;
       box-shadow: 0 4px 16px rgba(240,63,89,.18);
+      transform: scale(1.025);
     }
+
+    /* Animations */
+    @keyframes ch-card-in {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes ch-flash-green {
+      0%, 100% { background: var(--card); }
+      30%      { background: rgba(34,197,94,.18); box-shadow: 0 0 0 4px rgba(34,197,94,.22); }
+    }
+    @keyframes ch-flash-red {
+      0%, 100% { background: var(--card); }
+      30%      { background: rgba(220,38,38,.14); box-shadow: 0 0 0 4px rgba(220,38,38,.18); }
+    }
+    .ch-room-card.flash-green { animation: ch-flash-green 0.55s ease; }
+    .ch-room-card.flash-red   { animation: ch-flash-red  0.50s ease; }
 
     /* ── Gate connexion ──────────────────────────────────────── */
     .ch-gate {
@@ -443,10 +462,12 @@ const ADMIN_CHECK       = "/api/admin/check";
 const ADMIN_SESSION_KEY = "plan_mariage_admin_token";
 
 let chAdminToken = "";
-let chGuests     = [];     // tous les guests chargés
-let chAssign     = {};     // { guestId: roomId }
-let selectedGuestId = null;
-let dragGuestId     = null;
+let chGuests     = [];
+let chAssign     = {};
+let selectedGuestId    = null;
+let dragGuestId        = null;
+let pendingFlash       = null; // { roomId, type:"green"|"red" }
+const _animatedFloors  = new Set();
 let lastKnownUpdatedAt = 0;
 let syncTimer = null;
 let syncPending = false;
@@ -581,17 +602,19 @@ function assignGuest(guestId, roomId) {
   const room = ROOM_BY_ID[roomId];
   if (!room) return;
   const occupants = Object.entries(chAssign).filter(([,rid]) => rid === roomId);
-  if (occupants.length >= room.capacity) return; // pleine
-  // Retirer l'ancienne chambre si besoin
+  if (occupants.length >= room.capacity) return;
   delete chAssign[guestId];
   chAssign[guestId] = roomId;
   selectedGuestId = null;
+  pendingFlash = { roomId, type: "green" };
   saveData();
   render();
 }
 
 function removeGuest(guestId) {
+  const roomId = chAssign[guestId];
   delete chAssign[guestId];
+  if (roomId) pendingFlash = { roomId, type: "red" };
   saveData();
   render();
 }
@@ -601,6 +624,18 @@ function render() {
   renderSidebar();
   renderRooms();
   renderStats();
+  if (pendingFlash) {
+    const { roomId, type } = pendingFlash;
+    pendingFlash = null;
+    requestAnimationFrame(() => {
+      const card = document.querySelector(`.ch-room-card[data-rid="${CSS.escape(roomId)}"]`);
+      if (!card) return;
+      card.classList.remove("flash-green", "flash-red");
+      void card.offsetWidth; // force reflow
+      card.classList.add(`flash-${type}`);
+      card.addEventListener("animationend", () => card.classList.remove(`flash-${type}`), { once: true });
+    });
+  }
 }
 
 function guestCatLabel(g) {
@@ -676,6 +711,8 @@ function renderRooms() {
     const floor = grid.dataset.floor;
     const floorRooms = ROOMS.filter(r => r.floor === floor);
 
+    const firstRender = !_animatedFloors.has(floor);
+
     if (floor === "chalets-a" || floor === "chalets-b") {
       const byChalet = {};
       const chaletOrder = [];
@@ -686,6 +723,11 @@ function renderRooms() {
       grid.innerHTML = chaletOrder.map(name => chaletBlock(name, byChalet[name], roomOccupants)).join("");
     } else {
       grid.innerHTML = floorRooms.map(room => roomCard(room, roomOccupants[room.id] || [])).join("");
+    }
+
+    if (firstRender) {
+      _animatedFloors.add(floor);
+      animateRoomsIn(grid);
     }
 
     grid.querySelectorAll(".ch-room-card").forEach(card => {
@@ -751,6 +793,17 @@ function renderRooms() {
         dragGuestId = null;
       });
     });
+  });
+}
+
+function animateRoomsIn(grid) {
+  const items = grid.querySelectorAll(".ch-room-card, .ch-chalet-block");
+  items.forEach((el, i) => {
+    el.style.opacity = "0";
+    el.style.animation = "none";
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      el.style.animation = `ch-card-in 0.22s ease ${i * 40}ms both`;
+    }));
   });
 }
 
@@ -851,7 +904,11 @@ document.querySelectorAll(".ch-building-tab").forEach(btn => {
     document.querySelectorAll(".ch-building-section").forEach(s => s.classList.remove("is-active"));
     btn.classList.add("is-active");
     document.querySelector(`.ch-building-section[data-building="${b}"]`)?.classList.add("is-active");
-    renderRooms(); // re-render pour recalculer can-drop
+    // Réinitialiser les floors du bâtiment affiché pour rejouer l'animation d'entrée
+    for (const floor of [..._animatedFloors]) {
+      if (floor.startsWith(b)) _animatedFloors.delete(floor);
+    }
+    renderRooms();
   });
 });
 
