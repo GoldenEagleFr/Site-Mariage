@@ -213,6 +213,34 @@
       content: " 💍"; font-size: 0.8em;
     }
 
+    /* Grille extérieure pour les blocs chalets */
+    .ch-rooms-grid[data-floor="chalets-a"],
+    .ch-rooms-grid[data-floor="chalets-b"] {
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    }
+
+    /* Bloc par chalet */
+    .ch-chalet-block {
+      border: 2px solid var(--border);
+      border-radius: 14px;
+      padding: 10px;
+      background: var(--card);
+      transition: border-color .15s;
+    }
+    .ch-chalet-block.is-full { border-color: #22c55e; }
+    .ch-chalet-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 8px; padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+    .ch-chalet-name { font: 700 0.85rem 'Manrope',sans-serif; color: var(--ink); }
+    .ch-chalet-cap  { font: 600 0.72rem 'Manrope',sans-serif; color: var(--ink-soft); }
+    .ch-chalet-rooms { display: grid; gap: 6px; }
+
+    /* Carte de sous-chambre dans un bloc chalet */
+    .ch-room-card.is-compact { padding: 8px 8px 6px; border-radius: 9px; }
+    .ch-room-card.is-compact .ch-room-sdb { display: none; }
+
     /* ── Gate connexion ──────────────────────────────────────── */
     .ch-gate {
       position: fixed; inset: 0; z-index: 100;
@@ -368,31 +396,31 @@ const ROOMS = [
   // ── Caravelle RDC ────────────────────────────────────────
   { id:"caravelle-rdc-dimitri",  name:"Chez Dimitri",         floor:"caravelle-rdc", sdb:"Partagée",  beds:"1 lit double + 1 lit simple", capacity:3 },
   // ── Chalets A (avec salon) ───────────────────────────────
-  { id:"chalet-camille-ch1",     name:"Camille — Chambre 1",  floor:"chalets-a",     sdb:"Partagée",  beds:"1 lit double",               capacity:2 },
-  { id:"chalet-camille-ch2",     name:"Camille — Chambre 2",  floor:"chalets-a",     sdb:"Partagée",  beds:"2 lits simples (superposés)", capacity:2 },
-  { id:"chalet-camille-salon",   name:"Camille — Salon",      floor:"chalets-a",     sdb:"Partagée",  beds:"Canapé-lit double (clic-clac)", capacity:2 },
-  { id:"chalet-bernard-ch1",     name:"Bernard — Chambre 1",  floor:"chalets-a",     sdb:"Partagée",  beds:"1 lit double",               capacity:2 },
-  { id:"chalet-bernard-ch2",     name:"Bernard — Chambre 2",  floor:"chalets-a",     sdb:"Partagée",  beds:"2 lits simples (superposés)", capacity:2 },
-  { id:"chalet-bernard-salon",   name:"Bernard — Salon",      floor:"chalets-a",     sdb:"Partagée",  beds:"Canapé-lit double (clic-clac)", capacity:2 },
-  { id:"chalet-justine-ch1",     name:"Justine — Chambre 1",  floor:"chalets-a",     sdb:"Partagée",  beds:"1 lit double",               capacity:2 },
-  { id:"chalet-justine-ch2",     name:"Justine — Chambre 2",  floor:"chalets-a",     sdb:"Partagée",  beds:"2 lits simples (superposés)", capacity:2 },
-  { id:"chalet-justine-salon",   name:"Justine — Salon",      floor:"chalets-a",     sdb:"Partagée",  beds:"Canapé-lit double (clic-clac)", capacity:2 },
-  { id:"chalet-iris-ch1",        name:"Iris — Chambre 1",     floor:"chalets-a",     sdb:"Partagée",  beds:"1 lit double",               capacity:2 },
-  { id:"chalet-iris-ch2",        name:"Iris — Chambre 2",     floor:"chalets-a",     sdb:"Partagée",  beds:"2 lits simples (superposés)", capacity:2 },
-  { id:"chalet-iris-salon",      name:"Iris — Salon",         floor:"chalets-a",     sdb:"Partagée",  beds:"Canapé-lit double (clic-clac)", capacity:2 },
+  { id:"chalet-camille-ch1",     chalet:"Camille",    subName:"Chambre 1", floor:"chalets-a", sdb:"Partagée", beds:"1 lit double",               capacity:2 },
+  { id:"chalet-camille-ch2",     chalet:"Camille",    subName:"Chambre 2", floor:"chalets-a", sdb:"Partagée", beds:"2 lits simples (superposés)", capacity:2 },
+  { id:"chalet-camille-salon",   chalet:"Camille",    subName:"Salon",     floor:"chalets-a", sdb:"Partagée", beds:"Canapé-lit double (clic-clac)", capacity:2 },
+  { id:"chalet-bernard-ch1",     chalet:"Bernard",    subName:"Chambre 1", floor:"chalets-a", sdb:"Partagée", beds:"1 lit double",               capacity:2 },
+  { id:"chalet-bernard-ch2",     chalet:"Bernard",    subName:"Chambre 2", floor:"chalets-a", sdb:"Partagée", beds:"2 lits simples (superposés)", capacity:2 },
+  { id:"chalet-bernard-salon",   chalet:"Bernard",    subName:"Salon",     floor:"chalets-a", sdb:"Partagée", beds:"Canapé-lit double (clic-clac)", capacity:2 },
+  { id:"chalet-justine-ch1",     chalet:"Justine",    subName:"Chambre 1", floor:"chalets-a", sdb:"Partagée", beds:"1 lit double",               capacity:2 },
+  { id:"chalet-justine-ch2",     chalet:"Justine",    subName:"Chambre 2", floor:"chalets-a", sdb:"Partagée", beds:"2 lits simples (superposés)", capacity:2 },
+  { id:"chalet-justine-salon",   chalet:"Justine",    subName:"Salon",     floor:"chalets-a", sdb:"Partagée", beds:"Canapé-lit double (clic-clac)", capacity:2 },
+  { id:"chalet-iris-ch1",        chalet:"Iris",       subName:"Chambre 1", floor:"chalets-a", sdb:"Partagée", beds:"1 lit double",               capacity:2 },
+  { id:"chalet-iris-ch2",        chalet:"Iris",       subName:"Chambre 2", floor:"chalets-a", sdb:"Partagée", beds:"2 lits simples (superposés)", capacity:2 },
+  { id:"chalet-iris-salon",      chalet:"Iris",       subName:"Salon",     floor:"chalets-a", sdb:"Partagée", beds:"Canapé-lit double (clic-clac)", capacity:2 },
   // ── Chalets B (doubles) ──────────────────────────────────
-  { id:"chalet-juliette-g",      name:"Juliette — Gauche",    floor:"chalets-b",     sdb:"Privée",    beds:"2 lits simples",             capacity:2 },
-  { id:"chalet-juliette-d",      name:"Juliette — Droite",    floor:"chalets-b",     sdb:"Privée",    beds:"2 lits simples",             capacity:2 },
-  { id:"chalet-constant-g",      name:"Constant — Gauche",    floor:"chalets-b",     sdb:"Privée",    beds:"2 lits simples",             capacity:2 },
-  { id:"chalet-constant-d",      name:"Constant — Droite",    floor:"chalets-b",     sdb:"Privée",    beds:"2 lits simples",             capacity:2 },
-  { id:"chalet-germaine-g",      name:"Germaine — Gauche",    floor:"chalets-b",     sdb:"Privée",    beds:"2 lits simples",             capacity:2 },
-  { id:"chalet-germaine-d",      name:"Germaine — Droite",    floor:"chalets-b",     sdb:"Privée",    beds:"2 lits simples",             capacity:2 },
-  { id:"chalet-marguerite-g",    name:"Marguerite — Gauche",  floor:"chalets-b",     sdb:"Privée",    beds:"2 lits simples",             capacity:2 },
-  { id:"chalet-marguerite-d",    name:"Marguerite — Droite",  floor:"chalets-b",     sdb:"Privée",    beds:"2 lits simples",             capacity:2 },
-  { id:"chalet-gaspard-g",       name:"Gaspard — Gauche",     floor:"chalets-b",     sdb:"Privée",    beds:"2 lits simples",             capacity:2 },
-  { id:"chalet-gaspard-d",       name:"Gaspard — Droite",     floor:"chalets-b",     sdb:"Privée",    beds:"2 lits simples",             capacity:2 },
-  { id:"chalet-odette-g",        name:"Odette — Gauche",      floor:"chalets-b",     sdb:"Privée",    beds:"2 lits simples",             capacity:2 },
-  { id:"chalet-odette-d",        name:"Odette — Droite",      floor:"chalets-b",     sdb:"Privée",    beds:"2 lits simples",             capacity:2 },
+  { id:"chalet-juliette-g",      chalet:"Juliette",   subName:"Chambre 1", floor:"chalets-b", sdb:"Privée", beds:"2 lits simples", capacity:2 },
+  { id:"chalet-juliette-d",      chalet:"Juliette",   subName:"Chambre 2", floor:"chalets-b", sdb:"Privée", beds:"2 lits simples", capacity:2 },
+  { id:"chalet-constant-g",      chalet:"Constant",   subName:"Chambre 1", floor:"chalets-b", sdb:"Privée", beds:"2 lits simples", capacity:2 },
+  { id:"chalet-constant-d",      chalet:"Constant",   subName:"Chambre 2", floor:"chalets-b", sdb:"Privée", beds:"2 lits simples", capacity:2 },
+  { id:"chalet-germaine-g",      chalet:"Germaine",   subName:"Chambre 1", floor:"chalets-b", sdb:"Privée", beds:"2 lits simples", capacity:2 },
+  { id:"chalet-germaine-d",      chalet:"Germaine",   subName:"Chambre 2", floor:"chalets-b", sdb:"Privée", beds:"2 lits simples", capacity:2 },
+  { id:"chalet-marguerite-g",    chalet:"Marguerite", subName:"Chambre 1", floor:"chalets-b", sdb:"Privée", beds:"2 lits simples", capacity:2 },
+  { id:"chalet-marguerite-d",    chalet:"Marguerite", subName:"Chambre 2", floor:"chalets-b", sdb:"Privée", beds:"2 lits simples", capacity:2 },
+  { id:"chalet-gaspard-g",       chalet:"Gaspard",    subName:"Chambre 1", floor:"chalets-b", sdb:"Privée", beds:"2 lits simples", capacity:2 },
+  { id:"chalet-gaspard-d",       chalet:"Gaspard",    subName:"Chambre 2", floor:"chalets-b", sdb:"Privée", beds:"2 lits simples", capacity:2 },
+  { id:"chalet-odette-g",        chalet:"Odette",     subName:"Chambre 1", floor:"chalets-b", sdb:"Privée", beds:"2 lits simples", capacity:2 },
+  { id:"chalet-odette-d",        chalet:"Odette",     subName:"Chambre 2", floor:"chalets-b", sdb:"Privée", beds:"2 lits simples", capacity:2 },
 ];
 
 const ROOM_BY_ID = Object.fromEntries(ROOMS.map(r => [r.id, r]));
@@ -606,8 +634,7 @@ function renderSidebar() {
 }
 
 function renderRooms() {
-  // Regrouper occupants par chambre
-  const roomOccupants = {}; // roomId → [guest, ...]
+  const roomOccupants = {};
   for (const [gid, rid] of Object.entries(chAssign)) {
     const g = chGuests.find(x => x.id === gid);
     if (!g) continue;
@@ -618,7 +645,18 @@ function renderRooms() {
   document.querySelectorAll(".ch-rooms-grid").forEach(grid => {
     const floor = grid.dataset.floor;
     const floorRooms = ROOMS.filter(r => r.floor === floor);
-    grid.innerHTML = floorRooms.map(room => roomCard(room, roomOccupants[room.id] || [])).join("");
+
+    if (floor === "chalets-a" || floor === "chalets-b") {
+      const byChalet = {};
+      const chaletOrder = [];
+      for (const r of floorRooms) {
+        if (!byChalet[r.chalet]) { byChalet[r.chalet] = []; chaletOrder.push(r.chalet); }
+        byChalet[r.chalet].push(r);
+      }
+      grid.innerHTML = chaletOrder.map(name => chaletBlock(name, byChalet[name], roomOccupants)).join("");
+    } else {
+      grid.innerHTML = floorRooms.map(room => roomCard(room, roomOccupants[room.id] || [])).join("");
+    }
 
     grid.querySelectorAll(".ch-room-card").forEach(card => {
       const rid = card.dataset.rid;
@@ -626,13 +664,11 @@ function renderRooms() {
       const occs = roomOccupants[rid] || [];
       const isFull = occs.length >= room.capacity;
 
-      // Clic sur carte → assigner l'invité sélectionné
       card.addEventListener("click", () => {
         if (!selectedGuestId || isFull) return;
         assignGuest(selectedGuestId, rid);
       });
 
-      // Boutons retirer
       card.querySelectorAll(".ch-occupant-remove").forEach(btn => {
         btn.addEventListener("click", (e) => {
           e.stopPropagation();
@@ -641,6 +677,44 @@ function renderRooms() {
       });
     });
   });
+}
+
+function chaletBlock(chaletName, rooms, roomOccupants) {
+  const totalCap = rooms.reduce((s, r) => s + r.capacity, 0);
+  const totalOcc = rooms.reduce((s, r) => s + (roomOccupants[r.id] || []).length, 0);
+  const allFull  = rooms.every(r => (roomOccupants[r.id] || []).length >= r.capacity);
+  return `<div class="ch-chalet-block${allFull ? " is-full" : ""}">
+    <div class="ch-chalet-header">
+      <span class="ch-chalet-name">Chalet ${escHtml(chaletName)}</span>
+      <span class="ch-chalet-cap">${totalOcc}/${totalCap}</span>
+    </div>
+    <div class="ch-chalet-rooms" style="grid-template-columns:repeat(${rooms.length},1fr)">
+      ${rooms.map(r => roomCardCompact(r, roomOccupants[r.id] || [])).join("")}
+    </div>
+  </div>`;
+}
+
+function roomCardCompact(room, occupants) {
+  const isFull  = occupants.length >= room.capacity;
+  const pct     = room.capacity > 0 ? Math.round((occupants.length / room.capacity) * 100) : 0;
+  const canDrop = selectedGuestId && !isFull;
+  const classes = ["ch-room-card","is-compact",isFull?"is-full":"",canDrop?"can-drop":""].filter(Boolean).join(" ");
+  const occupantRows = occupants.map(g =>
+    `<div class="ch-occupant-row">
+       <span>${escHtml(g.name)}</span>
+       <button class="ch-occupant-remove" data-gid="${escHtml(g.id)}" title="Retirer">✕</button>
+     </div>`
+  ).join("");
+  return `<div class="${classes}" data-rid="${escHtml(room.id)}">
+    ${isFull ? `<span class="ch-room-badge-full">Complet</span>` : ""}
+    <p class="ch-room-name">${escHtml(room.subName)}</p>
+    <p class="ch-room-beds">${escHtml(room.beds)}</p>
+    <div class="ch-room-capacity">
+      <div class="ch-room-bar-wrap"><div class="ch-room-bar${isFull?" is-full":""}" style="width:${pct}%"></div></div>
+      <span class="ch-room-cap-label">${occupants.length}/${room.capacity}</span>
+    </div>
+    <div class="ch-room-occupants">${occupantRows}</div>
+  </div>`;
 }
 
 function roomCard(room, occupants) {
