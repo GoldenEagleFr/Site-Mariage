@@ -3052,22 +3052,17 @@
     roomCanvas.addEventListener("dragover", (e) => {
       e.preventDefault();
       if (!dragGuestId && !selectedGuestId) return;
-      // Capture la position immédiatement (l'event est synthétique, ne pas accéder dans RAF)
-      _lastDragPos = getRoomPos(e);
       e.dataTransfer.dropEffect = "move";
-      if (_dragRafPending) return;
-      _dragRafPending = true;
-      requestAnimationFrame(() => {
-        _dragRafPending = false;
-        if (!_lastDragPos) return;
-        const { wx, wy } = screenToWorld(_lastDragPos.x, _lastDragPos.y);
-        const newHover = findNearestChair(wx, wy);
-        const changed  = newHover?.tableId !== dragHoverChair?.tableId ||
-                         newHover?.seatIdx  !== dragHoverChair?.seatIdx;
-        dragHoverChair = newHover;
-        roomCanvas.style.cursor = newHover ? "copy" : "grabbing";
-        if (changed) startAnimLoop();
-      });
+      // dragHoverChair mis à jour synchronement pour que drop() le trouve toujours
+      const pos = getRoomPos(e);
+      const { wx, wy } = screenToWorld(pos.x, pos.y);
+      const newHover = findNearestChair(wx, wy);
+      const changed  = newHover?.tableId !== dragHoverChair?.tableId ||
+                       newHover?.seatIdx  !== dragHoverChair?.seatIdx;
+      dragHoverChair = newHover;
+      roomCanvas.style.cursor = newHover ? "copy" : "grabbing";
+      // Le rendu est délégué à la boucle RAF (pas d'appel direct à renderRoom ici)
+      if (changed) startAnimLoop();
     });
 
     roomCanvas.addEventListener("dragleave", () => {
@@ -3079,8 +3074,13 @@
     roomCanvas.addEventListener("drop", (e) => {
       e.preventDefault();
       const gId = e.dataTransfer.getData("text/plain") || dragGuestId;
-      if (gId && dragHoverChair) {
-        assignGuestToChair(gId, dragHoverChair.tableId, dragHoverChair.seatIdx);
+      if (gId) {
+        // Recalculer la chaise depuis la position du drop (dragHoverChair peut être légèrement
+        // en retard si le dernier dragover n'a pas encore déclenché son RAF)
+        const pos = getRoomPos(e);
+        const { wx, wy } = screenToWorld(pos.x, pos.y);
+        const dropChair = findNearestChair(wx, wy) ?? dragHoverChair;
+        if (dropChair) assignGuestToChair(gId, dropChair.tableId, dropChair.seatIdx);
       }
       dragHoverChair = null; dragGuestId = null;
       roomCanvas.style.cursor = "";
