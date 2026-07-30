@@ -212,6 +212,7 @@ def create_default_data() -> dict:
         "tasks": [],
         "guests": [],
         "guestGroups": [],
+        "roomAssignments": {},
         "updatedAt": DEFAULT_DATA["updatedAt"],
     }
 
@@ -397,6 +398,15 @@ def normalize_data(candidate: object) -> dict:
                 "color": grp_color,
             })
         normalized["guestGroups"] = cleaned_groups
+
+    # roomAssignments : { guestId: roomId }
+    raw_assign = candidate.get("roomAssignments")
+    if isinstance(raw_assign, dict):
+        clean_assign = {}
+        for gid, rid in raw_assign.items():
+            if isinstance(gid, str) and gid and isinstance(rid, str) and rid:
+                clean_assign[gid] = rid
+        normalized["roomAssignments"] = clean_assign
 
     return normalized
 

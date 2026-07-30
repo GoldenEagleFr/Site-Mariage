@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plan des chambres — Florence &amp; Antoine</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏨</text></svg>">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    /* ── Layout ──────────────────────────────────────────────── */
+    .ch-app { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+    .ch-topbar {
+      display: flex; align-items: center; gap: 8px;
+      padding: 0 14px; height: 52px; flex-shrink: 0;
+      background: var(--ink); color: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,.18);
+      z-index: 20;
+    }
+    .ch-topbar-title { font: 700 1rem 'Manrope',sans-serif; color: #fff; white-space: nowrap; }
+    .ch-back-btn {
+      color: rgba(255,255,255,.75); font-size: 0.82rem; font-weight: 700;
+      text-decoration: none; white-space: nowrap;
+      padding: 4px 8px; border-radius: 6px;
+      border: 1px solid rgba(255,255,255,.25);
+      transition: background .15s;
+    }
+    .ch-back-btn:hover { background: rgba(255,255,255,.12); color: #fff; }
+    .ch-sep { width: 1px; height: 22px; background: rgba(255,255,255,.2); flex-shrink: 0; }
+    .ch-stats-bar {
+      display: flex; gap: 16px; font-size: 0.78rem; color: rgba(255,255,255,.8);
+      flex: 1; overflow: hidden;
+    }
+    .ch-stat { white-space: nowrap; }
+    .ch-stat strong { color: #fff; }
+    .ch-sync { font-size: 0.72rem; color: rgba(255,255,255,.55); white-space: nowrap; }
+
+    /* ── Corps ───────────────────────────────────────────────── */
+    .ch-body { display: flex; flex: 1; overflow: hidden; }
+
+    /* ── Sidebar invités ─────────────────────────────────────── */
+    .ch-sidebar {
+      width: 200px; flex-shrink: 0;
+      display: flex; flex-direction: column;
+      background: var(--card); border-right: 1px solid var(--border);
+      overflow: hidden;
+    }
+    .ch-sidebar-head {
+      padding: 10px 12px 8px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .ch-sidebar-head h3 {
+      margin: 0 0 6px; font-size: 0.78rem; text-transform: uppercase;
+      letter-spacing: .05em; color: var(--ink-soft);
+    }
+    .ch-sidebar-search {
+      width: 100%; box-sizing: border-box;
+      font: 0.82rem 'Manrope',sans-serif;
+      padding: 4px 8px; border: 1px solid var(--border);
+      border-radius: 6px; background: var(--bg); color: var(--ink);
+      box-shadow: none;
+    }
+    .ch-guest-list { overflow-y: auto; flex: 1; padding: 6px; }
+    .ch-guest-item {
+      display: flex; align-items: center; gap: 6px;
+      padding: 6px 8px; border-radius: 8px;
+      cursor: pointer; font-size: 0.82rem; font-weight: 600;
+      color: var(--ink); border: 1.5px solid transparent;
+      transition: background .12s, border-color .12s;
+      margin-bottom: 3px;
+    }
+    .ch-guest-item:hover { background: var(--surface-alt); }
+    .ch-guest-item.is-selected {
+      background: rgba(240,63,89,.1);
+      border-color: var(--rose);
+      color: var(--rose);
+    }
+    .ch-guest-item.is-placed {
+      opacity: .45; cursor: default;
+      text-decoration: line-through;
+    }
+    .ch-guest-item.is-placed:hover { background: transparent; }
+    .ch-guest-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--rose); flex-shrink: 0;
+    }
+    .ch-guest-item.is-placed .ch-guest-dot { background: #22c55e; }
+    .ch-guest-cat {
+      font-size: 0.68rem; color: var(--ink-soft);
+      font-weight: 500; margin-left: auto;
+    }
+    .ch-sidebar-empty {
+      padding: 16px 12px; font-size: 0.82rem;
+      color: var(--ink-soft); text-align: center; font-style: italic;
+    }
+
+    /* ── Zone principale ─────────────────────────────────────── */
+    .ch-main { flex: 1; overflow-y: auto; padding: 16px; }
+
+    /* Onglets bâtiments */
+    .ch-building-tabs {
+      display: flex; gap: 6px; margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .ch-building-tab {
+      padding: 7px 16px; border-radius: 20px;
+      font: 600 0.82rem 'Manrope',sans-serif;
+      border: 1.5px solid var(--border);
+      background: var(--card); color: var(--ink-soft);
+      cursor: pointer; transition: all .15s;
+    }
+    .ch-building-tab:hover { border-color: var(--rose); color: var(--rose); }
+    .ch-building-tab.is-active {
+      background: var(--ink); color: #fff; border-color: var(--ink);
+    }
+    .ch-building-section { display: none; }
+    .ch-building-section.is-active { display: block; }
+
+    /* Sous-section (étage / chalet) */
+    .ch-floor-title {
+      font: 700 0.72rem 'Manrope',sans-serif;
+      text-transform: uppercase; letter-spacing: .06em;
+      color: var(--ink-soft); margin: 18px 0 10px;
+      padding-bottom: 6px; border-bottom: 1px solid var(--border);
+    }
+    .ch-floor-title:first-child { margin-top: 0; }
+
+    /* Grille de chambres */
+    .ch-rooms-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    /* Carte chambre */
+    .ch-room-card {
+      background: var(--card); border: 2px solid var(--border);
+      border-radius: 12px; padding: 12px;
+      cursor: pointer; transition: border-color .15s, box-shadow .15s;
+      position: relative;
+    }
+    .ch-room-card:hover { border-color: var(--rose); box-shadow: 0 4px 14px rgba(240,63,89,.12); }
+    .ch-room-card.is-full { border-color: #22c55e; cursor: default; }
+    .ch-room-card.is-full:hover { border-color: #22c55e; box-shadow: none; }
+    .ch-room-card.can-drop {
+      border-color: var(--rose); border-style: dashed;
+      box-shadow: 0 0 0 3px rgba(240,63,89,.15);
+      animation: pulse-border .8s ease-in-out infinite alternate;
+    }
+    @keyframes pulse-border {
+      from { box-shadow: 0 0 0 2px rgba(240,63,89,.15); }
+      to   { box-shadow: 0 0 0 5px rgba(240,63,89,.28); }
+    }
+
+    .ch-room-name {
+      font: 700 0.88rem 'Manrope',sans-serif;
+      color: var(--ink); margin: 0 0 3px;
+    }
+    .ch-room-beds {
+      font-size: 0.73rem; color: var(--ink-soft);
+      margin: 0 0 8px;
+    }
+    .ch-room-capacity {
+      display: flex; align-items: center; gap: 6px;
+      margin-bottom: 8px;
+    }
+    .ch-room-bar-wrap {
+      flex: 1; height: 5px; background: var(--border);
+      border-radius: 99px; overflow: hidden;
+    }
+    .ch-room-bar {
+      height: 100%; border-radius: 99px;
+      background: var(--rose);
+      transition: width .3s ease;
+    }
+    .ch-room-bar.is-full { background: #22c55e; }
+    .ch-room-cap-label {
+      font: 600 0.72rem 'Manrope',sans-serif;
+      color: var(--ink-soft); white-space: nowrap;
+    }
+    .ch-room-badge-full {
+      position: absolute; top: 8px; right: 8px;
+      font-size: 0.65rem; font-weight: 700;
+      background: #22c55e; color: #fff;
+      padding: 2px 6px; border-radius: 99px;
+    }
+    .ch-room-sdb {
+      font-size: 0.68rem; color: var(--ink-soft);
+      margin-bottom: 8px;
+    }
+
+    /* Occupants dans la chambre */
+    .ch-room-occupants { display: flex; flex-direction: column; gap: 3px; }
+    .ch-occupant-row {
+      display: flex; align-items: center; gap: 4px;
+      font-size: 0.78rem; font-weight: 600; color: var(--ink);
+    }
+    .ch-occupant-remove {
+      margin-left: auto; background: none; border: none;
+      color: var(--ink-soft); cursor: pointer; font-size: 0.8rem;
+      padding: 0 2px; line-height: 1; box-shadow: none; transform: none;
+      transition: color .12s;
+    }
+    .ch-occupant-remove:hover { color: var(--danger); box-shadow: none; transform: none; filter: none; }
+
+    /* Chambre des mariés */
+    .ch-room-card.is-bridal {
+      border-color: var(--gold-dark);
+      background: linear-gradient(135deg, rgba(255,189,28,.06), rgba(224,10,38,.04));
+    }
+    .ch-room-card.is-bridal .ch-room-name::after {
+      content: " 💍"; font-size: 0.8em;
+    }
+
+    /* ── Gate connexion ──────────────────────────────────────── */
+    .ch-gate {
+      position: fixed; inset: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--bg);
+    }
+    .ch-gate-card {
+      background: var(--card); border-radius: 18px;
+      padding: 36px 32px; max-width: 340px; width: 90%;
+      box-shadow: var(--shadow-card);
+      text-align: center;
+    }
+
+    /* ── Responsive ──────────────────────────────────────────── */
+    @media (max-width: 640px) {
+      .ch-sidebar { width: 160px; }
+      .ch-rooms-grid { grid-template-columns: 1fr; }
+      .ch-stat:nth-child(n+3) { display: none; }
+    }
+    @media (max-width: 480px) {
+      .ch-sidebar { display: none; }
+      .ch-main { padding: 10px; }
+    }
+  </style>
+</head>
+<body data-page="chambres">
+
+<!-- Gate connexion -->
+<section id="chGate" class="ch-gate">
+  <div class="ch-gate-card">
+    <p class="kicker">Espace privé</p>
+    <h2 style="font-family:'Fraunces',serif;font-size:1.8rem;margin:8px 0 20px;">🏨 Plan des chambres</h2>
+    <p style="font-size:0.85rem;color:var(--ink-soft);margin:0 0 18px;">Florence &amp; Antoine · Domaines de Gaston</p>
+    <form id="chLoginForm" class="row-form row-form-2 admin-login">
+      <input id="chPassword" type="password" placeholder="Mot de passe administrateur" autocomplete="current-password" required>
+      <button type="submit">Se connecter</button>
+    </form>
+    <p id="chLoginError" class="admin-error" aria-live="polite"></p>
+  </div>
+</section>
+
+<!-- Application -->
+<div id="chApp" class="ch-app is-hidden">
+
+  <!-- Topbar -->
+  <header class="ch-topbar">
+    <a href="organisation.html" class="ch-back-btn">← Org.</a>
+    <div class="ch-sep"></div>
+    <span class="ch-topbar-title">🏨 Plan des chambres</span>
+    <div class="ch-sep"></div>
+    <div class="ch-stats-bar">
+      <span class="ch-stat">Placés : <strong id="statPlaced">0</strong> / <strong id="statTotal">0</strong></span>
+      <span class="ch-stat">Couchages : <strong id="statBeds">0</strong> / 106</span>
+      <span class="ch-stat">Chambres pleines : <strong id="statFull">0</strong></span>
+    </div>
+    <span id="chSyncStatus" class="ch-sync"></span>
+    <button id="chDarkToggle" class="dark-mode-toggle-btn" type="button">🌙</button>
+  </header>
+
+  <!-- Corps -->
+  <div class="ch-body">
+
+    <!-- Sidebar invités -->
+    <aside class="ch-sidebar">
+      <div class="ch-sidebar-head">
+        <h3>🏨 Invités à placer</h3>
+        <input id="chGuestSearch" class="ch-sidebar-search" type="text" placeholder="Rechercher…">
+      </div>
+      <div id="chGuestList" class="ch-guest-list">
+        <p class="ch-sidebar-empty">Aucun invité avec hébergement.</p>
+      </div>
+    </aside>
+
+    <!-- Zone principale -->
+    <main class="ch-main">
+
+      <!-- Onglets bâtiments -->
+      <div class="ch-building-tabs">
+        <button class="ch-building-tab is-active" data-building="manoir">🏛 Le Manoir</button>
+        <button class="ch-building-tab" data-building="caravelle">🏠 La Caravelle</button>
+        <button class="ch-building-tab" data-building="chalets">🌲 Les Chalets</button>
+      </div>
+
+      <!-- ── MANOIR ───────────────────────────────────────────── -->
+      <div class="ch-building-section is-active" data-building="manoir">
+
+        <p class="ch-floor-title">1er étage — salle de bain privée</p>
+        <div class="ch-rooms-grid" data-floor="manoir-1">
+          <!-- chambres générées par JS -->
+        </div>
+
+        <p class="ch-floor-title">2ème étage — salle de bain privée</p>
+        <div class="ch-rooms-grid" data-floor="manoir-2">
+        </div>
+
+        <p class="ch-floor-title">Chambre des mariés</p>
+        <div class="ch-rooms-grid" data-floor="manoir-bridal">
+        </div>
+      </div>
+
+      <!-- ── CARAVELLE ────────────────────────────────────────── -->
+      <div class="ch-building-section" data-building="caravelle">
+
+        <p class="ch-floor-title">1er étage — salle de bain partagée</p>
+        <div class="ch-rooms-grid" data-floor="caravelle-1">
+        </div>
+
+        <p class="ch-floor-title">Rez-de-chaussée — salle de bain partagée</p>
+        <div class="ch-rooms-grid" data-floor="caravelle-rdc">
+        </div>
+      </div>
+
+      <!-- ── CHALETS ───────────────────────────────────────────── -->
+      <div class="ch-building-section" data-building="chalets">
+
+        <p class="ch-floor-title">Chalets avec salon (Camille, Bernard, Justine, Iris) — 6 couchages chacun</p>
+        <div class="ch-rooms-grid" data-floor="chalets-a">
+        </div>
+
+        <p class="ch-floor-title">Chalets doubles (Juliette, Constant, Germaine, Marguerite, Gaspard, Odette) — 4 couchages chacun</p>
+        <div class="ch-rooms-grid" data-floor="chalets-b">
+        </div>
+      </div>
+
+    </main>
+  </div><!-- .ch-body -->
+</div><!-- #chApp -->
+
+<script src="script.js"></script>
+<script>
+"use strict";
+
+// ── Données des chambres (source : Domaines de Gaston) ─────────────────
+const ROOMS = [
+  // ── Manoir 1er étage ─────────────────────────────────────
+  { id:"manoir-1-gedeon",        name:"Chez Gédéon",          floor:"manoir-1",      sdb:"Privée",    beds:"2 lits simples",             capacity:2 },
+  { id:"manoir-1-hippolyte",     name:"Chez Hippolyte",       floor:"manoir-1",      sdb:"Privée",    beds:"2 lits simples",             capacity:2 },
+  { id:"manoir-1-leon",          name:"Chez Léon",            floor:"manoir-1",      sdb:"Privée",    beds:"2 lits simples",             capacity:2 },
+  { id:"manoir-1-gilberte",      name:"Chez Gilberte",        floor:"manoir-1",      sdb:"Privée",    beds:"2 lits simples",             capacity:2 },
+  { id:"manoir-1-simone",        name:"Chez Simone & J-Paul", floor:"manoir-1",      sdb:"Privée",    beds:"1 lit double + 2 lits simples", capacity:4 },
+  { id:"manoir-1-dolores",       name:"Chez Dolores",         floor:"manoir-1",      sdb:"Privée",    beds:"4 lits simples",             capacity:4 },
+  { id:"manoir-1-jeanne",        name:"Chez Jeanne",          floor:"manoir-1",      sdb:"Privée",    beds:"4 lits simples",             capacity:4 },
+  { id:"manoir-1-antoinette",    name:"Chez Antoinette",      floor:"manoir-1",      sdb:"Privée",    beds:"1 lit double + 3 lits simples", capacity:5 },
+  { id:"manoir-1-paul",          name:"Chez Paul",            floor:"manoir-1",      sdb:"Privée",    beds:"5 lits simples",             capacity:5 },
+  // ── Manoir 2ème étage ────────────────────────────────────
+  { id:"manoir-2-nicolas-1",     name:"Chez Nicolas — ch.1",  floor:"manoir-2",      sdb:"Privée",    beds:"3 lits simples",             capacity:3 },
+  { id:"manoir-2-nicolas-2",     name:"Chez Nicolas — ch.2",  floor:"manoir-2",      sdb:"Privée",    beds:"2 lits simples",             capacity:2 },
+  { id:"manoir-2-hadrien",       name:"Chez Hadrien",         floor:"manoir-2",      sdb:"Privée",    beds:"2 lits simples",             capacity:2 },
+  { id:"manoir-2-isaure",        name:"Chez Isaure",          floor:"manoir-2",      sdb:"Privée",    beds:"2 lits simples",             capacity:2 },
+  { id:"manoir-2-alain-1",       name:"Chez Alain — ch.1",   floor:"manoir-2",      sdb:"Privée",    beds:"1 lit double + 1 lit simple", capacity:3 },
+  { id:"manoir-2-alain-2",       name:"Chez Alain — ch.2",   floor:"manoir-2",      sdb:"Privée",    beds:"1 lit double + 1 lit simple", capacity:3 },
+  // ── Chambre des mariés ───────────────────────────────────
+  { id:"manoir-bridal",          name:"Chambre des mariés",   floor:"manoir-bridal", sdb:"Privée",    beds:"Lit double",                 capacity:2, bridal:true },
+  // ── Caravelle 1er étage ──────────────────────────────────
+  { id:"caravelle-1-albert",     name:"Chez Albert",          floor:"caravelle-1",   sdb:"Partagée",  beds:"2 lits simples",             capacity:2, note:"SYFCO" },
+  { id:"caravelle-1-philomene",  name:"Chez Philomène",       floor:"caravelle-1",   sdb:"Partagée",  beds:"1 lit double",               capacity:2 },
+  { id:"caravelle-1-lucien",     name:"Chez Lucien",          floor:"caravelle-1",   sdb:"Partagée",  beds:"1 lit double",               capacity:2 },
+  { id:"caravelle-1-theophile",  name:"Chez Théophile",       floor:"caravelle-1",   sdb:"Partagée",  beds:"2 lits simples",             capacity:2 },
+  { id:"caravelle-1-felicie",    name:"Chez Félicie",         floor:"caravelle-1",   sdb:"Partagée",  beds:"1 lit double",               capacity:2 },
+  // ── Caravelle RDC ────────────────────────────────────────
+  { id:"caravelle-rdc-dimitri",  name:"Chez Dimitri",         floor:"caravelle-rdc", sdb:"Partagée",  beds:"1 lit double + 1 lit simple", capacity:3 },
+  // ── Chalets A (avec salon) ───────────────────────────────
+  { id:"chalet-camille-ch1",     name:"Camille — Chambre 1",  floor:"chalets-a",     sdb:"Partagée",  beds:"1 lit double",               capacity:2 },
+  { id:"chalet-camille-ch2",     name:"Camille — Chambre 2",  floor:"chalets-a",     sdb:"Partagée",  beds:"2 lits simples",             capacity:2 },
+  { id:"chalet-camille-salon",   name:"Camille — Salon",      floor:"chalets-a",     sdb:"Partagée",  beds:"Canapé-lit double (clic-clac)", capacity:2 },
+  { id:"chalet-bernard-ch1",     name:"Bernard — Chambre 1",  floor:"chalets-a",     sdb:"Partagée",  beds:"1 lit double",               capacity:2 },
+  { id:"chalet-bernard-ch2",     name:"Bernard — Chambre 2",  floor:"chalets-a",     sdb:"Partagée",  beds:"2 lits simples",             capacity:2 },
+  { id:"chalet-bernard-salon",   name:"Bernard — Salon",      floor:"chalets-a",     sdb:"Partagée",  beds:"Canapé-lit double (clic-clac)", capacity:2 },
+  { id:"chalet-justine-ch1",     name:"Justine — Chambre 1",  floor:"chalets-a",     sdb:"Partagée",  beds:"1 lit double",               capacity:2 },
+  { id:"chalet-justine-ch2",     name:"Justine — Chambre 2",  floor:"chalets-a",     sdb:"Partagée",  beds:"2 lits simples",             capacity:2 },
+  { id:"chalet-justine-salon",   name:"Justine — Salon",      floor:"chalets-a",     sdb:"Partagée",  beds:"Canapé-lit double (clic-clac)", capacity:2 },
+  { id:"chalet-iris-ch1",        name:"Iris — Chambre 1",     floor:"chalets-a",     sdb:"Partagée",  beds:"1 lit double",               capacity:2 },
+  { id:"chalet-iris-ch2",        name:"Iris — Chambre 2",     floor:"chalets-a",     sdb:"Partagée",  beds:"2 lits simples",             capacity:2 },
+  { id:"chalet-iris-salon",      name:"Iris — Salon",         floor:"chalets-a",     sdb:"Partagée",  beds:"Canapé-lit double (clic-clac)", capacity:2 },
+  // ── Chalets B (doubles) ──────────────────────────────────
+  { id:"chalet-juliette-g",      name:"Juliette — Gauche",    floor:"chalets-b",     sdb:"Privée",    beds:"2 lits simples",             capacity:2 },
+  { id:"chalet-juliette-d",      name:"Juliette — Droite",    floor:"chalets-b",     sdb:"Privée",    beds:"2 lits simples",             capacity:2 },
+  { id:"chalet-constant-g",      name:"Constant — Gauche",    floor:"chalets-b",     sdb:"Privée",    beds:"2 lits simples",             capacity:2 },
+  { id:"chalet-constant-d",      name:"Constant — Droite",    floor:"chalets-b",     sdb:"Privée",    beds:"2 lits simples",             capacity:2 },
+  { id:"chalet-germaine-g",      name:"Germaine — Gauche",    floor:"chalets-b",     sdb:"Privée",    beds:"2 lits simples",             capacity:2 },
+  { id:"chalet-germaine-d",      name:"Germaine — Droite",    floor:"chalets-b",     sdb:"Privée",    beds:"2 lits simples",             capacity:2 },
+  { id:"chalet-marguerite-g",    name:"Marguerite — Gauche",  floor:"chalets-b",     sdb:"Privée",    beds:"2 lits simples",             capacity:2 },
+  { id:"chalet-marguerite-d",    name:"Marguerite — Droite",  floor:"chalets-b",     sdb:"Privée",    beds:"2 lits simples",             capacity:2 },
+  { id:"chalet-gaspard-g",       name:"Gaspard — Gauche",     floor:"chalets-b",     sdb:"Privée",    beds:"2 lits simples",             capacity:2 },
+  { id:"chalet-gaspard-d",       name:"Gaspard — Droite",     floor:"chalets-b",     sdb:"Privée",    beds:"2 lits simples",             capacity:2 },
+  { id:"chalet-odette-g",        name:"Odette — Gauche",      floor:"chalets-b",     sdb:"Privée",    beds:"2 lits simples",             capacity:2 },
+  { id:"chalet-odette-d",        name:"Odette — Droite",      floor:"chalets-b",     sdb:"Privée",    beds:"2 lits simples",             capacity:2 },
+];
+
+const ROOM_BY_ID = Object.fromEntries(ROOMS.map(r => [r.id, r]));
+const TOTAL_CAPACITY = ROOMS.reduce((s, r) => s + r.capacity, 0);
+
+// ── État local ──────────────────────────────────────────────────────────
+const SERVER_ENDPOINT   = "/api/data";
+const ADMIN_CHECK       = "/api/admin/check";
+const ADMIN_SESSION_KEY = "plan_mariage_admin_token";
+
+let chAdminToken = "";
+let chGuests     = [];     // tous les guests chargés
+let chAssign     = {};     // { guestId: roomId }
+let selectedGuestId = null;
+let lastKnownUpdatedAt = 0;
+let syncTimer = null;
+let syncPending = false;
+
+// ── DOM ─────────────────────────────────────────────────────────────────
+const chGate       = document.getElementById("chGate");
+const chApp        = document.getElementById("chApp");
+const chLoginForm  = document.getElementById("chLoginForm");
+const chPassword   = document.getElementById("chPassword");
+const chLoginError = document.getElementById("chLoginError");
+const chGuestList  = document.getElementById("chGuestList");
+const chGuestSearch= document.getElementById("chGuestSearch");
+const chSyncStatus = document.getElementById("chSyncStatus");
+const statPlaced   = document.getElementById("statPlaced");
+const statTotal    = document.getElementById("statTotal");
+const statBeds     = document.getElementById("statBeds");
+const statFull     = document.getElementById("statFull");
+
+// ── Utilitaires ─────────────────────────────────────────────────────────
+function escHtml(s) {
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+
+// ── Connexion ────────────────────────────────────────────────────────────
+async function tryLogin(token) {
+  try {
+    const r = await fetch(ADMIN_CHECK, { headers: { "X-Admin-Key": token }, cache: "no-store" });
+    return r.ok;
+  } catch { return false; }
+}
+
+chLoginForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const token = chPassword.value.trim();
+  if (!token) return;
+  chLoginError.textContent = "Connexion…";
+  const ok = await tryLogin(token);
+  if (!ok) { chLoginError.textContent = "Mot de passe incorrect."; return; }
+  chAdminToken  = token;
+  sessionStorage.setItem(ADMIN_SESSION_KEY, token);
+  chLoginError.textContent = "";
+  await loadData();
+  chGate.classList.add("is-hidden");
+  chApp.classList.remove("is-hidden");
+  startSyncPoll();
+});
+
+// Restaurer session
+const savedToken = sessionStorage.getItem(ADMIN_SESSION_KEY);
+if (savedToken) {
+  tryLogin(savedToken).then(ok => {
+    if (!ok) return;
+    chAdminToken = savedToken;
+    loadData().then(() => {
+      chGate.classList.add("is-hidden");
+      chApp.classList.remove("is-hidden");
+      startSyncPoll();
+    });
+  });
+}
+
+// ── Chargement / sauvegarde ──────────────────────────────────────────────
+async function loadData() {
+  try {
+    const r = await fetch(SERVER_ENDPOINT, { cache: "no-store", headers: { "X-Admin-Key": chAdminToken } });
+    if (!r.ok) return;
+    const data = await r.json();
+    chGuests = (data.guests || []).filter(g => !g.isHost);
+    chAssign = data.roomAssignments || {};
+    lastKnownUpdatedAt = data.updatedAt || 0;
+    render();
+  } catch (err) {
+    setSyncStatus("⚠ Erreur de chargement");
+  }
+}
+
+function setSyncStatus(msg) {
+  if (chSyncStatus) chSyncStatus.textContent = msg;
+}
+
+let _saveDebounce = null;
+function saveData() {
+  syncPending = true;
+  setSyncStatus("⏳ Sauvegarde…");
+  if (_saveDebounce) clearTimeout(_saveDebounce);
+  _saveDebounce = setTimeout(async () => {
+    try {
+      // On charge d'abord pour merger proprement
+      const r0 = await fetch(SERVER_ENDPOINT, { cache:"no-store", headers:{"X-Admin-Key":chAdminToken} });
+      const current = r0.ok ? await r0.json() : {};
+      const payload = { ...current, roomAssignments: chAssign, updatedAt: Date.now() };
+      const r = await fetch(SERVER_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type":"application/json", "X-Admin-Key": chAdminToken },
+        body: JSON.stringify(payload),
+      });
+      if (r.ok) {
+        setSyncStatus("✓ Sauvegardé");
+        lastKnownUpdatedAt = payload.updatedAt;
+        syncPending = false;
+        setTimeout(() => setSyncStatus(""), 2500);
+      } else {
+        setSyncStatus("⚠ Erreur sauvegarde");
+      }
+    } catch { setSyncStatus("⚠ Erreur réseau"); }
+  }, 800);
+}
+
+// Sync polling (détecte les modifications depuis un autre appareil)
+function startSyncPoll() {
+  if (syncTimer) clearInterval(syncTimer);
+  syncTimer = setInterval(async () => {
+    if (syncPending) return;
+    try {
+      const r = await fetch(SERVER_ENDPOINT, { cache:"no-store", headers:{"X-Admin-Key":chAdminToken} });
+      if (!r.ok) return;
+      const data = await r.json();
+      if ((data.updatedAt || 0) > lastKnownUpdatedAt) {
+        chGuests = (data.guests || []).filter(g => !g.isHost);
+        chAssign = data.roomAssignments || {};
+        lastKnownUpdatedAt = data.updatedAt;
+        render();
+        setSyncStatus("🔄 Mis à jour");
+        setTimeout(() => setSyncStatus(""), 2000);
+      }
+    } catch {}
+  }, 15000);
+}
+
+// ── Assignation ──────────────────────────────────────────────────────────
+function assignGuest(guestId, roomId) {
+  const room = ROOM_BY_ID[roomId];
+  if (!room) return;
+  const occupants = Object.entries(chAssign).filter(([,rid]) => rid === roomId);
+  if (occupants.length >= room.capacity) return; // pleine
+  // Retirer l'ancienne chambre si besoin
+  delete chAssign[guestId];
+  chAssign[guestId] = roomId;
+  selectedGuestId = null;
+  saveData();
+  render();
+}
+
+function removeGuest(guestId) {
+  delete chAssign[guestId];
+  saveData();
+  render();
+}
+
+// ── Rendu ────────────────────────────────────────────────────────────────
+function render() {
+  renderSidebar();
+  renderRooms();
+  renderStats();
+}
+
+function guestCatLabel(g) {
+  if (g.guestCategory === "baby")  return "🍼";
+  if (g.guestCategory === "child") return "👶";
+  if (g.guestCategory === "teen")  return "🧑";
+  return "";
+}
+
+function renderSidebar() {
+  const search = (chGuestSearch?.value || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+  const hebergGuests = chGuests.filter(g => g.hebergement);
+
+  const filtered = hebergGuests.filter(g => {
+    if (!search) return true;
+    return g.name.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").includes(search);
+  });
+
+  if (filtered.length === 0) {
+    chGuestList.innerHTML = `<p class="ch-sidebar-empty">${hebergGuests.length === 0 ? "Aucun invité avec hébergement activé." : "Aucun résultat."}</p>`;
+    return;
+  }
+
+  chGuestList.innerHTML = filtered.map(g => {
+    const placed = chAssign[g.id];
+    const isSelected = g.id === selectedGuestId;
+    return `<div class="ch-guest-item${placed ? " is-placed" : ""}${isSelected ? " is-selected" : ""}"
+        data-gid="${escHtml(g.id)}">
+      <span class="ch-guest-dot"></span>
+      <span>${escHtml(g.name)}</span>
+      <span class="ch-guest-cat">${guestCatLabel(g)}</span>
+    </div>`;
+  }).join("");
+
+  chGuestList.querySelectorAll(".ch-guest-item:not(.is-placed)").forEach(el => {
+    el.addEventListener("click", () => {
+      const gid = el.dataset.gid;
+      selectedGuestId = selectedGuestId === gid ? null : gid;
+      renderSidebar();
+      renderRooms();
+    });
+  });
+}
+
+function renderRooms() {
+  // Regrouper occupants par chambre
+  const roomOccupants = {}; // roomId → [guest, ...]
+  for (const [gid, rid] of Object.entries(chAssign)) {
+    const g = chGuests.find(x => x.id === gid);
+    if (!g) continue;
+    if (!roomOccupants[rid]) roomOccupants[rid] = [];
+    roomOccupants[rid].push(g);
+  }
+
+  document.querySelectorAll(".ch-rooms-grid").forEach(grid => {
+    const floor = grid.dataset.floor;
+    const floorRooms = ROOMS.filter(r => r.floor === floor);
+    grid.innerHTML = floorRooms.map(room => roomCard(room, roomOccupants[room.id] || [])).join("");
+
+    grid.querySelectorAll(".ch-room-card").forEach(card => {
+      const rid = card.dataset.rid;
+      const room = ROOM_BY_ID[rid];
+      const occs = roomOccupants[rid] || [];
+      const isFull = occs.length >= room.capacity;
+
+      // Clic sur carte → assigner l'invité sélectionné
+      card.addEventListener("click", () => {
+        if (!selectedGuestId || isFull) return;
+        assignGuest(selectedGuestId, rid);
+      });
+
+      // Boutons retirer
+      card.querySelectorAll(".ch-occupant-remove").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          removeGuest(btn.dataset.gid);
+        });
+      });
+    });
+  });
+}
+
+function roomCard(room, occupants) {
+  const isFull    = occupants.length >= room.capacity;
+  const pct       = room.capacity > 0 ? Math.round((occupants.length / room.capacity) * 100) : 0;
+  const canDrop   = selectedGuestId && !isFull;
+  const classes   = [
+    "ch-room-card",
+    isFull    ? "is-full"   : "",
+    canDrop   ? "can-drop"  : "",
+    room.bridal ? "is-bridal" : "",
+  ].filter(Boolean).join(" ");
+
+  const occupantRows = occupants.map(g =>
+    `<div class="ch-occupant-row">
+       <span>${escHtml(g.name)}</span>
+       <button class="ch-occupant-remove" data-gid="${escHtml(g.id)}" title="Retirer">✕</button>
+     </div>`
+  ).join("");
+
+  const noteHtml = room.note ? `<span class="ch-room-sdb" style="color:var(--gold-dark)">⚠ ${escHtml(room.note)}</span>` : "";
+
+  return `<div class="${classes}" data-rid="${escHtml(room.id)}">
+    ${isFull ? `<span class="ch-room-badge-full">Complet</span>` : ""}
+    <p class="ch-room-name">${escHtml(room.name)}</p>
+    <p class="ch-room-beds">${escHtml(room.beds)}</p>
+    <p class="ch-room-sdb">SDB ${escHtml(room.sdb)}</p>
+    ${noteHtml}
+    <div class="ch-room-capacity">
+      <div class="ch-room-bar-wrap">
+        <div class="ch-room-bar${isFull ? " is-full" : ""}" style="width:${pct}%"></div>
+      </div>
+      <span class="ch-room-cap-label">${occupants.length}/${room.capacity}</span>
+    </div>
+    <div class="ch-room-occupants">${occupantRows}</div>
+  </div>`;
+}
+
+function renderStats() {
+  const hebergGuests = chGuests.filter(g => g.hebergement);
+  const placed = hebergGuests.filter(g => chAssign[g.id]).length;
+  const bedsUsed = Object.keys(chAssign).filter(gid => chGuests.find(g => g.id === gid)).length;
+  const fullRooms = ROOMS.filter(r => {
+    const occ = Object.values(chAssign).filter(rid => rid === r.id).length;
+    return occ >= r.capacity && occ > 0;
+  }).length;
+
+  if (statPlaced) statPlaced.textContent = placed;
+  if (statTotal)  statTotal.textContent  = hebergGuests.length;
+  if (statBeds)   statBeds.textContent   = bedsUsed;
+  if (statFull)   statFull.textContent   = fullRooms;
+}
+
+// ── Navigation bâtiments ─────────────────────────────────────────────────
+document.querySelectorAll(".ch-building-tab").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const b = btn.dataset.building;
+    document.querySelectorAll(".ch-building-tab").forEach(t => t.classList.remove("is-active"));
+    document.querySelectorAll(".ch-building-section").forEach(s => s.classList.remove("is-active"));
+    btn.classList.add("is-active");
+    document.querySelector(`.ch-building-section[data-building="${b}"]`)?.classList.add("is-active");
+    renderRooms(); // re-render pour recalculer can-drop
+  });
+});
+
+// ── Recherche ────────────────────────────────────────────────────────────
+chGuestSearch?.addEventListener("input", () => renderSidebar());
+
+// ── Dark mode ────────────────────────────────────────────────────────────
+const darkToggle = document.getElementById("chDarkToggle");
+const isDark = localStorage.getItem("dark-mode") === "true";
+if (isDark) document.body.classList.add("dark-mode");
+darkToggle?.addEventListener("click", () => {
+  const d = document.body.classList.toggle("dark-mode");
+  localStorage.setItem("dark-mode", d);
+  darkToggle.textContent = d ? "☀️" : "🌙";
+});
+if (isDark && darkToggle) darkToggle.textContent = "☀️";
+</script>
+</body>
+</html>

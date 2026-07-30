@@ -130,6 +130,7 @@ const DEFAULT_STATE = {
   tasks: [],
   guests: [],
   guestGroups: [],
+  roomAssignments: {},
   updatedAt: 0,
 };
 
@@ -2466,6 +2467,18 @@ function normalizeState(candidate) {
       guest.rsvpToken = token;
       usedTokens.add(token);
     }
+  }
+
+  // roomAssignments : { guestId: roomId }
+  const rawAssign = input.roomAssignments;
+  if (rawAssign && typeof rawAssign === "object" && !Array.isArray(rawAssign)) {
+    const cleanAssign = {};
+    for (const [gid, rid] of Object.entries(rawAssign)) {
+      if (typeof gid === "string" && gid && typeof rid === "string" && rid) {
+        cleanAssign[gid] = rid;
+      }
+    }
+    normalized.roomAssignments = cleanAssign;
   }
 
   return normalized;
