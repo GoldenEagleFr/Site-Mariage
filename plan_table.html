@@ -1382,13 +1382,6 @@
           dragGuestId = guest.id; selectedGuestId = null;
           e.dataTransfer.setData("text/plain", guest.id);
           e.dataTransfer.effectAllowed = "move";
-          // Pastille sans fond blanc comme image de drag
-          const ghost = document.createElement("div");
-          ghost.textContent = guest.name;
-          ghost.style.cssText = "position:fixed;top:-200px;left:-200px;background:#f03f59;color:#fff;padding:5px 14px;border-radius:99px;font:600 0.82rem/1.4 Manrope,sans-serif;pointer-events:none;white-space:nowrap;box-shadow:0 4px 14px rgba(240,63,89,.4);";
-          document.body.appendChild(ghost);
-          e.dataTransfer.setDragImage(ghost, ghost.offsetWidth / 2, ghost.offsetHeight / 2);
-          setTimeout(() => ghost.remove(), 0);
           item.classList.add("dragging");
           startAnimLoop();
         });

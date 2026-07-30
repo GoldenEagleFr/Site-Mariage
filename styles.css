@@ -5278,9 +5278,6 @@ body.dark-mode .guest-host-status { color: #6fcf97; }
 }
 .guest-drag-item.dragging {
   opacity: 0.25;
-  pointer-events: none;
-  transform: scale(0.96);
-  transition: opacity .1s, transform .1s;
 }
 .gdi-handle {
   font-size: 13px; line-height: 1; flex-shrink: 0;
