@@ -213,6 +213,7 @@ def create_default_data() -> dict:
         "guests": [],
         "guestGroups": [],
         "roomAssignments": {},
+        "lastAdminVisit": 0,
         "updatedAt": DEFAULT_DATA["updatedAt"],
     }
 
@@ -398,6 +399,10 @@ def normalize_data(candidate: object) -> dict:
                 "color": grp_color,
             })
         normalized["guestGroups"] = cleaned_groups
+
+    last_visit = candidate.get("lastAdminVisit")
+    if isinstance(last_visit, (int, float)) and last_visit >= 0:
+        normalized["lastAdminVisit"] = int(last_visit)
 
     # roomAssignments : { guestId: roomId }
     raw_assign = candidate.get("roomAssignments")

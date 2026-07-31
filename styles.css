@@ -714,6 +714,29 @@ body::after {
   background: linear-gradient(145deg, var(--sun), var(--gold-dark));
 }
 
+.admin-tab-badge {
+  display: none;
+  margin-left: 6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #e0102c;
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+  animation: badge-pop 0.25s cubic-bezier(.34,1.56,.64,1) both;
+}
+.admin-tab-badge.is-visible { display: inline-block; }
+.admin-tab.is-active .admin-tab-badge { background: rgba(255,255,255,0.9); color: #c0392b; }
+
+@keyframes badge-pop {
+  from { transform: scale(0); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
 .admin-tab-panel {
   display: grid;
   gap: 14px;

@@ -131,6 +131,7 @@ const DEFAULT_STATE = {
   guests: [],
   guestGroups: [],
   roomAssignments: {},
+  lastAdminVisit: 0,
   updatedAt: 0,
 };
 
@@ -737,6 +738,16 @@ function bindBudgetChartResize() {
   });
 }
 
+function updateRsvpBadge() {
+  const badge = document.getElementById("rsvpNewBadge");
+  if (!badge) return;
+  const newCount = state.guests.filter(
+    (g) => !g.isHost && g.rsvpSubmittedAt > 0 && g.rsvpSubmittedAt > state.lastAdminVisit
+  ).length;
+  badge.textContent = newCount > 0 ? String(newCount) : "";
+  badge.classList.toggle("is-visible", newCount > 0);
+}
+
 function bindAdminTabs() {
   if (!adminTabButtons.length || !adminTabPanels.length) {
     return;
@@ -750,6 +761,12 @@ function bindAdminTabs() {
       }
       setActiveAdminTab(tabId);
       if (tabId === "traiteur") renderTraiteur();
+      // L'admin vient de voir la liste des invités : marquer comme vu
+      if (tabId === "guests" && isAdminUnlocked) {
+        state.lastAdminVisit = Date.now();
+        updateRsvpBadge();
+        persistState();
+      }
     });
   }
 
@@ -1007,6 +1024,7 @@ function refresh(options = {}) {
   renderRsvpChart();
   renderBudgetBarChart();
   renderTraiteur();
+  updateRsvpBadge();
 
   if (persist) {
     schedulePersist();
@@ -2479,6 +2497,11 @@ function normalizeState(candidate) {
       }
     }
     normalized.roomAssignments = cleanAssign;
+  }
+
+  const lastVisit = input.lastAdminVisit;
+  if (typeof lastVisit === "number" && lastVisit >= 0) {
+    normalized.lastAdminVisit = Math.floor(lastVisit);
   }
 
   return normalized;
