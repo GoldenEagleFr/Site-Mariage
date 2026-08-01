@@ -94,8 +94,77 @@
       color: var(--ink-soft); text-align: center; font-style: italic;
     }
 
-    /* ── Zone principale ─────────────────────────────────────── */
-    .ch-main { flex: 1; overflow-y: auto; padding: 16px; }
+    /* ── Zone principale (carte) ────────────────────────────────── */
+    .ch-main { flex: 1; overflow: hidden; display: flex; flex-direction: column; padding: 0; }
+    .ch-map-wrap {
+      flex: 1; min-height: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: #e8e3dc; padding: 12px; box-sizing: border-box;
+    }
+    .ch-map-inner {
+      position: relative;
+      aspect-ratio: 4 / 3;
+      max-width: 100%; max-height: 100%;
+      width: 100%;
+    }
+    .ch-map-img {
+      width: 100%; height: 100%; display: block;
+      border-radius: 10px;
+      box-shadow: 0 4px 24px rgba(0,0,0,.22);
+    }
+    .ch-map-hotspots { position: absolute; inset: 0; border-radius: 10px; }
+    .ch-map-hotspot {
+      position: absolute;
+      cursor: pointer; border-radius: 6px; overflow: hidden;
+      transition: transform .25s cubic-bezier(.34,1.56,.64,1), box-shadow .25s ease;
+      transform-origin: center; z-index: 1;
+    }
+    .ch-map-hotspot:hover { transform: scale(1.1); box-shadow: 0 8px 24px rgba(0,0,0,.45); z-index: 10; }
+    .ch-map-hotspot-bg {
+      position: absolute; inset: 0;
+      background: url(PLAN-DES-DOMAINES-AQUARELLE.jpg) no-repeat;
+      pointer-events: none;
+    }
+
+    /* ── Modal bâtiment ──────────────────────────────────────────── */
+    .ch-modal {
+      position: fixed; inset: 0; z-index: 50;
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px;
+    }
+    .ch-modal.is-hidden { display: none; }
+    .ch-modal-backdrop {
+      position: absolute; inset: 0;
+      background: rgba(10,8,6,.52); backdrop-filter: blur(2px);
+    }
+    .ch-modal-panel {
+      position: relative; z-index: 1;
+      background: var(--card); border-radius: 18px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.35);
+      width: 100%; max-width: 720px;
+      max-height: calc(100vh - 40px);
+      display: flex; flex-direction: column; overflow: hidden;
+      animation: modal-in .22s cubic-bezier(.34,1.32,.64,1) both;
+    }
+    @keyframes modal-in {
+      from { opacity: 0; transform: scale(.93) translateY(10px); }
+      to   { opacity: 1; transform: none; }
+    }
+    .ch-modal-header {
+      display: flex; align-items: center; gap: 12px;
+      padding: 16px 20px 14px;
+      border-bottom: 1px solid var(--border); flex-shrink: 0;
+    }
+    .ch-modal-title { font: 700 1.05rem 'Manrope',sans-serif; color: var(--ink); flex: 1; }
+    .ch-modal-close {
+      background: none; border: 1px solid var(--border);
+      color: var(--ink-soft); border-radius: 8px;
+      padding: 4px 10px; font-size: 0.8rem; cursor: pointer;
+      box-shadow: none; transition: background .12s, color .12s;
+    }
+    .ch-modal-close:hover { background: var(--surface-alt); color: var(--ink); box-shadow: none; transform: none; filter: none; }
+    .ch-modal-rooms { overflow-y: auto; padding: 16px 20px; flex: 1; }
+    .ch-modal-rooms .ch-rooms-grid { margin-bottom: 16px; }
 
     /* Onglets bâtiments */
     .ch-building-tabs {
@@ -344,55 +413,30 @@
       </div>
     </aside>
 
-    <!-- Zone principale -->
+    <!-- Zone principale : carte -->
     <main class="ch-main">
-
-      <!-- Onglets bâtiments -->
-      <div class="ch-building-tabs">
-        <button class="ch-building-tab is-active" data-building="manoir">🏛 Le Manoir</button>
-        <button class="ch-building-tab" data-building="caravelle">🏠 La Caravelle</button>
-        <button class="ch-building-tab" data-building="chalets">🌲 Les Chalets</button>
-      </div>
-
-      <!-- ── MANOIR ───────────────────────────────────────────── -->
-      <div class="ch-building-section is-active" data-building="manoir">
-
-        <p class="ch-floor-title">1er étage — salle de bain privée</p>
-        <div class="ch-rooms-grid" data-floor="manoir-1">
-          <!-- chambres générées par JS -->
-        </div>
-
-        <p class="ch-floor-title">2ème étage — salle de bain privée</p>
-        <div class="ch-rooms-grid" data-floor="manoir-2">
+      <div class="ch-map-wrap">
+        <div class="ch-map-inner">
+          <img src="PLAN-DES-DOMAINES-AQUARELLE.jpg" class="ch-map-img" alt="Plan des Domaines de Gaston">
+          <div id="chMapHotspots" class="ch-map-hotspots"></div>
         </div>
       </div>
-
-      <!-- ── CARAVELLE ────────────────────────────────────────── -->
-      <div class="ch-building-section" data-building="caravelle">
-
-        <p class="ch-floor-title">1er étage — salle de bain partagée</p>
-        <div class="ch-rooms-grid" data-floor="caravelle-1">
-        </div>
-
-        <p class="ch-floor-title">Rez-de-chaussée — salle de bain partagée</p>
-        <div class="ch-rooms-grid" data-floor="caravelle-rdc">
-        </div>
-      </div>
-
-      <!-- ── CHALETS ───────────────────────────────────────────── -->
-      <div class="ch-building-section" data-building="chalets">
-
-        <p class="ch-floor-title">Chalets avec salon (Camille, Bernard, Justine, Iris) — 6 couchages chacun</p>
-        <div class="ch-rooms-grid" data-floor="chalets-a">
-        </div>
-
-        <p class="ch-floor-title">Chalets doubles (Juliette, Constant, Germaine, Marguerite, Gaspard, Odette) — 4 couchages chacun</p>
-        <div class="ch-rooms-grid" data-floor="chalets-b">
-        </div>
-      </div>
-
     </main>
+
   </div><!-- .ch-body -->
+
+  <!-- Modal bâtiment -->
+  <div id="chBuildingModal" class="ch-modal is-hidden">
+    <div class="ch-modal-backdrop" id="chModalBackdrop"></div>
+    <div class="ch-modal-panel">
+      <div class="ch-modal-header">
+        <span id="chModalTitle" class="ch-modal-title"></span>
+        <button id="chModalClose" class="ch-modal-close" type="button">✕ Fermer</button>
+      </div>
+      <div id="chModalRooms" class="ch-modal-rooms"></div>
+    </div>
+  </div>
+
 </div><!-- #chApp -->
 
 <script>
@@ -456,6 +500,28 @@ const ROOMS = [
 const ROOM_BY_ID = Object.fromEntries(ROOMS.map(r => [r.id, r]));
 const TOTAL_CAPACITY = ROOMS.reduce((s, r) => s + r.capacity, 0);
 
+// ── Bâtiments sur la carte (positions en % de l'image 1200×900) ────────
+const MAP_BUILDINGS = [
+  { id:"manoir",     label:"Le Manoir",       floors:[
+      { id:"manoir-1",       label:"1er étage — Salle de bain privée" },
+      { id:"manoir-2",       label:"2ème étage — Salle de bain privée" },
+    ], l:33, t:12, w:13, h:16 },
+  { id:"caravelle",  label:"La Caravelle",    floors:[
+      { id:"caravelle-1",   label:"1er étage — Salle de bain partagée" },
+      { id:"caravelle-rdc", label:"Rez-de-chaussée — Salle de bain partagée" },
+    ], l:48, t:31, w:11, h:14 },
+  { id:"bernard",    label:"Chalet Bernard",    chalet:"Bernard",    l:38, t:31, w:8, h:11 },
+  { id:"constant",   label:"Chalet Constant",   chalet:"Constant",   l:25, t:36, w:9, h:11 },
+  { id:"gaspard",    label:"Chalet Gaspard",    chalet:"Gaspard",    l:28, t:44, w:9, h:11 },
+  { id:"camille",    label:"Chalet Camille",    chalet:"Camille",    l:25, t:52, w:9, h:11 },
+  { id:"iris",       label:"Chalet Iris",       chalet:"Iris",       l:62, t:39, w:8, h:10 },
+  { id:"juliette",   label:"Chalet Juliette",   chalet:"Juliette",   l:67, t:44, w:8, h:10 },
+  { id:"odette",     label:"Chalet Odette",     chalet:"Odette",     l:64, t:49, w:8, h:10 },
+  { id:"marguerite", label:"Chalet Marguerite", chalet:"Marguerite", l:62, t:55, w:8, h:10 },
+  { id:"germaine",   label:"Chalet Germaine",   chalet:"Germaine",   l:64, t:60, w:8, h:10 },
+  { id:"justine",    label:"Chalet Justine",    chalet:"Justine",    l:60, t:65, w:8, h:10 },
+];
+
 // ── État local ──────────────────────────────────────────────────────────
 const SERVER_ENDPOINT   = "/api/data";
 const ADMIN_CHECK       = "/api/admin/check";
@@ -467,6 +533,7 @@ let chAssign     = {};
 let selectedGuestId    = null;
 let dragGuestId        = null;
 let pendingFlash       = null; // { roomId, type:"green"|"red" }
+let activeBuilding     = null;
 const _animatedFloors  = new Set();
 let lastKnownUpdatedAt = 0;
 let syncTimer = null;
@@ -510,6 +577,7 @@ chLoginForm.addEventListener("submit", async (e) => {
   sessionStorage.setItem(ADMIN_SESSION_KEY, token);
   chLoginError.textContent = "";
   await loadData();
+  renderHotspots();
   chGate.classList.add("is-hidden");
   chApp.classList.remove("is-hidden");
   startSyncPoll();
@@ -522,6 +590,7 @@ if (savedToken) {
     if (!ok) return;
     chAdminToken = savedToken;
     loadData().then(() => {
+      renderHotspots();
       chGate.classList.add("is-hidden");
       chApp.classList.remove("is-hidden");
       startSyncPoll();
@@ -698,102 +767,142 @@ function renderSidebar() {
   });
 }
 
-function renderRooms() {
-  const roomOccupants = {};
+function getRoomOccupants() {
+  const o = {};
   for (const [gid, rid] of Object.entries(chAssign)) {
     const g = chGuests.find(x => x.id === gid);
     if (!g) continue;
-    if (!roomOccupants[rid]) roomOccupants[rid] = [];
-    roomOccupants[rid].push(g);
+    if (!o[rid]) o[rid] = [];
+    o[rid].push(g);
   }
+  return o;
+}
 
-  document.querySelectorAll(".ch-rooms-grid").forEach(grid => {
-    const floor = grid.dataset.floor;
-    const floorRooms = ROOMS.filter(r => r.floor === floor);
+function renderRooms() {
+  if (activeBuilding) renderModalRooms();
+}
 
-    const firstRender = !_animatedFloors.has(floor);
+function renderModalRooms(animate = false) {
+  if (!activeBuilding) return;
+  const b   = activeBuilding;
+  const occ = getRoomOccupants();
+  const container = document.getElementById("chModalRooms");
+  if (!container) return;
 
-    if (floor === "chalets-a" || floor === "chalets-b") {
-      const byChalet = {};
-      const chaletOrder = [];
-      for (const r of floorRooms) {
-        if (!byChalet[r.chalet]) { byChalet[r.chalet] = []; chaletOrder.push(r.chalet); }
-        byChalet[r.chalet].push(r);
-      }
-      grid.innerHTML = chaletOrder.map(name => chaletBlock(name, byChalet[name], roomOccupants)).join("");
-    } else {
-      grid.innerHTML = floorRooms.map(room => roomCard(room, roomOccupants[room.id] || [])).join("");
+  let html = "";
+  if (b.chalet) {
+    const rooms = ROOMS.filter(r => r.chalet === b.chalet);
+    html = chaletBlock(b.chalet, rooms, occ);
+  } else if (b.floors) {
+    for (const f of b.floors) {
+      const rooms = ROOMS.filter(r => r.floor === f.id);
+      html += `<p class="ch-floor-title">${escHtml(f.label)}</p>
+        <div class="ch-rooms-grid" data-floor="${escHtml(f.id)}">
+          ${rooms.map(r => roomCard(r, occ[r.id] || [])).join("")}
+        </div>`;
     }
+  }
+  container.innerHTML = html;
+  bindRoomCards(container);
+  if (animate) animateRoomsIn(container);
+}
 
-    if (firstRender) {
-      _animatedFloors.add(floor);
-      animateRoomsIn(grid);
-    }
+function bindRoomCards(container) {
+  container.querySelectorAll(".ch-room-card").forEach(card => {
+    const rid  = card.dataset.rid;
+    const room = ROOM_BY_ID[rid];
+    const occs = Object.values(chAssign).filter(r => r === rid);
+    const isFull = occs.length >= room.capacity;
 
-    grid.querySelectorAll(".ch-room-card").forEach(card => {
-      const rid = card.dataset.rid;
-      const room = ROOM_BY_ID[rid];
-      const occs = roomOccupants[rid] || [];
-      const isFull = occs.length >= room.capacity;
+    card.addEventListener("click", () => {
+      if (!selectedGuestId || isFull) return;
+      assignGuest(selectedGuestId, rid);
+    });
 
-      // Clic pour assigner l'invité sélectionné
-      card.addEventListener("click", () => {
-        if (!selectedGuestId || isFull) return;
-        assignGuest(selectedGuestId, rid);
-      });
-
-      // Boutons retirer
-      card.querySelectorAll(".ch-occupant-remove").forEach(btn => {
-        btn.addEventListener("click", (e) => {
-          e.stopPropagation();
-          removeGuest(btn.dataset.gid);
-        });
-      });
-
-      // Drag — invités occupants (pour déplacer vers une autre chambre)
-      card.querySelectorAll(".ch-occupant-row").forEach(row => {
-        const gid = row.querySelector(".ch-occupant-remove")?.dataset.gid;
-        if (!gid) return;
-        row.setAttribute("draggable", "true");
-        row.addEventListener("dragstart", (e) => {
-          e.stopPropagation();
-          dragGuestId = gid;
-          e.dataTransfer.setData("text/plain", gid);
-          e.dataTransfer.effectAllowed = "move";
-          requestAnimationFrame(() => row.classList.add("is-dragging"));
-        });
-        row.addEventListener("dragend", () => {
-          row.classList.remove("is-dragging");
-          dragGuestId = null;
-          document.querySelectorAll(".ch-room-card.drag-over").forEach(c => c.classList.remove("drag-over"));
-        });
-      });
-
-      // Drop — recevoir un invité
-      card.addEventListener("dragover", (e) => {
-        if (!dragGuestId) return;
-        if (chAssign[dragGuestId] === rid) return; // déjà dans cette chambre
-        const liveCount = Object.values(chAssign).filter(r => r === rid).length;
-        if (liveCount >= room.capacity) return; // pleine
-        e.preventDefault();
-        e.dataTransfer.dropEffect = "move";
-        card.classList.add("drag-over");
-      });
-
-      card.addEventListener("dragleave", (e) => {
-        if (!card.contains(e.relatedTarget)) card.classList.remove("drag-over");
-      });
-
-      card.addEventListener("drop", (e) => {
-        e.preventDefault();
-        card.classList.remove("drag-over");
-        const gid = e.dataTransfer.getData("text/plain") || dragGuestId;
-        if (!gid) return;
-        assignGuest(gid, rid);
-        dragGuestId = null;
+    card.querySelectorAll(".ch-occupant-remove").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        removeGuest(btn.dataset.gid);
       });
     });
+
+    card.querySelectorAll(".ch-occupant-row").forEach(row => {
+      const gid = row.querySelector(".ch-occupant-remove")?.dataset.gid;
+      if (!gid) return;
+      row.setAttribute("draggable", "true");
+      row.addEventListener("dragstart", (e) => {
+        e.stopPropagation();
+        dragGuestId = gid;
+        e.dataTransfer.setData("text/plain", gid);
+        e.dataTransfer.effectAllowed = "move";
+        requestAnimationFrame(() => row.classList.add("is-dragging"));
+      });
+      row.addEventListener("dragend", () => {
+        row.classList.remove("is-dragging");
+        dragGuestId = null;
+        document.querySelectorAll(".ch-room-card.drag-over").forEach(c => c.classList.remove("drag-over"));
+      });
+    });
+
+    card.addEventListener("dragover", (e) => {
+      if (!dragGuestId) return;
+      if (chAssign[dragGuestId] === rid) return;
+      const liveCount = Object.values(chAssign).filter(r => r === rid).length;
+      if (liveCount >= room.capacity) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      card.classList.add("drag-over");
+    });
+    card.addEventListener("dragleave", (e) => {
+      if (!card.contains(e.relatedTarget)) card.classList.remove("drag-over");
+    });
+    card.addEventListener("drop", (e) => {
+      e.preventDefault();
+      card.classList.remove("drag-over");
+      const gid = e.dataTransfer.getData("text/plain") || dragGuestId;
+      if (!gid) return;
+      assignGuest(gid, rid);
+      dragGuestId = null;
+    });
   });
+}
+
+function renderHotspots() {
+  const container = document.getElementById("chMapHotspots");
+  if (!container) return;
+  container.innerHTML = MAP_BUILDINGS.map(b => {
+    const bsX = (10000 / b.w).toFixed(1);
+    const bsY = (10000 / b.h).toFixed(1);
+    const bpX = (b.l * 100 / (100 - b.w)).toFixed(1);
+    const bpY = (b.t * 100 / (100 - b.h)).toFixed(1);
+    return `<div class="ch-map-hotspot" data-bid="${escHtml(b.id)}"
+      style="left:${b.l}%;top:${b.t}%;width:${b.w}%;height:${b.h}%">
+      <div class="ch-map-hotspot-bg" style="background-size:${bsX}% ${bsY}%;background-position:${bpX}% ${bpY}%"></div>
+    </div>`;
+  }).join("");
+  container.querySelectorAll(".ch-map-hotspot").forEach(el => {
+    el.addEventListener("click", () => openBuildingModal(el.dataset.bid));
+  });
+}
+
+function openBuildingModal(bid) {
+  const b = MAP_BUILDINGS.find(x => x.id === bid);
+  if (!b) return;
+  activeBuilding = b;
+  const modal = document.getElementById("chBuildingModal");
+  document.getElementById("chModalTitle").textContent = b.label;
+  modal.classList.remove("is-hidden");
+  // Force animation replay
+  const panel = modal.querySelector(".ch-modal-panel");
+  panel.style.animation = "none";
+  void panel.offsetWidth;
+  panel.style.animation = "";
+  renderModalRooms(true);
+}
+
+function closeBuildingModal() {
+  activeBuilding = null;
+  document.getElementById("chBuildingModal").classList.add("is-hidden");
 }
 
 function animateRoomsIn(grid) {
@@ -896,21 +1005,10 @@ function renderStats() {
   if (statFull)   statFull.textContent   = fullRooms;
 }
 
-// ── Navigation bâtiments ─────────────────────────────────────────────────
-document.querySelectorAll(".ch-building-tab").forEach(btn => {
-  btn.addEventListener("click", () => {
-    const b = btn.dataset.building;
-    document.querySelectorAll(".ch-building-tab").forEach(t => t.classList.remove("is-active"));
-    document.querySelectorAll(".ch-building-section").forEach(s => s.classList.remove("is-active"));
-    btn.classList.add("is-active");
-    document.querySelector(`.ch-building-section[data-building="${b}"]`)?.classList.add("is-active");
-    // Réinitialiser les floors du bâtiment affiché pour rejouer l'animation d'entrée
-    for (const floor of [..._animatedFloors]) {
-      if (floor.startsWith(b)) _animatedFloors.delete(floor);
-    }
-    renderRooms();
-  });
-});
+// ── Modal : fermeture ────────────────────────────────────────────────────
+document.getElementById("chModalClose")?.addEventListener("click", closeBuildingModal);
+document.getElementById("chModalBackdrop")?.addEventListener("click", closeBuildingModal);
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeBuildingModal(); });
 
 // ── Recherche ────────────────────────────────────────────────────────────
 chGuestSearch?.addEventListener("input", () => renderSidebar());
