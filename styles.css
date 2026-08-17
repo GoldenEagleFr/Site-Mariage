@@ -5287,7 +5287,39 @@ body.dark-mode .guest-host-status { color: #6fcf97; }
     padding: 8px 4px;
   }
 
-  /* ── Invités : réduire indentation enfants ──────────────────── */
+  /* ── Invités : contrôles en ligne équilibrée ────────────────── */
+
+  /* Sélecteurs : base 0 → croissent équitablement, pas de min naturel */
+  .guest-item .inline-category,
+  .guest-item .inline-status {
+    flex: 1 1 0 !important;
+    min-width: 50px !important;
+    font-size: 0.73rem !important;
+  }
+
+  /* Hébergement : compact */
+  .guest-item .guest-hebergement-label {
+    font-size: 0.70rem !important;
+  }
+
+  /* Bouton édition : même taille que ✕, compact */
+  .guest-item .guest-edit-btn {
+    flex-shrink: 0 !important;
+    width: 30px !important;
+    height: 30px !important;
+    font-size: 0.85rem !important;
+    padding: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  /* Supprimer : annule le margin-left:auto (plus de grand vide au milieu) */
+  .guest-item button.danger {
+    margin-left: 0 !important;
+  }
+
+  /* Indentation enfants : réduite */
   .guest-item-child,
   .guest-item-teen,
   .guest-item-baby,
