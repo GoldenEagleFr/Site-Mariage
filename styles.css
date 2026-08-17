@@ -5146,6 +5146,73 @@ body.dark-mode .guest-host-status { color: #6fcf97; }
   }
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   BUDGET + INVITÉS — TRÈS PETIT ÉCRAN (< 480px)
+   ═══════════════════════════════════════════════════════════════ */
+@media (max-width: 480px) {
+
+  /* ── Budget : items en layout vertical ─────────────────────── */
+  .budget-data-item {
+    grid-template-columns: 1fr !important;
+    min-width: 0 !important;
+  }
+  .budget-item-amounts {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    flex-wrap: wrap;
+    text-align: left;
+  }
+  .budget-item-actions {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  /* ── Budget item-edit : 1 colonne ───────────────────────────── */
+  .budget-item-edit {
+    grid-template-columns: 1fr !important;
+  }
+  .budget-item-edit > *:last-child {
+    grid-column: auto !important;
+  }
+
+  /* ── Panel-list : autoriser le scroll si contenu dépasse ────── */
+  .panel-list {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* ── Admin tabs : 3 colonnes pour 5 onglets ─────────────────── */
+  .admin-tabs {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .admin-tab {
+    font-size: 0.73rem;
+    padding: 8px 4px;
+  }
+
+  /* ── Invités : réduire indentation enfants ──────────────────── */
+  .guest-item-child,
+  .guest-item-teen,
+  .guest-item-baby,
+  .guest-item-partner {
+    margin-left: 6px;
+  }
+
+  /* ── Métriques : 1 colonne sur très petit écran ─────────────── */
+  .metrics {
+    grid-template-columns: 1fr;
+  }
+
+  /* ── Budget solde row ────────────────────────────────────────── */
+  .budget-solde .solde-label {
+    font-size: 0.72rem;
+  }
+}
+
 /* ── RSVP : spinner de recherche ─────────────────────────────── */
 .rsvp-spinner {
   display: flex;
