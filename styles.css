@@ -5148,31 +5148,40 @@ body.dark-mode .guest-host-status { color: #6fcf97; }
    ═══════════════════════════════════════════════════════════════ */
 @media (max-width: 480px) {
 
-  /* ── Budget : carte verticale ───────────────────────────────── */
+  /* ── Budget : grille nom|montants + barre actions ───────────── */
   .budget-data-item {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 8px !important;
+    display: grid !important;
+    grid-template-columns: 1fr auto !important;
+    gap: 5px 12px !important;
     min-width: 0 !important;
+    align-items: start !important;
   }
 
-  /* ── Montants : chips horizontaux ───────────────────────────── */
+  /* Col gauche ligne 1 : en-tête (catégorie + nom) */
+  .budget-item-header {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  /* Col droite ligne 1 : montants empilés alignés droite */
   .budget-item-amounts {
-    display: flex !important;
-    flex-direction: row !important;
-    gap: 8px !important;
-    flex-wrap: wrap !important;
-    text-align: left !important;
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    display: grid !important;
+    gap: 2px !important;
+    text-align: right !important;
   }
   .budget-amount-total,
   .budget-amount-paid,
   .budget-amount-rest {
-    font-size: 0.78rem !important;
+    font-size: 0.77rem !important;
     white-space: nowrap;
   }
 
-  /* ── Actions : barre horizontale compacte ───────────────────── */
+  /* Ligne 2 : barre actions pleine largeur */
   .budget-item-actions {
+    grid-column: 1 / -1 !important;
+    grid-row: 2 !important;
     flex-direction: row !important;
     align-items: center !important;
     justify-content: flex-start !important;
@@ -5180,11 +5189,25 @@ body.dark-mode .guest-host-status { color: #6fcf97; }
     gap: 5px !important;
   }
 
-  /* ── Modifier → icône seule ─────────────────────────────────── */
+  /* Formulaire édition : pleine largeur, 1 colonne */
+  .budget-item-edit {
+    grid-column: 1 / -1 !important;
+    grid-template-columns: 1fr !important;
+  }
+  .budget-item-edit > * {
+    grid-column: auto !important;
+  }
+
+  /* Zone versements : pleine largeur */
+  .budget-payments-wrap {
+    grid-column: 1 / -1 !important;
+  }
+
+  /* ── Modifier → icône ✎ ─────────────────────────────────────── */
   .budget-edit-btn {
     font-size: 0 !important;
-    width: 28px !important;
-    height: 28px !important;
+    width: 26px !important;
+    height: 26px !important;
     padding: 0 !important;
     display: inline-flex !important;
     align-items: center !important;
@@ -5193,14 +5216,14 @@ body.dark-mode .guest-host-status { color: #6fcf97; }
   }
   .budget-edit-btn::before {
     content: "✎";
-    font-size: 14px;
+    font-size: 13px;
   }
 
-  /* ── Supprimer → icône seule ────────────────────────────────── */
+  /* ── Supprimer → icône ✕ ────────────────────────────────────── */
   .budget-delete-btn {
     font-size: 0 !important;
-    width: 28px !important;
-    height: 28px !important;
+    width: 26px !important;
+    height: 26px !important;
     padding: 0 !important;
     display: inline-flex !important;
     align-items: center !important;
@@ -5209,17 +5232,16 @@ body.dark-mode .guest-host-status { color: #6fcf97; }
   }
   .budget-delete-btn::before {
     content: "✕";
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 700;
   }
 
-  /* ── Formulaire édition : 1 colonne ─────────────────────────── */
-  .budget-item-edit {
-    grid-template-columns: 1fr !important;
+  /* ── Solde label : taille compacte ──────────────────────────── */
+  .solde-label {
+    font-size: 0.73rem !important;
   }
-  .budget-item-edit > * {
-    grid-column: auto !important;
-  }
+
+  /* Formulaire édition interne : 1 colonne */
 
   /* ── Formulaire versement : inputs pleine largeur ────────────── */
   .payment-add-form {
