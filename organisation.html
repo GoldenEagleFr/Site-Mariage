@@ -274,11 +274,30 @@
             <div class="panel-two-col">
               <div class="panel-controls">
 
+                <!-- Badges statut — mobile uniquement (Option B) -->
+                <div class="guest-stat-badges">
+                  <div class="gsb-badge gsb-yes">
+                    <span class="gsb-n" id="guestBadgeYes">0</span>
+                    <span class="gsb-l">Confirmés</span>
+                  </div>
+                  <div class="gsb-badge gsb-no">
+                    <span class="gsb-n" id="guestBadgeNo">0</span>
+                    <span class="gsb-l">Refusés</span>
+                  </div>
+                  <div class="gsb-badge gsb-pend">
+                    <span class="gsb-n" id="guestBadgePend">0</span>
+                    <span class="gsb-l">En attente</span>
+                  </div>
+                </div>
+
                 <!-- Recherche en premier -->
                 <input id="guestSearch" type="text" placeholder="🔍 Rechercher un invité…" class="guest-search-input">
 
+                <!-- Bouton toggle filtres — mobile uniquement -->
+                <button type="button" id="guestFiltersToggle" class="guest-filters-toggle">Filtres ▾</button>
+
                 <!-- Filtres compacts -->
-                <div class="guest-filters-compact">
+                <div class="guest-filters-compact" id="guestFiltersPanel">
                   <select id="guestFilter">
                     <option value="all">Tous statuts</option>
                     <option value="pending">En attente</option>

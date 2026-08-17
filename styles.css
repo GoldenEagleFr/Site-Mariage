@@ -1764,6 +1764,12 @@ body::after {
   cursor: pointer;
 }
 
+/* ── Badges statut invités — masqués sur desktop ──────── */
+.guest-stat-badges { display: none; }
+
+/* ── Toggle filtres — masqué sur desktop ─────────────── */
+.guest-filters-toggle { display: none; }
+
 .guest-add-details {
   margin-top: 10px;
   border: 1.5px solid var(--line);
@@ -5285,6 +5291,63 @@ body.dark-mode .guest-host-status { color: #6fcf97; }
   .admin-tab {
     font-size: 0.73rem;
     padding: 8px 4px;
+  }
+
+  /* ── Invités : badges statut (Option B) ─────────────────────── */
+  .guest-stat-badges {
+    display: flex !important;
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+  .gsb-badge {
+    flex: 1;
+    border-radius: 10px;
+    padding: 9px 6px 7px;
+    text-align: center;
+    border: 1px solid transparent;
+  }
+  .gsb-badge .gsb-n {
+    display: block;
+    font-size: 1.25rem;
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 3px;
+  }
+  .gsb-badge .gsb-l {
+    font-size: 0.62rem;
+    font-weight: 700;
+  }
+  .gsb-yes  { background: rgba(47,133,90,.1);   color: #2f855a; border-color: rgba(47,133,90,.22); }
+  .gsb-no   { background: rgba(185,28,28,.09);  color: #b91c1c; border-color: rgba(185,28,28,.18); }
+  .gsb-pend { background: rgba(180,83,9,.09);   color: #b45309; border-color: rgba(180,83,9,.18); }
+
+  /* ── Filtres : masqués par défaut, toggle pour ouvrir ────────── */
+  .guest-filters-toggle {
+    display: block !important;
+    width: 100%;
+    text-align: left;
+    padding: 7px 11px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--card);
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: var(--ink-soft);
+    cursor: pointer;
+    margin-bottom: 4px;
+  }
+  .guest-filters-compact {
+    display: none !important;
+    margin-bottom: 4px !important;
+  }
+  .guest-filters-compact.gsf-open {
+    display: flex !important;
+  }
+
+  /* ── Stats verbeux masquées (remplacées par les badges) ──────── */
+  #guestStats,
+  .guest-split-stats {
+    display: none !important;
   }
 
   /* ── Invités : contrôles en ligne équilibrée ────────────────── */

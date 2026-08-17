@@ -200,6 +200,11 @@ const guestFilter = document.getElementById("guestFilter");
 const guestAttendanceFilter = document.getElementById("guestAttendanceFilter");
 const guestCategoryFilter = document.getElementById("guestCategoryFilter");
 const guestStats = document.getElementById("guestStats");
+const guestBadgeYes  = document.getElementById("guestBadgeYes");
+const guestBadgeNo   = document.getElementById("guestBadgeNo");
+const guestBadgePend = document.getElementById("guestBadgePend");
+const guestFiltersToggle = document.getElementById("guestFiltersToggle");
+const guestFiltersPanel  = document.getElementById("guestFiltersPanel");
 const guestCategoryStats = document.getElementById("guestCategoryStats");
 const guestVinStats = document.getElementById("guestVinStats");
 const guestMealStats = document.getElementById("guestMealStats");
@@ -596,6 +601,13 @@ function bindPlannerEvents() {
   if (guestSearch) {
     guestSearch.addEventListener("input", () => {
       renderGuests();
+    });
+  }
+
+  if (guestFiltersToggle && guestFiltersPanel) {
+    guestFiltersToggle.addEventListener("click", () => {
+      const open = guestFiltersPanel.classList.toggle("gsf-open");
+      guestFiltersToggle.textContent = open ? "Filtres ▲" : "Filtres ▾";
     });
   }
 
@@ -1616,11 +1628,17 @@ function renderGuests() {
     return true;
   });
 
-  if (guestStats) {
+  if (guestStats || guestBadgeYes) {
     const invites = state.guests.filter((g) => !g.isHost);
-    const pending = invites.filter((g) => g.status === "pending").length;
+    const pending   = invites.filter((g) => g.status === "pending").length;
     const confirmed = invites.filter((g) => g.status === "yes").length;
-    guestStats.textContent = `${filteredGuests.length}/${state.guests.length} affichés — ${confirmed} oui — ${pending} en attente (${invites.length} invités + ${state.guests.length - invites.length} marié${state.guests.length - invites.length > 1 ? "s" : ""})`;
+    const declined  = invites.filter((g) => g.status === "no").length;
+    if (guestStats) {
+      guestStats.textContent = `${filteredGuests.length}/${state.guests.length} affichés — ${confirmed} oui — ${pending} en attente (${invites.length} invités + ${state.guests.length - invites.length} marié${state.guests.length - invites.length > 1 ? "s" : ""})`;
+    }
+    if (guestBadgeYes)  guestBadgeYes.textContent  = confirmed;
+    if (guestBadgeNo)   guestBadgeNo.textContent   = declined;
+    if (guestBadgePend) guestBadgePend.textContent = pending;
   }
   if (guestCategoryStats) {
     const adults   = state.guests.filter((g) => !["child", "teen", "baby"].includes(g.guestCategory)).length;
