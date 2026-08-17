@@ -3902,9 +3902,11 @@ body.rsvp-page .kicker {
   gap: 14px;
 }
 
-/* Colonne gauche plus étroite pour l'onglet invités */
-#adminTabGuests .panel-two-col {
-  grid-template-columns: minmax(240px, 0.55fr) minmax(0, 1fr);
+/* Colonne gauche plus étroite pour l'onglet invités (desktop uniquement) */
+@media (min-width: 601px) {
+  #adminTabGuests .panel-two-col {
+    grid-template-columns: minmax(240px, 0.55fr) minmax(0, 1fr);
+  }
 }
 
 /* ── RSVP extra fields ─────────────────────────────────────── */
@@ -5293,10 +5295,7 @@ body.dark-mode .guest-host-status { color: #6fcf97; }
     padding: 8px 4px;
   }
 
-  /* ── Invités : forcer layout 1 colonne (spécificité #id) ────── */
-  #adminTabGuests .panel-two-col {
-    grid-template-columns: 1fr !important;
-  }
+  /* ── Invités : panel-list sans hauteur max ───────────────────── */
   #adminTabGuests .panel-list {
     max-height: none !important;
   }
