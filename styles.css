@@ -5086,10 +5086,7 @@ body.dark-mode .guest-host-status { color: #6fcf97; }
   .panel-list {
     overflow-x: hidden;
   }
-  /* Budget items : scroll horizontal conservé (densité d'infos) */
-  .budget-data-item {
-    min-width: 420px;
-  }
+  /* Budget items : le grid s'adapte à la largeur disponible */
   /* Guest items : vue carte empilée */
   .guest-item {
     min-width: 0 !important;
@@ -5151,38 +5148,112 @@ body.dark-mode .guest-host-status { color: #6fcf97; }
    ═══════════════════════════════════════════════════════════════ */
 @media (max-width: 480px) {
 
-  /* ── Budget : items en layout vertical ─────────────────────── */
+  /* ── Budget : carte verticale ───────────────────────────────── */
   .budget-data-item {
-    grid-template-columns: 1fr !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
     min-width: 0 !important;
   }
+
+  /* ── Montants : chips horizontaux ───────────────────────────── */
   .budget-item-amounts {
-    display: flex;
-    flex-direction: row;
-    gap: 10px;
-    flex-wrap: wrap;
-    text-align: left;
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 8px !important;
+    flex-wrap: wrap !important;
+    text-align: left !important;
   }
-  .budget-item-actions {
-    flex-direction: row;
-    align-items: center;
-    justify-content: flex-end;
-    flex-wrap: wrap;
-    gap: 6px;
+  .budget-amount-total,
+  .budget-amount-paid,
+  .budget-amount-rest {
+    font-size: 0.78rem !important;
+    white-space: nowrap;
   }
 
-  /* ── Budget item-edit : 1 colonne ───────────────────────────── */
+  /* ── Actions : barre horizontale compacte ───────────────────── */
+  .budget-item-actions {
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    flex-wrap: wrap !important;
+    gap: 5px !important;
+  }
+
+  /* ── Modifier → icône seule ─────────────────────────────────── */
+  .budget-edit-btn {
+    font-size: 0 !important;
+    width: 28px !important;
+    height: 28px !important;
+    padding: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 6px !important;
+  }
+  .budget-edit-btn::before {
+    content: "✎";
+    font-size: 14px;
+  }
+
+  /* ── Supprimer → icône seule ────────────────────────────────── */
+  .budget-delete-btn {
+    font-size: 0 !important;
+    width: 28px !important;
+    height: 28px !important;
+    padding: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 6px !important;
+  }
+  .budget-delete-btn::before {
+    content: "✕";
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  /* ── Formulaire édition : 1 colonne ─────────────────────────── */
   .budget-item-edit {
     grid-template-columns: 1fr !important;
   }
-  .budget-item-edit > *:last-child {
+  .budget-item-edit > * {
     grid-column: auto !important;
   }
 
-  /* ── Panel-list : autoriser le scroll si contenu dépasse ────── */
+  /* ── Formulaire versement : inputs pleine largeur ────────────── */
+  .payment-add-form {
+    flex-direction: column !important;
+  }
+  .payment-add-form input[type="text"],
+  .payment-add-form input[type="number"],
+  .payment-add-form input[type="date"] {
+    width: 100% !important;
+    flex: 1 1 auto !important;
+    box-sizing: border-box !important;
+    flex-shrink: 1 !important;
+  }
+  .payment-add-form .pmt-add-btn {
+    width: 100% !important;
+    text-align: center !important;
+  }
+
+  /* ── Lignes versement : libellé sur sa propre ligne ─────────── */
+  .payment-row {
+    flex-wrap: wrap !important;
+    gap: 5px !important;
+  }
+  .payment-label {
+    flex: 1 0 100% !important;
+    margin-bottom: 2px;
+  }
+  .payment-amounts {
+    flex-shrink: 1 !important;
+  }
+
+  /* ── Panel-list : pas de scroll horizontal ──────────────────── */
   .panel-list {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
+    overflow-x: hidden !important;
   }
 
   /* ── Admin tabs : 3 colonnes pour 5 onglets ─────────────────── */
@@ -5202,12 +5273,12 @@ body.dark-mode .guest-host-status { color: #6fcf97; }
     margin-left: 6px;
   }
 
-  /* ── Métriques : 1 colonne sur très petit écran ─────────────── */
+  /* ── Métriques : 1 colonne ──────────────────────────────────── */
   .metrics {
     grid-template-columns: 1fr;
   }
 
-  /* ── Budget solde row ────────────────────────────────────────── */
+  /* ── Budget soldé : ajustement taille ───────────────────────── */
   .budget-solde .solde-label {
     font-size: 0.72rem;
   }
