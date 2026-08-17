@@ -5293,6 +5293,14 @@ body.dark-mode .guest-host-status { color: #6fcf97; }
     padding: 8px 4px;
   }
 
+  /* ── Invités : forcer layout 1 colonne (spécificité #id) ────── */
+  #adminTabGuests .panel-two-col {
+    grid-template-columns: 1fr !important;
+  }
+  #adminTabGuests .panel-list {
+    max-height: none !important;
+  }
+
   /* ── Invités : badges statut (Option B) ─────────────────────── */
   .guest-stat-badges {
     display: flex !important;
