@@ -5,6 +5,7 @@ import email.mime.text
 import hashlib
 import json
 import os
+import secrets
 import smtplib
 import threading
 import time
@@ -35,12 +36,14 @@ _BACKUP_TIMER: threading.Timer | None = None
 BACKUP_INTERVAL_SECONDS = 6 * 3600  # 6 heures
 BACKUP_MAX_COUNT = 10
 MAINTENANCE_FILE = BASE_DIR / "maintenance.html"
+MAINTENANCE_BYPASS_COOKIE = "mariage_maint_bypass"
 
 _RATE_LIMIT: defaultdict = defaultdict(list)
 _RATE_LIMIT_LOCK = threading.Lock()
 _SEARCH_RATE_LIMIT: defaultdict = defaultdict(list)
 _SEARCH_RATE_LIMIT_LOCK = threading.Lock()
 _MAINTENANCE_MODE: bool = False
+_MAINTENANCE_BYPASS_TOKEN: str = ""
 
 
 # ── Backup périodique ───────────────────────────────────────────
@@ -1091,6 +1094,15 @@ class PlannerHandler(SimpleHTTPRequestHandler):
     def _is_maintenance_mode(self) -> bool:
         return _MAINTENANCE_MODE
 
+    def _has_bypass_cookie(self) -> bool:
+        if not _MAINTENANCE_BYPASS_TOKEN:
+            return False
+        for part in self.headers.get("Cookie", "").split(";"):
+            name, _, value = part.strip().partition("=")
+            if name.strip() == MAINTENANCE_BYPASS_COOKIE and value.strip() == _MAINTENANCE_BYPASS_TOKEN:
+                return True
+        return False
+
     def _is_access_authorized(self) -> bool:
         if not ACCESS_CODE:
             return True
@@ -1119,7 +1131,7 @@ class PlannerHandler(SimpleHTTPRequestHandler):
             return
 
         # ── Mode maintenance ─────────────────────────────────────────
-        if self._is_maintenance_mode() and path != "/api/admin/check" and not self._is_admin_authorized():
+        if self._is_maintenance_mode() and path != "/api/admin/check" and not self._is_admin_authorized() and not self._has_bypass_cookie():
             if MAINTENANCE_FILE.exists():
                 body = MAINTENANCE_FILE.read_bytes()
                 self.send_response(HTTPStatus.SERVICE_UNAVAILABLE)
@@ -1379,7 +1391,25 @@ class PlannerHandler(SimpleHTTPRequestHandler):
                 return
             global _MAINTENANCE_MODE
             _MAINTENANCE_MODE = bool(payload.get("active", False))
-            self._send_json({"ok": True, "active": _MAINTENANCE_MODE})
+            body = json.dumps({"ok": True, "active": _MAINTENANCE_MODE}, ensure_ascii=False).encode("utf-8")
+            self.send_response(HTTPStatus.OK)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("Content-Length", str(len(body)))
+            if _MAINTENANCE_MODE:
+                # Pose le cookie bypass sur le navigateur qui a activé la maintenance
+                self.send_header(
+                    "Set-Cookie",
+                    f"{MAINTENANCE_BYPASS_COOKIE}={_MAINTENANCE_BYPASS_TOKEN}; Max-Age=86400; Path=/; HttpOnly; SameSite=Strict",
+                )
+            else:
+                # Retire le cookie quand on désactive la maintenance
+                self.send_header(
+                    "Set-Cookie",
+                    f"{MAINTENANCE_BYPASS_COOKIE}=; Max-Age=0; Path=/; HttpOnly; SameSite=Strict",
+                )
+            self.end_headers()
+            self.wfile.write(body)
             return
 
         if self.path != "/api/data":
@@ -1418,7 +1448,8 @@ class PlannerHandler(SimpleHTTPRequestHandler):
 
 
 def main() -> None:
-    global ADMIN_PASSWORD, ACCESS_CODE, _MAINTENANCE_MODE
+    global ADMIN_PASSWORD, ACCESS_CODE, _MAINTENANCE_MODE, _MAINTENANCE_BYPASS_TOKEN
+    _MAINTENANCE_BYPASS_TOKEN = secrets.token_hex(24)
     _MAINTENANCE_MODE = os.getenv("MARIAGE_MAINTENANCE", "").strip() == "1"
     ADMIN_PASSWORD = load_admin_password()
     if ADMIN_PASSWORD == DEFAULT_ADMIN_PASSWORD:
