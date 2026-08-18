@@ -1628,7 +1628,7 @@ function renderGuests() {
     return true;
   });
 
-  if (guestStats || guestBadgeYes) {
+  {
     const invites = state.guests.filter((g) => !g.isHost);
     const pending   = invites.filter((g) => g.status === "pending").length;
     const confirmed = invites.filter((g) => g.status === "yes").length;
@@ -1636,9 +1636,12 @@ function renderGuests() {
     if (guestStats) {
       guestStats.textContent = `${filteredGuests.length}/${state.guests.length} affichés — ${confirmed} oui — ${pending} en attente (${invites.length} invités + ${state.guests.length - invites.length} marié${state.guests.length - invites.length > 1 ? "s" : ""})`;
     }
-    if (guestBadgeYes)  guestBadgeYes.textContent  = confirmed;
-    if (guestBadgeNo)   guestBadgeNo.textContent   = declined;
-    if (guestBadgePend) guestBadgePend.textContent = pending;
+    const byYes  = document.getElementById("guestBadgeYes");
+    const byNo   = document.getElementById("guestBadgeNo");
+    const byPend = document.getElementById("guestBadgePend");
+    if (byYes)  byYes.textContent  = confirmed;
+    if (byNo)   byNo.textContent   = declined;
+    if (byPend) byPend.textContent = pending;
   }
   if (guestCategoryStats) {
     const adults   = state.guests.filter((g) => !["child", "teen", "baby"].includes(g.guestCategory)).length;
