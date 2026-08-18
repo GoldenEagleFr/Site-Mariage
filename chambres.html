@@ -192,6 +192,9 @@
     .ch-modal-chip.is-active {
       background: var(--rose); color: #fff; border-color: var(--rose);
     }
+    .ch-modal-chip[draggable="true"] { cursor: grab; }
+    .ch-modal-chip[draggable="true"]::before { content: "⠿ "; font-size: 0.65rem; opacity: .5; }
+    .ch-modal-chip.is-dragging { opacity: .32; border-style: dashed; }
     .ch-modal-chip-none {
       font-size: 0.78rem; color: var(--ink-soft); font-style: italic;
       padding: 5px 0;
@@ -918,6 +921,35 @@ function renderHotspots() {
   });
 }
 
+function createDragGhost(name) {
+  const canvas = document.createElement("canvas");
+  const ctx    = canvas.getContext("2d");
+  const font   = "bold 13px -apple-system,Segoe UI,Manrope,sans-serif";
+  ctx.font = font;
+  const tw  = ctx.measureText(name).width;
+  const pad = 14; const h = 30;
+  canvas.width  = Math.ceil(tw + pad * 2);
+  canvas.height = h;
+  const r = h / 2;
+  ctx.fillStyle = "#f03f59";
+  ctx.beginPath();
+  ctx.moveTo(r, 0); ctx.lineTo(canvas.width - r, 0);
+  ctx.arcTo(canvas.width, 0, canvas.width, r, r);
+  ctx.lineTo(canvas.width, h - r);
+  ctx.arcTo(canvas.width, h, canvas.width - r, h, r);
+  ctx.lineTo(r, h);
+  ctx.arcTo(0, h, 0, h - r, r);
+  ctx.lineTo(0, r);
+  ctx.arcTo(0, 0, r, 0, r);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = "#fff";
+  ctx.font = font;
+  ctx.textBaseline = "middle";
+  ctx.fillText(name, pad, h / 2);
+  return canvas;
+}
+
 function renderModalGuestBar() {
   const bar = document.getElementById("chModalGuestBar");
   if (!bar) return;
@@ -927,18 +959,38 @@ function renderModalGuestBar() {
     html += `<span class="ch-modal-chip-none">Tous les invités sont placés ✓</span>`;
   } else {
     html += unplaced.map(g =>
-      `<button class="ch-modal-chip${selectedGuestId === g.id ? " is-active" : ""}" data-gid="${escHtml(g.id)}">${escHtml(g.name)}</button>`
+      `<button class="ch-modal-chip${selectedGuestId === g.id ? " is-active" : ""}" draggable="true" data-gid="${escHtml(g.id)}" data-name="${escHtml(g.name)}">${escHtml(g.name)}</button>`
     ).join("");
   }
   html += `</div>`;
   bar.innerHTML = html;
   bar.querySelectorAll(".ch-modal-chip").forEach(btn => {
+    const gid  = btn.dataset.gid;
+    const name = btn.dataset.name;
+
     btn.addEventListener("click", () => {
-      const gid = btn.dataset.gid;
       selectedGuestId = selectedGuestId === gid ? null : gid;
       renderModalGuestBar();
       renderModalRooms();
       renderSidebar();
+    });
+
+    btn.addEventListener("dragstart", (e) => {
+      dragGuestId = gid;
+      e.dataTransfer.setData("text/plain", gid);
+      e.dataTransfer.effectAllowed = "move";
+      const ghost = createDragGhost(name);
+      document.body.appendChild(ghost);
+      ghost.style.cssText = "position:fixed;top:-100px;left:-100px;pointer-events:none;";
+      e.dataTransfer.setDragImage(ghost, ghost.width / 2, ghost.height / 2);
+      requestAnimationFrame(() => { if (ghost.parentNode) ghost.parentNode.removeChild(ghost); });
+      requestAnimationFrame(() => btn.classList.add("is-dragging"));
+    });
+
+    btn.addEventListener("dragend", () => {
+      btn.classList.remove("is-dragging");
+      dragGuestId = null;
+      document.querySelectorAll(".ch-room-card.drag-over").forEach(c => c.classList.remove("drag-over"));
     });
   });
 }
