@@ -1131,7 +1131,8 @@ class PlannerHandler(SimpleHTTPRequestHandler):
             return
 
         # ── Mode maintenance ─────────────────────────────────────────
-        if self._is_maintenance_mode() and path != "/api/admin/check" and not self._is_admin_authorized() and not self._has_bypass_cookie():
+        _MAINT_EXEMPT = {"/api/admin/check", "/organisation.html"}
+        if self._is_maintenance_mode() and path not in _MAINT_EXEMPT and not self._is_admin_authorized() and not self._has_bypass_cookie():
             if MAINTENANCE_FILE.exists():
                 body = MAINTENANCE_FILE.read_bytes()
                 self.send_response(HTTPStatus.SERVICE_UNAVAILABLE)
