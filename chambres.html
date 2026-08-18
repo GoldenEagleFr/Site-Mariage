@@ -166,6 +166,37 @@
     .ch-modal-rooms { overflow-y: auto; padding: 16px 20px; flex: 1; }
     .ch-modal-rooms .ch-rooms-grid { margin-bottom: 16px; }
 
+    /* Sélecteur d'invité dans la modal */
+    .ch-modal-guest-bar {
+      padding: 10px 20px 0; flex-shrink: 0;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 10px;
+    }
+    .ch-modal-guest-label {
+      font: 600 0.72rem 'Manrope',sans-serif;
+      text-transform: uppercase; letter-spacing: .05em;
+      color: var(--ink-soft); margin: 0 0 7px;
+    }
+    .ch-modal-guest-chips {
+      display: flex; gap: 6px; flex-wrap: wrap;
+    }
+    .ch-modal-chip {
+      padding: 5px 11px; border-radius: 20px;
+      font: 600 0.78rem 'Manrope',sans-serif;
+      border: 1.5px solid var(--border);
+      background: var(--bg); color: var(--ink);
+      cursor: pointer; transition: all .14s;
+      white-space: nowrap;
+    }
+    .ch-modal-chip:hover { border-color: var(--rose); color: var(--rose); }
+    .ch-modal-chip.is-active {
+      background: var(--rose); color: #fff; border-color: var(--rose);
+    }
+    .ch-modal-chip-none {
+      font-size: 0.78rem; color: var(--ink-soft); font-style: italic;
+      padding: 5px 0;
+    }
+
     /* Onglets bâtiments */
     .ch-building-tabs {
       display: flex; gap: 6px; margin-bottom: 16px;
@@ -433,6 +464,7 @@
         <span id="chModalTitle" class="ch-modal-title"></span>
         <button id="chModalClose" class="ch-modal-close" type="button">✕ Fermer</button>
       </div>
+      <div id="chModalGuestBar" class="ch-modal-guest-bar"></div>
       <div id="chModalRooms" class="ch-modal-rooms"></div>
     </div>
   </div>
@@ -784,6 +816,7 @@ function renderRooms() {
 
 function renderModalRooms(animate = false) {
   if (!activeBuilding) return;
+  renderModalGuestBar();
   const b   = activeBuilding;
   const occ = getRoomOccupants();
   const container = document.getElementById("chModalRooms");
@@ -885,6 +918,31 @@ function renderHotspots() {
   });
 }
 
+function renderModalGuestBar() {
+  const bar = document.getElementById("chModalGuestBar");
+  if (!bar) return;
+  const unplaced = chGuests.filter(g => g.hebergement && !chAssign[g.id]);
+  let html = `<p class="ch-modal-guest-label">Invité à placer</p><div class="ch-modal-guest-chips">`;
+  if (unplaced.length === 0) {
+    html += `<span class="ch-modal-chip-none">Tous les invités sont placés ✓</span>`;
+  } else {
+    html += unplaced.map(g =>
+      `<button class="ch-modal-chip${selectedGuestId === g.id ? " is-active" : ""}" data-gid="${escHtml(g.id)}">${escHtml(g.name)}</button>`
+    ).join("");
+  }
+  html += `</div>`;
+  bar.innerHTML = html;
+  bar.querySelectorAll(".ch-modal-chip").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const gid = btn.dataset.gid;
+      selectedGuestId = selectedGuestId === gid ? null : gid;
+      renderModalGuestBar();
+      renderModalRooms();
+      renderSidebar();
+    });
+  });
+}
+
 function openBuildingModal(bid) {
   const b = MAP_BUILDINGS.find(x => x.id === bid);
   if (!b) return;
@@ -897,6 +955,7 @@ function openBuildingModal(bid) {
   panel.style.animation = "none";
   void panel.offsetWidth;
   panel.style.animation = "";
+  renderModalGuestBar();
   renderModalRooms(true);
 }
 
