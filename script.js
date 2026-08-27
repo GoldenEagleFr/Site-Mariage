@@ -1707,7 +1707,12 @@ function renderGuests() {
     }).map(g => g.id)
   );
 
-  const mainList = filteredGuests.filter(g => !linkedMinorIds.has(g.id) && !partnerSecondaryIds.has(g.id));
+  const mainList = filteredGuests.filter(g => {
+    if (linkedMinorIds.has(g.id)) return false;
+    if (!partnerSecondaryIds.has(g.id)) return true;
+    // Si le primaire n'est pas dans le filtre actuel, le secondaire apparaît en standalone
+    return !filteredIds.has(g.partnerId);
+  });
   const displayGuests = [];
   for (const g of mainList) {
     displayGuests.push(g);
