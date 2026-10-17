@@ -115,16 +115,48 @@
     .ch-map-hotspots { position: absolute; inset: 0; border-radius: 10px; }
     .ch-map-hotspot {
       position: absolute;
-      cursor: pointer; border-radius: 6px; overflow: hidden;
+      cursor: pointer; border-radius: 6px; overflow: visible;
       transition: transform .25s cubic-bezier(.34,1.56,.64,1), box-shadow .25s ease;
       transform-origin: center; z-index: 1;
     }
-    .ch-map-hotspot:hover { transform: scale(1.1); box-shadow: 0 8px 24px rgba(0,0,0,.45); z-index: 10; }
+    .ch-map-hotspot:hover,
+    .ch-map-hotspot.drag-over { transform: scale(1.1); box-shadow: 0 8px 24px rgba(0,0,0,.45); z-index: 10; }
+    .ch-map-hotspot.drag-over::after {
+      content: "";
+      position: absolute; inset: -3px;
+      border: 2px dashed var(--rose, #f03f59);
+      border-radius: 9px;
+      pointer-events: none;
+      background: rgba(240,63,89,.10);
+    }
     .ch-map-hotspot-bg {
       position: absolute; inset: 0;
       background: url(PLAN-DES-DOMAINES-AQUARELLE.jpg) no-repeat;
       pointer-events: none;
+      border-radius: 5px; overflow: hidden;
     }
+    .ch-hs-badge {
+      position: absolute; top: -8px; right: -8px;
+      min-width: 20px; height: 20px; padding: 0 5px;
+      border-radius: 10px;
+      font-size: 10px; font-weight: 700; line-height: 20px;
+      text-align: center; white-space: nowrap;
+      pointer-events: none; z-index: 5;
+      background: #888; color: #fff;
+      box-shadow: 0 1px 4px rgba(0,0,0,.35);
+      transition: background .2s ease;
+    }
+    .ch-hs-badge.partial { background: var(--rose, #f03f59); }
+    .ch-hs-badge.full { background: #22c55e; }
+    .ch-hs-drop-label {
+      position: absolute; bottom: -24px; left: 50%; transform: translateX(-50%);
+      background: var(--rose, #f03f59); color: #fff;
+      font-size: 10px; font-weight: 700; white-space: nowrap;
+      padding: 2px 7px; border-radius: 4px;
+      pointer-events: none; z-index: 6;
+      opacity: 0; transition: opacity .15s ease;
+    }
+    .ch-map-hotspot.drag-over .ch-hs-drop-label { opacity: 1; }
 
     /* ── Modal bâtiment ──────────────────────────────────────────── */
     .ch-modal {
@@ -693,6 +725,7 @@ function render() {
   renderSidebar();
   renderRooms();
   renderStats();
+  updateHotspotBadges();
   if (pendingFlash) {
     const { roomId, type } = pendingFlash;
     pendingFlash = null;
@@ -763,6 +796,7 @@ function renderSidebar() {
       el.classList.remove("is-dragging");
       dragGuestId = null;
       document.querySelectorAll(".ch-room-card.drag-over").forEach(c => c.classList.remove("drag-over"));
+      document.querySelectorAll(".ch-map-hotspot.drag-over").forEach(h => h.classList.remove("drag-over"));
     });
   });
 }
@@ -776,6 +810,30 @@ function getRoomOccupants() {
     o[rid].push(g);
   }
   return o;
+}
+
+function getBuildingRooms(b) {
+  if (b.chalet) return ROOMS.filter(r => r.chalet === b.chalet);
+  if (b.floors) {
+    const floorIds = new Set(b.floors.map(f => f.id));
+    return ROOMS.filter(r => floorIds.has(r.floor));
+  }
+  return [];
+}
+
+function updateHotspotBadges() {
+  const occ = getRoomOccupants();
+  document.querySelectorAll(".ch-map-hotspot").forEach(el => {
+    const b = MAP_BUILDINGS.find(x => x.id === el.dataset.bid);
+    if (!b) return;
+    const rooms = getBuildingRooms(b);
+    const totalCap = rooms.reduce((s, r) => s + r.capacity, 0);
+    const occupied = rooms.reduce((s, r) => s + (occ[r.id]?.length || 0), 0);
+    const badge = el.querySelector(".ch-hs-badge");
+    if (!badge) return;
+    badge.textContent = `${occupied}/${totalCap}`;
+    badge.className = "ch-hs-badge" + (occupied === 0 ? "" : occupied >= totalCap ? " full" : " partial");
+  });
 }
 
 function renderRooms() {
@@ -878,11 +936,32 @@ function renderHotspots() {
     return `<div class="ch-map-hotspot" data-bid="${escHtml(b.id)}"
       style="left:${b.l}%;top:${b.t}%;width:${b.w}%;height:${b.h}%">
       <div class="ch-map-hotspot-bg" style="background-size:${bsX}% ${bsY}%;background-position:${bpX}% ${bpY}%"></div>
+      <span class="ch-hs-badge">0/0</span>
+      <span class="ch-hs-drop-label">Déposer ici ↓</span>
     </div>`;
   }).join("");
   container.querySelectorAll(".ch-map-hotspot").forEach(el => {
     el.addEventListener("click", () => openBuildingModal(el.dataset.bid));
+    el.addEventListener("dragover", (e) => {
+      if (!dragGuestId) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      el.classList.add("drag-over");
+    });
+    el.addEventListener("dragleave", (e) => {
+      if (!el.contains(e.relatedTarget)) el.classList.remove("drag-over");
+    });
+    el.addEventListener("drop", (e) => {
+      e.preventDefault();
+      el.classList.remove("drag-over");
+      const gid = e.dataTransfer.getData("text/plain") || dragGuestId;
+      if (!gid) return;
+      dragGuestId = null;
+      selectedGuestId = gid;
+      openBuildingModal(el.dataset.bid);
+    });
   });
+  updateHotspotBadges();
 }
 
 function openBuildingModal(bid) {
@@ -897,6 +976,7 @@ function openBuildingModal(bid) {
   panel.style.animation = "none";
   void panel.offsetWidth;
   panel.style.animation = "";
+  if (selectedGuestId) renderSidebar();
   renderModalRooms(true);
 }
 
