@@ -1363,8 +1363,11 @@
       const countEl = document.getElementById("guestDragCount");
       if (!sidebar || !list) return;
 
-      const unplaced = guests.filter(g => !assignments[g.id]);
-      const placed   = guests.filter(g => assignments[g.id]);
+      // Seuls les invités au repas (pas vin d'honneur uniquement)
+      const mealGuests = guests.filter(g => g.attendanceType !== "vin_only");
+      const unplaced = mealGuests.filter(g => !assignments[g.id]);
+      const placed   = mealGuests.filter(g =>  assignments[g.id]);
+      const vinOnlyCount = guests.length - mealGuests.length;
       if (countEl) countEl.textContent = unplaced.length ? `(${unplaced.length})` : "";
 
       list.innerHTML = "";
@@ -1389,7 +1392,7 @@
           dragGuestId = null; dragHoverChair = null;
           item.classList.remove("dragging");
           roomCanvas.style.cursor = "";
-          startAnimLoop(); // laisse le fondu se terminer
+          startAnimLoop();
         });
         item.addEventListener("click", () => {
           selectedGuestId = selectedGuestId === guest.id ? null : guest.id;
@@ -1407,13 +1410,37 @@
           const tName = tables.find(t => t.id === assignments[guest.id])?.name || "?";
           const item = document.createElement("div");
           item.className = "guest-drag-item is-placed";
-          const hdl2 = document.createElement("span"); hdl2.className = "gdi-handle placed"; hdl2.textContent = "✓";
+          item.draggable = true;
+          item.dataset.gid = guest.id;
+          const hdl2 = document.createElement("span"); hdl2.className = "gdi-handle"; hdl2.textContent = "⠿";
           const lbl2 = document.createElement("span"); lbl2.className = "gdi-name"; lbl2.textContent = guest.name;
-          item.appendChild(hdl2); item.appendChild(lbl2);
-          item.title = `→ ${tName} — Cliquer pour retirer`;
+          const tbl2 = document.createElement("span"); tbl2.className = "gdi-table"; tbl2.textContent = tName;
+          item.appendChild(hdl2); item.appendChild(lbl2); item.appendChild(tbl2);
+          item.title = `→ ${tName} — Glisser pour changer de place, cliquer pour retirer`;
+          item.addEventListener("dragstart", (e) => {
+            dragGuestId = guest.id; selectedGuestId = null;
+            e.dataTransfer.setData("text/plain", guest.id);
+            e.dataTransfer.effectAllowed = "move";
+            item.classList.add("dragging");
+            startAnimLoop();
+          });
+          item.addEventListener("dragend", () => {
+            dragGuestId = null; dragHoverChair = null;
+            item.classList.remove("dragging");
+            roomCanvas.style.cursor = "";
+            startAnimLoop();
+          });
           item.addEventListener("click", () => { removeGuestFromTable(guest.id); renderGuestDragSidebar(); });
           list.appendChild(item);
         }
+      }
+
+      if (vinOnlyCount > 0) {
+        const note = document.createElement("div");
+        note.className = "guest-drag-section";
+        note.style.cssText = "opacity:.6;font-style:italic;font-size:0.76rem;";
+        note.textContent = `${vinOnlyCount} invité${vinOnlyCount > 1 ? "s" : ""} vin d'honneur uniquement`;
+        list.appendChild(note);
       }
     }
 

@@ -5551,7 +5551,7 @@ body.dark-mode .guest-host-status { color: #6fcf97; }
   background: rgba(34,197,94,.12);
   color: var(--ink);
   border-color: rgba(34,197,94,.3);
-  cursor: pointer;
+  cursor: grab;
 }
 .guest-drag-item.is-placed:hover {
   background: rgba(34,197,94,.22);
@@ -5570,7 +5570,8 @@ body.dark-mode .guest-host-status { color: #6fcf97; }
 }
 .gdi-handle.placed { color: rgba(34,197,94,0.5); }
 .guest-drag-item.is-selected .gdi-handle { color: rgba(255,255,255,0.6); }
-.gdi-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.gdi-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1; }
+.gdi-table { font-size: 0.7rem; color: var(--ink-soft); white-space: nowrap; flex-shrink: 0; opacity: .75; }
 
 /* ═══════════════════════════════════════════════════════════
    PAIRS (liaisons "toujours ensemble")
