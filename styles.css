@@ -2047,33 +2047,80 @@ body.dark-mode .gsh-count { background: rgba(255,255,255,.1); }
 
 .guest-item {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
-  gap: 5px 8px;
+  gap: 5px 7px;
   padding: 8px 10px;
 }
 
 .guest-item .guest-main {
-  flex: 1 1 auto;
-  min-width: 160px;
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
 }
-
-.guest-item .inline-category,
-.guest-item .inline-status {
-  font-size: 0.78rem;
-  padding: 3px 6px;
-  flex-shrink: 0;
-}
-
-.guest-item .guest-hebergement-label {
-  font-size: 0.75rem;
+.guest-item .guest-main .main-text {
+  display: block;
   white-space: nowrap;
-  flex-shrink: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.guest-item .guest-main .guest-meta {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.guest-item button.danger {
-  margin-left: auto;
+.guest-item .inline-status {
+  font-size: 0.75rem;
+  padding: 3px 5px;
   flex-shrink: 0;
+  border-radius: 8px;
+  border-width: 1px;
+}
+
+/* Statut : select coloré comme un badge */
+.guest-item .inline-status.gs-yes  { background: rgba(47,133,90,.1);  color: #2f855a; border-color: rgba(47,133,90,.3); }
+.guest-item .inline-status.gs-no   { background: rgba(185,28,28,.09); color: #b91c1c; border-color: rgba(185,28,28,.2); }
+.guest-item .inline-status.gs-pend { background: rgba(180,83,9,.09);  color: #b45309; border-color: rgba(180,83,9,.2); }
+
+/* Icône hébergement sur place */
+.guest-heb-btn {
+  font-size: 1rem;
+  line-height: 1;
+  padding: 3px 5px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: none;
+  box-shadow: none;
+  cursor: pointer;
+  transition: opacity .15s, background .15s;
+  flex-shrink: 0;
+  opacity: 0.22;
+  color: var(--ink);
+  font-weight: 400;
+}
+.guest-heb-btn:hover {
+  transform: none;
+  filter: none;
+  box-shadow: none;
+  opacity: 0.6;
+  background: rgba(240,63,89,.06);
+}
+.guest-heb-btn.is-on {
+  opacity: 1;
+  background: rgba(240,63,89,.08);
+  border-color: rgba(240,63,89,.28);
+}
+.guest-heb-btn.is-on:hover {
+  background: rgba(240,63,89,.14);
+}
+
+/* Bouton supprimer compact (×) */
+.guest-item .danger {
+  flex-shrink: 0;
+  padding: 3px 8px;
+  font-size: 1rem;
+  line-height: 1;
 }
 
 .guest-item .guest-rsvp-details {
@@ -5225,53 +5272,26 @@ body.dark-mode .guest-host-status { color: #6fcf97; }
     overflow-x: hidden;
   }
   /* Budget items : le grid s'adapte à la largeur disponible */
-  /* Guest items : vue carte empilée */
+  /* Guest items : vue carte — nom pleine largeur, contrôles en dessous */
   .guest-item {
     min-width: 0 !important;
+    flex-wrap: wrap !important;
   }
   .guest-item .guest-main {
     flex: 0 0 100%;
     min-width: 0;
   }
-  .guest-item .inline-category,
   .guest-item .inline-status {
     flex: 1 1 auto;
     font-size: 0.76rem;
     padding: 3px 5px;
     min-width: 0;
   }
-  .guest-item .guest-hebergement-label {
-    font-size: 0.74rem;
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
-  .guest-item .guest-edit-btn {
-    flex-shrink: 0;
-  }
-  .guest-item button.danger {
-    margin-left: auto;
-    flex-shrink: 0;
-    font-size: 0;
-    width: 30px;
-    height: 30px;
-    padding: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 6px;
-  }
-  .guest-item button.danger::before {
-    content: "✕";
-    font-size: 13px;
-    font-weight: 700;
-  }
-  .guest-item .guest-color-group-wrap {
-    flex: 0 0 100%;
-  }
+  .guest-item .guest-edit-btn { flex-shrink: 0; }
+  .guest-item button.danger   { margin-left: auto; flex-shrink: 0; }
+  .guest-item .guest-color-group-wrap { flex: 0 0 100%; }
   .guest-item .guest-item-edit,
-  .guest-item .guest-rsvp-details {
-    flex: 0 0 100%;
-  }
+  .guest-item .guest-rsvp-details { flex: 0 0 100%; }
   /* Budget item-edit : bouton save sur toute la largeur */
   .budget-item-edit {
     grid-template-columns: 1fr 1fr;
@@ -5464,20 +5484,14 @@ body.dark-mode .guest-host-status { color: #6fcf97; }
 
   /* ── Invités : contrôles en ligne équilibrée ────────────────── */
 
-  /* Sélecteurs : base 0 → croissent équitablement, pas de min naturel */
-  .guest-item .inline-category,
+  /* Statut : flex pour qu'il grandisse à côté du bouton heb */
   .guest-item .inline-status {
     flex: 1 1 0 !important;
     min-width: 50px !important;
     font-size: 0.73rem !important;
   }
 
-  /* Hébergement : compact */
-  .guest-item .guest-hebergement-label {
-    font-size: 0.70rem !important;
-  }
-
-  /* Bouton édition : même taille que ✕, compact */
+  /* Bouton édition compact */
   .guest-item .guest-edit-btn {
     flex-shrink: 0 !important;
     width: 30px !important;
@@ -5489,7 +5503,7 @@ body.dark-mode .guest-host-status { color: #6fcf97; }
     justify-content: center !important;
   }
 
-  /* Supprimer : annule le margin-left:auto (plus de grand vide au milieu) */
+  /* Supprimer compact */
   .guest-item button.danger {
     margin-left: 0 !important;
   }

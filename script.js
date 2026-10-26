@@ -1817,11 +1817,12 @@ function renderGuests() {
       });
     }
 
-    const hebergCheck = node.querySelector(".hebergement-check");
-    if (hebergCheck) {
-      hebergCheck.checked = Boolean(guest.hebergement);
-      hebergCheck.addEventListener("change", () => {
-        guest.hebergement = hebergCheck.checked;
+    const hebBtn = node.querySelector(".guest-heb-btn");
+    if (hebBtn) {
+      hebBtn.classList.toggle("is-on", Boolean(guest.hebergement));
+      hebBtn.addEventListener("click", () => {
+        guest.hebergement = !guest.hebergement;
+        hebBtn.classList.toggle("is-on", guest.hebergement);
         refresh({ persist: false });
         persistNow();
       });
@@ -1842,6 +1843,10 @@ function renderGuests() {
     }
 
     const statusSelect = node.querySelector("select.inline-status");
+    const applyStatusClass = (s) => {
+      statusSelect.classList.remove("gs-yes", "gs-no", "gs-pend");
+      statusSelect.classList.add(s === "yes" ? "gs-yes" : s === "no" ? "gs-no" : "gs-pend");
+    };
     if (guest.isHost) {
       statusSelect.replaceWith(Object.assign(document.createElement("span"), {
         className: "guest-host-status",
@@ -1849,8 +1854,10 @@ function renderGuests() {
       }));
     } else {
       statusSelect.value = VALID_GUEST_STATUS.has(guest.status) ? guest.status : "pending";
+      applyStatusClass(statusSelect.value);
       statusSelect.addEventListener("change", () => {
         guest.status = statusSelect.value;
+        applyStatusClass(statusSelect.value);
         refresh();
       });
     }
