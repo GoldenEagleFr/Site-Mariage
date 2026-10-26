@@ -367,9 +367,26 @@
               </div>
             </div>
 
-            <!-- ── Liste pleine largeur ──────────────────────────── -->
+            <!-- ── Liste deux colonnes ─────────────────────────── -->
             <div class="panel-list">
-              <ul id="guestList" class="data-list"></ul>
+              <div class="guest-list-cols" id="guestList">
+                <div class="guest-list-col" id="guestColRepas">
+                  <div class="guest-col-head">
+                    <span class="gsh-icon">🍽️</span>
+                    <span class="gsh-label">Vin d'honneur + repas</span>
+                    <span class="gsh-count" id="guestCountRepas"></span>
+                  </div>
+                  <ul id="guestListRepas" class="data-list"></ul>
+                </div>
+                <div class="guest-list-col" id="guestColVinOnly">
+                  <div class="guest-col-head">
+                    <span class="gsh-icon">🥂</span>
+                    <span class="gsh-label">Vin d'honneur uniquement</span>
+                    <span class="gsh-count" id="guestCountVinOnly"></span>
+                  </div>
+                  <ul id="guestListVinOnly" class="data-list"></ul>
+                </div>
+              </div>
             </div>
           </section>
 

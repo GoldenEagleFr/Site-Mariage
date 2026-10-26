@@ -194,7 +194,13 @@ const guestName = document.getElementById("guestName");
 const guestCategory = document.getElementById("guestCategory");
 const guestAttendanceType = document.getElementById("guestAttendanceType");
 const guestStatus = document.getElementById("guestStatus");
-const guestList = document.getElementById("guestList");
+const guestList        = document.getElementById("guestList");
+const guestListRepas   = document.getElementById("guestListRepas");
+const guestListVinOnly = document.getElementById("guestListVinOnly");
+const guestColRepas    = document.getElementById("guestColRepas");
+const guestColVinOnly  = document.getElementById("guestColVinOnly");
+const guestCountRepas  = document.getElementById("guestCountRepas");
+const guestCountVinOnly= document.getElementById("guestCountVinOnly");
 const guestSearch = document.getElementById("guestSearch");
 const guestFilter = document.getElementById("guestFilter");
 const guestAttendanceFilter = document.getElementById("guestAttendanceFilter");
@@ -1593,14 +1599,22 @@ function renderTasks() {
 }
 
 function renderGuests() {
-  if (!guestList || !guestTemplate) {
+  if (!guestListRepas || !guestListVinOnly || !guestTemplate) {
     return;
   }
 
-  guestList.innerHTML = "";
+  guestListRepas.innerHTML = "";
+  guestListVinOnly.innerHTML = "";
   const search = toSearchKey(guestSearch?.value ?? "");
   const mode = guestFilter?.value ?? "all";
   const attendanceMode = guestAttendanceFilter?.value ?? "all";
+
+  // Visibilité des colonnes selon le filtre actif
+  const showRepas   = attendanceMode === "all" || attendanceMode === "vin_repas";
+  const showVinOnly = attendanceMode === "all" || attendanceMode === "vin_only";
+  if (guestColRepas)   guestColRepas.classList.toggle("is-hidden", !showRepas);
+  if (guestColVinOnly) guestColVinOnly.classList.toggle("is-hidden", !showVinOnly);
+  if (guestList)       guestList.classList.toggle("single-col", !showRepas || !showVinOnly);
   const statusRank     = { yes: 0, no: 1, pending: 2 };
   const attendanceRank = { vin_repas: 0, vin_only: 1 };
   const orderedGuests = [...state.guests].sort((a, b) => {
@@ -1675,10 +1689,14 @@ function renderGuests() {
   }
 
   if (filteredGuests.length === 0) {
-    const emptyNode = document.createElement("li");
-    emptyNode.className = "list-empty";
-    emptyNode.textContent = state.guests.length ? "Aucune invitation pour ce filtre." : "Aucune invitation pour le moment.";
-    guestList.appendChild(emptyNode);
+    const makeEmpty = (list) => {
+      const li = document.createElement("li");
+      li.className = "list-empty";
+      li.textContent = state.guests.length ? "Aucune invitation pour ce filtre." : "Aucune invitation pour le moment.";
+      list.appendChild(li);
+    };
+    if (showRepas)   makeEmpty(guestListRepas);
+    if (showVinOnly) makeEmpty(guestListVinOnly);
     return;
   }
 
@@ -1744,25 +1762,19 @@ function renderGuests() {
     displayGuests.push(...minors);
   }
 
-  // Compter par section pour les headers
+  // Compter par colonne + mettre à jour les compteurs des en-têtes
   const repasCount   = filteredGuests.filter(g => normalizeGuestAttendanceType(g.attendanceType) !== "vin_only").length;
   const vinOnlyCount = filteredGuests.filter(g => normalizeGuestAttendanceType(g.attendanceType) === "vin_only").length;
-  let lastRenderedSection = null;
+  if (guestCountRepas)   guestCountRepas.textContent   = repasCount   ? String(repasCount)   : "";
+  if (guestCountVinOnly) guestCountVinOnly.textContent = vinOnlyCount ? String(vinOnlyCount) : "";
+
+  let currentTargetList = guestListRepas;
 
   for (const [index, guest] of displayGuests.entries()) {
-    // Header de section (repas / vin seul) — uniquement quand les deux types sont présents
-    if (!guest._isPartnerOf && !guest.isHost && attendanceMode === "all" && repasCount > 0 && vinOnlyCount > 0) {
-      const section = normalizeGuestAttendanceType(guest.attendanceType);
-      if (section !== lastRenderedSection) {
-        lastRenderedSection = section;
-        const sep = document.createElement("li");
-        sep.className = "guest-section-header";
-        const count = section === "vin_only" ? vinOnlyCount : repasCount;
-        sep.innerHTML = `<span class="gsh-icon">${section === "vin_only" ? "🥂" : "🍽️"}</span>`
-          + `<span class="gsh-label">${section === "vin_only" ? "Vin d'honneur uniquement" : "Vin d'honneur + repas"}</span>`
-          + `<span class="gsh-count">${count} invité${count > 1 ? "s" : ""}</span>`;
-        guestList.appendChild(sep);
-      }
+    // Cibler la bonne colonne (les secondaires / mineurs suivent le primaire)
+    if (!guest._isPartnerOf && !guest.isHost) {
+      currentTargetList = normalizeGuestAttendanceType(guest.attendanceType) === "vin_only"
+        ? guestListVinOnly : guestListRepas;
     }
 
     const node = guestTemplate.content.firstElementChild.cloneNode(true);
@@ -2041,7 +2053,7 @@ function renderGuests() {
       }
     }
 
-    guestList.appendChild(node);
+    currentTargetList.appendChild(node);
   }
 }
 
@@ -2178,9 +2190,8 @@ function clearPrivateUi() {
   if (taskList) {
     taskList.innerHTML = "";
   }
-  if (guestList) {
-    guestList.innerHTML = "";
-  }
+  if (guestListRepas)   guestListRepas.innerHTML = "";
+  if (guestListVinOnly) guestListVinOnly.innerHTML = "";
   if (taskSearch) {
     taskSearch.value = "";
   }
