@@ -1985,6 +1985,35 @@ button:hover {
   gap: 11px;
 }
 
+/* ── Séparateurs de section dans la liste invités ──────── */
+.guest-section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 4px 4px;
+  margin-top: 4px;
+  font-size: 0.73rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--ink-soft);
+  border-bottom: 1.5px solid var(--line);
+}
+.guest-section-header:first-child { margin-top: 0; }
+.gsh-icon  { font-size: 1rem; line-height: 1; }
+.gsh-label { flex: 1; }
+.gsh-count {
+  font-size: 0.7rem;
+  font-weight: 700;
+  background: var(--card-alt, rgba(0,0,0,.06));
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+@media (prefers-color-scheme: dark) {
+  .gsh-count { background: rgba(255,255,255,.1); }
+}
+body.dark-mode .gsh-count { background: rgba(255,255,255,.1); }
+
 .data-item {
   border: 1px solid rgba(240, 63, 89, 0.42);
   border-radius: 14px;

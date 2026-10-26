@@ -1601,15 +1601,19 @@ function renderGuests() {
   const search = toSearchKey(guestSearch?.value ?? "");
   const mode = guestFilter?.value ?? "all";
   const attendanceMode = guestAttendanceFilter?.value ?? "all";
-  const statusRank = { yes: 0, no: 1, pending: 2 };
+  const statusRank     = { yes: 0, no: 1, pending: 2 };
+  const attendanceRank = { vin_repas: 0, vin_only: 1 };
   const orderedGuests = [...state.guests].sort((a, b) => {
     // Les mariés toujours en tête
     if (a.isHost && !b.isHost) return -1;
     if (!a.isHost && b.isHost) return 1;
+    // Repas avant vin d'honneur seul
+    const aType = normalizeGuestAttendanceType(a.attendanceType);
+    const bType = normalizeGuestAttendanceType(b.attendanceType);
+    const attDiff = (attendanceRank[aType] ?? 0) - (attendanceRank[bType] ?? 0);
+    if (attDiff !== 0) return attDiff;
     const rankDiff = (statusRank[a.status] ?? 99) - (statusRank[b.status] ?? 99);
-    if (rankDiff !== 0) {
-      return rankDiff;
-    }
+    if (rankDiff !== 0) return rankDiff;
     return a.name.localeCompare(b.name, "fr", { sensitivity: "base" });
   });
 
@@ -1740,7 +1744,27 @@ function renderGuests() {
     displayGuests.push(...minors);
   }
 
+  // Compter par section pour les headers
+  const repasCount   = filteredGuests.filter(g => normalizeGuestAttendanceType(g.attendanceType) !== "vin_only").length;
+  const vinOnlyCount = filteredGuests.filter(g => normalizeGuestAttendanceType(g.attendanceType) === "vin_only").length;
+  let lastRenderedSection = null;
+
   for (const [index, guest] of displayGuests.entries()) {
+    // Header de section (repas / vin seul) — uniquement quand les deux types sont présents
+    if (!guest._isPartnerOf && !guest.isHost && attendanceMode === "all" && repasCount > 0 && vinOnlyCount > 0) {
+      const section = normalizeGuestAttendanceType(guest.attendanceType);
+      if (section !== lastRenderedSection) {
+        lastRenderedSection = section;
+        const sep = document.createElement("li");
+        sep.className = "guest-section-header";
+        const count = section === "vin_only" ? vinOnlyCount : repasCount;
+        sep.innerHTML = `<span class="gsh-icon">${section === "vin_only" ? "🥂" : "🍽️"}</span>`
+          + `<span class="gsh-label">${section === "vin_only" ? "Vin d'honneur uniquement" : "Vin d'honneur + repas"}</span>`
+          + `<span class="gsh-count">${count} invité${count > 1 ? "s" : ""}</span>`;
+        guestList.appendChild(sep);
+      }
+    }
+
     const node = guestTemplate.content.firstElementChild.cloneNode(true);
     node.style.setProperty("--stagger", String(index));
     if (guest._isPartnerOf)              node.classList.add("guest-item-partner");
