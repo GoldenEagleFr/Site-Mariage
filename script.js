@@ -1601,7 +1601,7 @@ function renderGuests() {
   const search = toSearchKey(guestSearch?.value ?? "");
   const mode = guestFilter?.value ?? "all";
   const attendanceMode = guestAttendanceFilter?.value ?? "all";
-  const statusRank = { pending: 0, yes: 1, no: 2 };
+  const statusRank = { yes: 0, no: 1, pending: 2 };
   const orderedGuests = [...state.guests].sort((a, b) => {
     // Les mariés toujours en tête
     if (a.isHost && !b.isHost) return -1;

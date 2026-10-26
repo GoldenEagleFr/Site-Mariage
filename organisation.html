@@ -271,10 +271,10 @@
               <p class="panel-kicker">Invitations</p>
               <h2>Invités</h2>
             </div>
-            <div class="panel-two-col">
-              <div class="panel-controls">
-
-                <!-- Badges statut — mobile uniquement (Option B) -->
+            <!-- ── Header filtres / stats ───────────────────────── -->
+            <div class="guest-header">
+              <div class="guest-header-row">
+                <!-- Badges statut (toujours visibles) -->
                 <div class="guest-stat-badges">
                   <div class="gsb-badge gsb-yes">
                     <span class="gsb-n" id="guestBadgeYes">0</span>
@@ -289,14 +289,11 @@
                     <span class="gsb-l">En attente</span>
                   </div>
                 </div>
-
-                <!-- Recherche en premier -->
+                <!-- Recherche -->
                 <input id="guestSearch" type="text" placeholder="🔍 Rechercher un invité…" class="guest-search-input">
-
-                <!-- Bouton toggle filtres — mobile uniquement -->
+                <!-- Toggle filtres (mobile) -->
                 <button type="button" id="guestFiltersToggle" class="guest-filters-toggle">Filtres ▾</button>
-
-                <!-- Filtres compacts -->
+                <!-- Filtres -->
                 <div class="guest-filters-compact" id="guestFiltersPanel">
                   <select id="guestFilter">
                     <option value="all">Tous statuts</option>
@@ -318,17 +315,7 @@
                     <option value="witness">👑 Témoins</option>
                   </select>
                 </div>
-
-                <!-- Stats -->
-                <p id="guestStats" class="list-stats">0 invitation</p>
-                <div class="guest-split-stats" aria-live="polite">
-                  <p id="guestCategoryStats" class="list-stats">Adultes: 0 — Enfants: 0</p>
-                  <p id="guestVinStats" class="list-stats">Vin d'honneur: 0 invitation - 0 pers.</p>
-                  <p id="guestMealStats" class="list-stats">Repas: 0 invitation - 0 pers.</p>
-                  <p id="guestHebergStats" class="list-stats">Hébergement: 0 pers. — 0 €</p>
-                </div>
-
-                <!-- Formulaire d'ajout (replié par défaut) -->
+                <!-- Formulaire d'ajout -->
                 <details class="guest-add-details">
                   <summary>+ Ajouter un invité</summary>
                   <form id="guestForm" class="row-form" style="margin-top:8px;">
@@ -362,17 +349,27 @@
                     <input type="file" id="csvFileInput" accept=".csv,.txt" style="display:none">
                   </div>
                 </details>
-
-                <!-- Actions secondaires -->
-                <div class="list-tools-actions" style="margin-top:6px;">
+                <!-- Actions -->
+                <div class="list-tools-actions">
                   <button id="btnAddHosts" type="button" class="ghost-action">💍 Ajouter les mariés</button>
                   <button id="btnExportGuestsCSV" type="button" class="ghost-action">⬇ Exporter CSV</button>
                 </div>
+              </div>
+              <!-- Stats détaillées -->
+              <div class="guest-header-stats" aria-live="polite">
+                <p id="guestStats" class="list-stats"></p>
+                <div class="guest-split-stats">
+                  <p id="guestCategoryStats" class="list-stats"></p>
+                  <p id="guestVinStats" class="list-stats"></p>
+                  <p id="guestMealStats" class="list-stats"></p>
+                  <p id="guestHebergStats" class="list-stats"></p>
+                </div>
+              </div>
+            </div>
 
-              </div>
-              <div class="panel-list">
-                <ul id="guestList" class="data-list"></ul>
-              </div>
+            <!-- ── Liste pleine largeur ──────────────────────────── -->
+            <div class="panel-list">
+              <ul id="guestList" class="data-list"></ul>
             </div>
           </section>
 

@@ -1764,8 +1764,98 @@ body::after {
   cursor: pointer;
 }
 
-/* ── Badges statut invités — masqués sur desktop ──────── */
-.guest-stat-badges { display: none; }
+/* ── Header invités ──────────────────────────────────── */
+.guest-header {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: 12px 14px 10px;
+  margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.guest-header-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+}
+
+.guest-header-row .guest-search-input {
+  flex: 1 1 180px;
+  min-width: 120px;
+  margin-bottom: 0;
+  padding: 7px 12px;
+  font-size: 0.85rem;
+}
+
+.guest-header-row .guest-filters-compact {
+  flex: 2 1 260px;
+  margin-bottom: 0;
+  flex-wrap: nowrap;
+}
+
+.guest-header-row .guest-add-details {
+  margin-top: 0;
+  flex-shrink: 0;
+}
+
+.guest-header-row .list-tools-actions {
+  margin-top: 0;
+  flex-shrink: 0;
+}
+
+.guest-header-stats {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 3px 16px;
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+}
+
+.guest-header-stats .list-stats { margin: 0; }
+
+.guest-header-stats .guest-split-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 14px;
+  margin: 0;
+}
+
+/* ── Badges statut (chips compacts, toujours visibles) ── */
+.guest-stat-badges {
+  display: flex;
+  gap: 5px;
+  flex-shrink: 0;
+  align-items: center;
+}
+
+.gsb-badge {
+  border-radius: 20px;
+  padding: 3px 9px 3px 7px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid transparent;
+}
+
+.gsb-badge .gsb-n {
+  font-size: 0.95rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.gsb-badge .gsb-l {
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+
+.gsb-yes  { background: rgba(47,133,90,.1);  color: #2f855a; border-color: rgba(47,133,90,.22); }
+.gsb-no   { background: rgba(185,28,28,.09); color: #b91c1c; border-color: rgba(185,28,28,.18); }
+.gsb-pend { background: rgba(180,83,9,.09);  color: #b45309; border-color: rgba(180,83,9,.18); }
 
 /* ── Toggle filtres — masqué sur desktop ─────────────── */
 .guest-filters-toggle { display: none; }
@@ -3902,12 +3992,6 @@ body.rsvp-page .kicker {
   gap: 14px;
 }
 
-/* Colonne gauche plus étroite pour l'onglet invités (desktop uniquement) */
-@media (min-width: 601px) {
-  #adminTabGuests .panel-two-col {
-    grid-template-columns: minmax(240px, 0.55fr) minmax(0, 1fr);
-  }
-}
 
 /* ── RSVP extra fields ─────────────────────────────────────── */
 .rsvp-extra-fields {
@@ -5300,40 +5384,14 @@ body.dark-mode .guest-host-status { color: #6fcf97; }
     max-height: none !important;
   }
 
-  /* ── Invités : badges statut (Option B) ─────────────────────── */
-  .guest-stat-badges {
-    display: flex !important;
-    gap: 6px;
-    margin-bottom: 6px;
-  }
-  .gsb-badge {
-    flex: 1;
-    border-radius: 10px;
-    padding: 9px 6px 7px;
-    text-align: center;
-    border: 1px solid transparent;
-  }
-  .gsb-badge .gsb-n {
-    display: block;
-    font-size: 1.25rem;
-    font-weight: 800;
-    line-height: 1.1;
-    margin-bottom: 3px;
-  }
-  .gsb-badge .gsb-l {
-    font-size: 0.62rem;
-    font-weight: 700;
-  }
-  .gsb-yes  { background: rgba(47,133,90,.1);   color: #2f855a; border-color: rgba(47,133,90,.22); }
-  .gsb-no   { background: rgba(185,28,28,.09);  color: #b91c1c; border-color: rgba(185,28,28,.18); }
-  .gsb-pend { background: rgba(180,83,9,.09);   color: #b45309; border-color: rgba(180,83,9,.18); }
+  /* ── Header invités : réorganisation mobile ──────────────────── */
+  .guest-header { gap: 7px; padding: 10px 12px 9px; }
 
   /* ── Filtres : masqués par défaut, toggle pour ouvrir ────────── */
   .guest-filters-toggle {
-    display: block !important;
-    width: 100%;
-    text-align: left;
-    padding: 7px 11px;
+    display: flex !important;
+    align-items: center;
+    padding: 6px 10px;
     border-radius: 8px;
     border: 1px solid var(--line);
     background: var(--card);
@@ -5341,19 +5399,20 @@ body.dark-mode .guest-host-status { color: #6fcf97; }
     font-weight: 700;
     color: var(--ink-soft);
     cursor: pointer;
-    margin-bottom: 4px;
+    flex-shrink: 0;
   }
-  .guest-filters-compact {
+  .guest-header-row .guest-filters-compact {
     display: none !important;
-    margin-bottom: 4px !important;
+    flex: 1 0 100% !important;
+    flex-wrap: wrap !important;
+    margin-bottom: 0 !important;
   }
-  .guest-filters-compact.gsf-open {
+  .guest-header-row .guest-filters-compact.gsf-open {
     display: flex !important;
   }
 
-  /* ── Stats verbeux masquées (remplacées par les badges) ──────── */
-  #guestStats,
-  .guest-split-stats {
+  /* ── Stats masquées sur mobile (badges suffisent) ────────────── */
+  .guest-header-stats {
     display: none !important;
   }
 
