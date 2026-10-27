@@ -1312,6 +1312,21 @@ body::after {
 }
 
 /* ── Budget : chips filtre soldé ───────────────────────────────── */
+.budget-list-sticky-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: linear-gradient(150deg, rgba(255,255,255,.98), rgba(255,230,225,.95));
+  padding-bottom: 8px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid rgba(240,63,89,.12);
+}
+
+body.dark-mode .budget-list-sticky-head {
+  background: rgba(28,8,14,.97);
+  border-bottom-color: rgba(200,60,80,.18);
+}
+
 .budget-filter-chips {
   display: flex;
   gap: 5px;

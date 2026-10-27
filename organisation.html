@@ -232,24 +232,26 @@
                 </div>
               </div>
               <div class="panel-list">
-                <div class="list-tools">
-                  <input id="budgetSearch" type="text" placeholder="🔍 Rechercher un poste…" style="min-width:0">
-                  <select id="budgetCategoryFilter">
-                    <option value="all">Toutes les catégories</option>
-                    <option value="__none__">Sans catégorie</option>
-                  </select>
-                  <select id="budgetSoldeFilter" style="display:none" aria-hidden="true">
-                    <option value="all">Soldé et non soldé</option>
-                    <option value="unsettled">Non soldé</option>
-                    <option value="settled">Soldé</option>
-                  </select>
-                  <div class="budget-filter-chips" id="budgetSoldeChips">
-                    <button type="button" class="budget-filter-chip is-active" data-solde="all">Tout</button>
-                    <button type="button" class="budget-filter-chip" data-solde="unsettled">Non soldé</button>
-                    <button type="button" class="budget-filter-chip" data-solde="settled">Soldé ✓</button>
+                <div class="budget-list-sticky-head">
+                  <div class="list-tools">
+                    <input id="budgetSearch" type="text" placeholder="🔍 Rechercher un poste…" style="min-width:0">
+                    <select id="budgetCategoryFilter">
+                      <option value="all">Toutes les catégories</option>
+                      <option value="__none__">Sans catégorie</option>
+                    </select>
+                    <select id="budgetSoldeFilter" style="display:none" aria-hidden="true">
+                      <option value="all">Soldé et non soldé</option>
+                      <option value="unsettled">Non soldé</option>
+                      <option value="settled">Soldé</option>
+                    </select>
+                    <div class="budget-filter-chips" id="budgetSoldeChips">
+                      <button type="button" class="budget-filter-chip is-active" data-solde="all">Tout</button>
+                      <button type="button" class="budget-filter-chip" data-solde="unsettled">Non soldé</button>
+                      <button type="button" class="budget-filter-chip" data-solde="settled">Soldé ✓</button>
+                    </div>
                   </div>
+                  <p id="budgetFilterStats" class="list-stats"></p>
                 </div>
-                <p id="budgetFilterStats" class="list-stats"></p>
                 <ul id="budgetList" class="data-list"></ul>
               </div>
             </div>
