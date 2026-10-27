@@ -2088,7 +2088,7 @@ body.dark-mode .gsh-count { background: rgba(255,255,255,.1); }
 .guest-item .inline-status.gs-no   { background: rgba(185,28,28,.09); color: #b91c1c; border-color: rgba(185,28,28,.2); }
 .guest-item .inline-status.gs-pend { background: rgba(180,83,9,.09);  color: #b45309; border-color: rgba(180,83,9,.2); }
 
-/* Icône hébergement sur place */
+/* Icône hébergement sur place — 3 états */
 .guest-heb-btn {
   font-size: 1rem;
   line-height: 1;
@@ -2098,11 +2098,12 @@ body.dark-mode .gsh-count { background: rgba(255,255,255,.1); }
   background: none;
   box-shadow: none;
   cursor: pointer;
-  transition: opacity .15s, background .15s;
+  transition: opacity .15s, background .15s, border-color .15s;
   flex-shrink: 0;
   opacity: 0.22;
   color: var(--ink);
   font-weight: 400;
+  position: relative;
 }
 .guest-heb-btn:hover {
   transform: none;
@@ -2111,13 +2112,75 @@ body.dark-mode .gsh-count { background: rgba(255,255,255,.1); }
   opacity: 0.6;
   background: rgba(240,63,89,.06);
 }
-.guest-heb-btn.is-on {
+/* Samedi seulement (1 nuit) */
+.guest-heb-btn.is-sat {
   opacity: 1;
-  background: rgba(240,63,89,.08);
-  border-color: rgba(240,63,89,.28);
+  background: rgba(180,83,9,.09);
+  border-color: rgba(180,83,9,.35);
+  color: #b45309;
 }
-.guest-heb-btn.is-on:hover {
-  background: rgba(240,63,89,.14);
+.guest-heb-btn.is-sat:hover { background: rgba(180,83,9,.15); }
+/* Vendredi + Samedi (2 nuits) */
+.guest-heb-btn.is-fri-sat {
+  opacity: 1;
+  background: rgba(240,63,89,.1);
+  border-color: rgba(240,63,89,.38);
+  color: var(--rose);
+}
+.guest-heb-btn.is-fri-sat::after {
+  content: "2";
+  font-size: 0.55rem;
+  font-weight: 800;
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  line-height: 1;
+}
+.guest-heb-btn.is-fri-sat:hover { background: rgba(240,63,89,.16); }
+
+/* ── Question posée par l'invité ─────────────────────────── */
+.guest-question-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  flex: 0 0 100%;
+  padding: 6px 8px;
+  margin-top: 4px;
+  border-radius: 7px;
+  border: 1px solid rgba(240,63,89,.22);
+  background: rgba(255,240,238,.6);
+  font-size: 0.78rem;
+  flex-wrap: wrap;
+}
+.guest-question-text {
+  flex: 1 1 0;
+  min-width: 0;
+  color: var(--ink);
+  line-height: 1.4;
+  word-break: break-word;
+}
+.guest-question-check-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.guest-question-check-label input { accent-color: #2f855a; }
+.guest-question-row.is-answered {
+  border-color: rgba(47,133,90,.3);
+  background: rgba(220,252,231,.5);
+}
+.guest-question-row.is-answered .guest-question-text {
+  opacity: 0.6;
+  text-decoration: line-through;
+}
+.guest-question-row.is-answered .guest-question-check-label {
+  color: #2f855a;
 }
 
 /* Bouton supprimer compact (×) */

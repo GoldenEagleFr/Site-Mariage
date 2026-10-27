@@ -636,7 +636,7 @@ async function loadData() {
     const r = await fetch(SERVER_ENDPOINT, { cache: "no-store", headers: { "X-Admin-Key": chAdminToken } });
     if (!r.ok) return;
     const data = await r.json();
-    chGuests = (data.guests || []).filter(g => !g.isHost);
+    chGuests = (data.guests || []);
     chAssign = data.roomAssignments || {};
     lastKnownUpdatedAt = data.updatedAt || 0;
     render();
@@ -687,7 +687,7 @@ function startSyncPoll() {
       if (!r.ok) return;
       const data = await r.json();
       if ((data.updatedAt || 0) > lastKnownUpdatedAt) {
-        chGuests = (data.guests || []).filter(g => !g.isHost);
+        chGuests = (data.guests || []);
         chAssign = data.roomAssignments || {};
         lastKnownUpdatedAt = data.updatedAt;
         render();
@@ -749,7 +749,7 @@ function guestCatLabel(g) {
 
 function renderSidebar() {
   const search = (chGuestSearch?.value || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
-  const hebergGuests = chGuests.filter(g => g.hebergement);
+  const hebergGuests = chGuests.filter(g => g.hebergement || g.isHost);
 
   const filtered = hebergGuests.filter(g => {
     if (!search) return true;

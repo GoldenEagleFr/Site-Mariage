@@ -518,12 +518,13 @@ function bindPlannerEvents() {
         partySize: 1,
         status: VALID_GUEST_STATUS.has(status) ? status : "pending",
         rsvpToken: createGuestToken(),
-        hebergement: false,
+        hebergement: null,
         hebergementInfo: false,
         rsvpSubmittedAt: 0,
         musicSuggestion: "",
         allergies: "",
         otherQuestion: "",
+        otherQuestionAnswered: false,
         parentIds: [parentId1, parentId2].filter(Boolean),
         colorGroupId: null,
         partnerId: partnerId || null,
@@ -581,12 +582,13 @@ function bindPlannerEvents() {
             partySize: 1,
             status,
             rsvpToken: createGuestToken(),
-            hebergement: false,
+            hebergement: null,
             hebergementInfo: false,
             rsvpSubmittedAt: 0,
             musicSuggestion: "",
             allergies: "",
             otherQuestion: "",
+            otherQuestionAnswered: false,
             parentIds: [],
             colorGroupId: null,
           });
@@ -659,7 +661,7 @@ function bindPlannerEvents() {
     if (!isAdminUnlocked) return;
     const alreadyHasHosts = state.guests.some((g) => g.isHost);
     if (alreadyHasHosts) return;
-    const hostBase = { groupType: "single", attendanceType: "vin_repas", partySize: 1, status: "yes", isHost: true, hebergement: false, hebergementInfo: false, rsvpSubmittedAt: 0, guestCategory: "adult", musicSuggestion: "", allergies: "", otherQuestion: "", colorGroupId: null, partnerId: null, isWitness: false };
+    const hostBase = { groupType: "single", attendanceType: "vin_repas", partySize: 1, status: "yes", isHost: true, hebergement: null, hebergementInfo: false, rsvpSubmittedAt: 0, guestCategory: "adult", musicSuggestion: "", allergies: "", otherQuestion: "", otherQuestionAnswered: false, colorGroupId: null, partnerId: null, isWitness: false };
     state.guests.unshift({ ...hostBase, id: createId(), name: "Le marié", rsvpToken: createGuestToken() });
     state.guests.unshift({ ...hostBase, id: createId(), name: "La mariée", rsvpToken: createGuestToken() });
     refresh();
@@ -1683,9 +1685,13 @@ function renderGuests() {
   }
   if (guestHebergStats) {
     const hebergGuests = state.guests.filter((g) => g.hebergement && g.status === "yes");
+    const friSatCount = hebergGuests.filter(g => g.hebergement === "fri_sat").length;
+    const satCount    = hebergGuests.filter(g => g.hebergement === "sat").length;
     const hebergPeople = hebergGuests.reduce((sum, g) => sum + normalizeGuestPartySize(g.partySize, g.groupType), 0);
-    const hebergRevenue = hebergGuests.length * 75;
-    guestHebergStats.textContent = `Hébergement: ${hebergGuests.length} foyer(s) - ${hebergPeople} pers. — ${formatMoney(hebergRevenue)}`;
+    const parts = [];
+    if (friSatCount) parts.push(`${friSatCount} Ven+Sam`);
+    if (satCount)    parts.push(`${satCount} Sam`);
+    guestHebergStats.textContent = `Hébergement: ${hebergGuests.length} foyer(s) [${parts.join(", ") || "—"}] - ${hebergPeople} pers.`;
   }
 
   if (filteredGuests.length === 0) {
@@ -1780,6 +1786,7 @@ function renderGuests() {
     }
 
     const colIdx = currentTargetList === guestListRepas ? staggerRepas++ : staggerVinOnly++;
+    const realGuest = state.guests.find(g => g.id === guest.id) ?? guest;
     const node = guestTemplate.content.firstElementChild.cloneNode(true);
     node.style.setProperty("--stagger", String(colIdx));
     if (guest._isPartnerOf)              node.classList.add("guest-item-partner");
@@ -1822,10 +1829,18 @@ function renderGuests() {
 
     const hebBtn = node.querySelector(".guest-heb-btn");
     if (hebBtn) {
-      hebBtn.classList.toggle("is-on", Boolean(guest.hebergement));
+      const HEB_CYCLE = { "null": "fri_sat", "fri_sat": "sat", "sat": null };
+      const HEB_TITLE = { "fri_sat": "Vendredi + Samedi", "sat": "Samedi seulement", "null": "Pas d'hébergement" };
+      const applyHebState = (v) => {
+        hebBtn.classList.toggle("is-fri-sat", v === "fri_sat");
+        hebBtn.classList.toggle("is-sat", v === "sat");
+        hebBtn.title = HEB_TITLE[v ?? "null"] ?? "Pas d'hébergement";
+      };
+      applyHebState(realGuest.hebergement ?? null);
       hebBtn.addEventListener("click", () => {
-        guest.hebergement = !guest.hebergement;
-        hebBtn.classList.toggle("is-on", guest.hebergement);
+        const cur = realGuest.hebergement ?? "null";
+        realGuest.hebergement = HEB_CYCLE[cur] ?? null;
+        applyHebState(realGuest.hebergement);
         refresh({ persist: false });
         persistNow();
       });
@@ -1859,7 +1874,7 @@ function renderGuests() {
       statusSelect.value = VALID_GUEST_STATUS.has(guest.status) ? guest.status : "pending";
       applyStatusClass(statusSelect.value);
       statusSelect.addEventListener("change", () => {
-        guest.status = statusSelect.value;
+        realGuest.status = statusSelect.value;
         applyStatusClass(statusSelect.value);
         refresh();
       });
@@ -2052,13 +2067,37 @@ function renderGuests() {
 
     const rsvpDetails = node.querySelector(".guest-rsvp-details");
     if (rsvpDetails) {
-      const lines = [];
-      if (guest.hebergementInfo) lines.push("📋 Souhaite des infos hébergement");
-      if (guest.musicSuggestion) lines.push(`🎵 ${guest.musicSuggestion}`);
-      if (guest.allergies) lines.push(`🥗 ${guest.allergies}`);
-      if (guest.otherQuestion) lines.push(`❓ ${guest.otherQuestion}`);
-      if (lines.length > 0) {
-        rsvpDetails.innerHTML = lines.map(l => `<span class="guest-rsvp-detail">${escHtml(l)}</span>`).join("");
+      const infoLines = [];
+      if (guest.hebergementInfo) infoLines.push("📋 Souhaite des infos hébergement");
+      if (guest.musicSuggestion) infoLines.push(`🎵 ${guest.musicSuggestion}`);
+      if (guest.allergies)       infoLines.push(`🥗 ${guest.allergies}`);
+      if (infoLines.length > 0 || guest.otherQuestion) {
+        if (infoLines.length > 0) {
+          rsvpDetails.innerHTML = infoLines.map(l => `<span class="guest-rsvp-detail">${escHtml(l)}</span>`).join("");
+        }
+        if (guest.otherQuestion) {
+          const qRow = document.createElement("div");
+          qRow.className = "guest-question-row" + (realGuest.otherQuestionAnswered ? " is-answered" : "");
+          const qText = document.createElement("span");
+          qText.className = "guest-question-text";
+          qText.textContent = `❓ ${guest.otherQuestion}`;
+          const qLabel = document.createElement("label");
+          qLabel.className = "guest-question-check-label";
+          const qCb = document.createElement("input");
+          qCb.type = "checkbox";
+          qCb.checked = Boolean(realGuest.otherQuestionAnswered);
+          qCb.addEventListener("change", () => {
+            realGuest.otherQuestionAnswered = qCb.checked;
+            qRow.classList.toggle("is-answered", qCb.checked);
+            refresh({ persist: false });
+            persistNow();
+          });
+          qLabel.appendChild(qCb);
+          qLabel.append(" Répondu");
+          qRow.appendChild(qText);
+          qRow.appendChild(qLabel);
+          rsvpDetails.appendChild(qRow);
+        }
         rsvpDetails.classList.remove("is-hidden");
       }
     }
@@ -2529,13 +2568,14 @@ function normalizeState(candidate) {
           status: Boolean(guest.isHost) ? "yes" : (VALID_GUEST_STATUS.has(guest.status) ? guest.status : "pending"),
           isHost: Boolean(guest.isHost),
           rsvpToken: typeof guest.rsvpToken === "string" && guest.rsvpToken.trim() ? guest.rsvpToken.trim() : createGuestToken(),
-          hebergement: Boolean(guest.hebergement),
+          hebergement: guest.hebergement === "fri_sat" ? "fri_sat" : guest.hebergement === "sat" ? "sat" : (guest.hebergement === true ? "fri_sat" : null),
           hebergementInfo: Boolean(guest.hebergementInfo),
           rsvpSubmittedAt: Number(guest.rsvpSubmittedAt) || 0,
           guestCategory: ["adult", "teen", "child", "baby"].includes(guest.guestCategory) ? guest.guestCategory : "adult",
           musicSuggestion: String(guest.musicSuggestion ?? "").trim(),
           allergies: String(guest.allergies ?? "").trim(),
           otherQuestion: String(guest.otherQuestion ?? "").trim(),
+          otherQuestionAnswered: Boolean(guest.otherQuestionAnswered),
           colorGroupId: (typeof guest.colorGroupId === "string" && guest.colorGroupId && guest.colorGroupId !== "None") ? guest.colorGroupId : null,
           parentIds: (() => {
             const ids = Array.isArray(guest.parentIds) ? guest.parentIds : (guest.parentId ? [guest.parentId] : []);
@@ -2884,7 +2924,7 @@ function exportGuestsCSV() {
       g.guestCategory === "child" ? "Enfant" : g.guestCategory === "teen" ? "Ado" : "Adulte",
       getGuestAttendanceTypeLabel(g.attendanceType),
       String(normalizeGuestPartySize(g.partySize, g.groupType)),
-      g.hebergement ? "Oui" : "",
+      g.hebergement === "fri_sat" ? "Vendredi + Samedi" : g.hebergement === "sat" ? "Samedi" : "",
       g.allergies ?? "",
       g.musicSuggestion ?? "",
       g.otherQuestion ?? "",
