@@ -157,6 +157,26 @@
         </section>
 
         <section id="adminTabBudget" class="admin-tab-panel is-hidden" data-admin-tab-panel="budget" role="tabpanel" aria-labelledby="adminTabBtnBudget">
+          <div class="budget-summary-tiles">
+            <div class="budget-tile">
+              <p class="budget-tile-label">Engagé</p>
+              <p class="budget-tile-value" id="budgetTileTotal">—</p>
+            </div>
+            <div class="budget-tile budget-tile-paid">
+              <p class="budget-tile-label">Payé</p>
+              <p class="budget-tile-value" id="budgetTilePaid">—</p>
+            </div>
+            <div class="budget-tile budget-tile-due">
+              <p class="budget-tile-label">Reste à payer</p>
+              <p class="budget-tile-value" id="budgetTileDue">—</p>
+              <p class="budget-tile-sub" id="budgetTileDueSub"></p>
+            </div>
+            <div class="budget-tile budget-tile-margin">
+              <p class="budget-tile-label">Marge / cible</p>
+              <p class="budget-tile-value" id="budgetTileMargin">—</p>
+              <div class="budget-tile-bar"><div class="budget-tile-bar-fill" id="budgetTileBarFill"></div></div>
+            </div>
+          </div>
           <section class="panel">
             <div class="panel-head">
               <p class="panel-kicker">Finance</p>
@@ -164,15 +184,17 @@
             </div>
             <div class="panel-two-col">
               <div class="panel-controls">
-                <form id="budgetGoalForm" class="row-form row-form-2">
-                  <input id="budgetGoal" type="number" min="0" step="0.01" placeholder="Budget cible EUR" required>
-                  <button type="submit">Mettre à jour</button>
-                </form>
-                <form id="budgetPeopleForm" class="row-form budget-people-form">
-                  <input id="budgetGuestCount" type="number" min="1" step="1" placeholder="Invités (total)" required>
-                  <input id="budgetAdultCount" type="number" min="1" step="1" placeholder="Adultes" required>
-                  <button type="submit">Mettre à jour</button>
-                </form>
+                <div class="budget-config-row">
+                  <form id="budgetGoalForm" class="row-form row-form-2">
+                    <input id="budgetGoal" type="number" min="0" step="0.01" placeholder="Budget cible (€)" required>
+                    <button type="submit">✓</button>
+                  </form>
+                  <form id="budgetPeopleForm" class="row-form budget-people-form">
+                    <input id="budgetGuestCount" type="number" min="1" step="1" placeholder="Invités (total)" required>
+                    <input id="budgetAdultCount" type="number" min="1" step="1" placeholder="Adultes" required>
+                    <button type="submit">✓</button>
+                  </form>
+                </div>
                 <div class="budget-categories-wrap">
                   <p class="field-label">Catégories</p>
                   <div id="budgetCategoryList" class="category-chips"></div>
@@ -215,11 +237,16 @@
                     <option value="all">Toutes les catégories</option>
                     <option value="__none__">Sans catégorie</option>
                   </select>
-                  <select id="budgetSoldeFilter">
+                  <select id="budgetSoldeFilter" style="display:none" aria-hidden="true">
                     <option value="all">Soldé et non soldé</option>
                     <option value="unsettled">Non soldé</option>
                     <option value="settled">Soldé</option>
                   </select>
+                  <div class="budget-filter-chips" id="budgetSoldeChips">
+                    <button type="button" class="budget-filter-chip is-active" data-solde="all">Tout</button>
+                    <button type="button" class="budget-filter-chip" data-solde="unsettled">Non soldé</button>
+                    <button type="button" class="budget-filter-chip" data-solde="settled">Soldé ✓</button>
+                  </div>
                 </div>
                 <p id="budgetFilterStats" class="list-stats"></p>
                 <ul id="budgetList" class="data-list"></ul>
@@ -507,6 +534,7 @@
         <span class="budget-item-category"></span>
         <span class="main-text"></span>
       </div>
+      <div class="budget-item-progress"><div class="budget-item-progress-fill"></div></div>
       <div class="budget-item-amounts">
         <span class="budget-amount-total"></span>
         <span class="budget-amount-paid"></span>

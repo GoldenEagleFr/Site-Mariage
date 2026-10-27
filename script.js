@@ -225,6 +225,12 @@ const metricBudgetLeft = document.getElementById("metricBudgetLeft");
 const metricBudgetPaid = document.getElementById("metricBudgetPaid");
 const metricBudgetDue = document.getElementById("metricBudgetDue");
 const metricBudgetDueSub = document.getElementById("metricBudgetDueSub");
+const budgetTileTotal = document.getElementById("budgetTileTotal");
+const budgetTilePaid = document.getElementById("budgetTilePaid");
+const budgetTileDue = document.getElementById("budgetTileDue");
+const budgetTileDueSub = document.getElementById("budgetTileDueSub");
+const budgetTileMargin = document.getElementById("budgetTileMargin");
+const budgetTileBarFill = document.getElementById("budgetTileBarFill");
 const metricTasks = document.getElementById("metricTasks");
 const metricRsvp = document.getElementById("metricRsvp");
 const metricRsvpBreakdown = document.getElementById("metricRsvpBreakdown");
@@ -410,6 +416,18 @@ function bindPlannerEvents() {
   if (budgetSoldeFilter) {
     budgetSoldeFilter.addEventListener("change", () => renderBudget());
   }
+
+  // Chips filtre soldé
+  document.querySelectorAll("#budgetSoldeChips .budget-filter-chip").forEach((chip) => {
+    chip.addEventListener("click", () => {
+      document.querySelectorAll("#budgetSoldeChips .budget-filter-chip").forEach((c) => c.classList.remove("is-active"));
+      chip.classList.add("is-active");
+      if (budgetSoldeFilter) {
+        budgetSoldeFilter.value = chip.dataset.solde ?? "all";
+      }
+      renderBudget();
+    });
+  });
 
   if (taskSearch) {
     taskSearch.addEventListener("input", () => {
@@ -1186,6 +1204,13 @@ function renderBudget() {
     if (totalEl) totalEl.textContent = `Prévu : ${formatMoney(amountTotal)}`;
     if (paidEl) paidEl.textContent = `Payé : ${formatMoney(amountPaid)}`;
     if (restEl) restEl.textContent = `Reste : ${formatMoney(rest)}`;
+
+    const progressFill = node.querySelector(".budget-item-progress-fill");
+    if (progressFill) {
+      const pct = amountTotal > 0 ? Math.min(100, Math.round((amountPaid / amountTotal) * 100)) : 0;
+      progressFill.style.width = pct + "%";
+      progressFill.style.background = pct >= 100 ? "#22c55e" : pct > 0 ? "#f59e0b" : "rgba(0,0,0,.1)";
+    }
 
     const soldeCheck = node.querySelector(".solde-check");
     if (soldeCheck) {
@@ -2151,6 +2176,22 @@ function renderMetrics() {
       ? `${unsettledItems.length} prestataire${unsettledItems.length > 1 ? "s" : ""} non soldé${unsettledItems.length > 1 ? "s" : ""}`
       : "Tout est soldé ✓";
   }
+
+  // Tuiles résumé dans l'onglet Budget
+  if (budgetTileTotal) budgetTileTotal.textContent = formatMoney(budgetTotal);
+  if (budgetTilePaid) budgetTilePaid.textContent = formatMoney(budgetPaid);
+  if (budgetTileDue) budgetTileDue.textContent = formatMoney(budgetDue);
+  if (budgetTileDueSub) {
+    budgetTileDueSub.textContent = unsettledItems.length > 0
+      ? `${unsettledItems.length} poste${unsettledItems.length > 1 ? "s" : ""} non soldé${unsettledItems.length > 1 ? "s" : ""}`
+      : "Tout est soldé ✓";
+  }
+  if (budgetTileMargin) budgetTileMargin.textContent = formatMoney(budgetLeft);
+  if (budgetTileBarFill) {
+    const pct = budgetGoal > 0 ? Math.min(100, Math.round((budgetTotal / budgetGoal) * 100)) : 0;
+    budgetTileBarFill.style.width = pct + "%";
+  }
+
   if (budgetPerGuestLabel) {
     budgetPerGuestLabel.textContent = `Tarif final par invité (${guestCount} pers.)`;
   }
@@ -2290,6 +2331,11 @@ function clearPrivateUi() {
   if (metricBudgetLeft) {
     metricBudgetLeft.textContent = "0 EUR";
   }
+  for (const el of [budgetTileTotal, budgetTilePaid, budgetTileDue, budgetTileMargin]) {
+    if (el) el.textContent = "—";
+  }
+  if (budgetTileDueSub) budgetTileDueSub.textContent = "";
+  if (budgetTileBarFill) budgetTileBarFill.style.width = "0%";
   if (budgetPerGuest) {
     budgetPerGuest.textContent = formatMoney(0, 2);
   }

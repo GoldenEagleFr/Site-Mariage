@@ -1235,6 +1235,125 @@ body::after {
   min-width: 0;
 }
 
+/* ── Budget : 4 tuiles résumé ──────────────────────────────────── */
+.budget-summary-tiles {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.budget-tile {
+  background: var(--card-bg, #fff);
+  border: 1px solid rgba(240, 63, 89, 0.22);
+  border-radius: 12px;
+  padding: 12px 14px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.budget-tile-label {
+  margin: 0 0 3px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.budget-tile-value {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  font-family: Fraunces, Georgia, serif;
+  color: var(--ink);
+}
+
+.budget-tile-sub {
+  margin: 2px 0 0;
+  font-size: 0.7rem;
+  color: var(--ink-soft);
+}
+
+.budget-tile-paid   .budget-tile-value { color: #1e8449; }
+.budget-tile-due    .budget-tile-value { color: #ba4a00; }
+.budget-tile-margin .budget-tile-value { color: var(--gold-dark); }
+
+.budget-tile-bar {
+  height: 4px;
+  background: rgba(0, 0, 0, 0.07);
+  border-radius: 99px;
+  margin-top: 8px;
+  overflow: hidden;
+}
+
+.budget-tile-bar-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--rose), #f59e0b);
+  transition: width 0.5s ease;
+}
+
+/* ── Budget : barre de progression sur chaque item ─────────────── */
+.budget-item-progress {
+  height: 4px;
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 99px;
+  overflow: hidden;
+  grid-column: 1 / -1;
+}
+
+.budget-item-progress-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 99px;
+  transition: width 0.4s ease;
+}
+
+/* ── Budget : chips filtre soldé ───────────────────────────────── */
+.budget-filter-chips {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.budget-filter-chip {
+  padding: 4px 11px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  border: 1.5px solid var(--border, #e5e5e5);
+  background: transparent;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+  line-height: 1.4;
+}
+
+.budget-filter-chip.is-active {
+  border-color: rgba(240, 63, 89, 0.4);
+  background: rgba(240, 63, 89, 0.08);
+  color: var(--rose);
+}
+
+/* ── Budget : encadré config (deux formulaires fusionnés) ──────── */
+.budget-config-row {
+  padding: 10px 12px;
+  background: rgba(250, 245, 245, 0.65);
+  border: 1px solid rgba(240, 63, 89, 0.14);
+  border-radius: 10px;
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.budget-config-row .row-form button[type="submit"] {
+  padding: 7px 12px;
+  min-width: 36px;
+}
+
 .budget-unit-prices {
   display: grid;
   gap: 8px;
@@ -3093,6 +3212,35 @@ body.dark-mode .budget-solde {
 body.dark-mode .budget-item-edit {
   border-top-color: rgba(200, 60, 80, 0.18);
 }
+
+body.dark-mode .budget-tile {
+  background: rgba(28, 8, 14, 0.7);
+  border-color: rgba(200, 60, 80, 0.22);
+}
+
+body.dark-mode .budget-tile-paid   .budget-tile-value { color: #6fcf97; }
+body.dark-mode .budget-tile-due    .budget-tile-value { color: #e8a0a8; }
+body.dark-mode .budget-tile-margin .budget-tile-value { color: #e8a0a8; }
+
+body.dark-mode .budget-tile-bar { background: rgba(255, 255, 255, 0.06); }
+
+body.dark-mode .budget-filter-chip {
+  border-color: rgba(200, 60, 80, 0.2);
+  color: var(--ink-soft);
+}
+
+body.dark-mode .budget-filter-chip.is-active {
+  border-color: rgba(240, 63, 89, 0.5);
+  background: rgba(240, 63, 89, 0.12);
+  color: #f08090;
+}
+
+body.dark-mode .budget-config-row {
+  background: rgba(28, 8, 14, 0.5);
+  border-color: rgba(200, 60, 80, 0.18);
+}
+
+body.dark-mode .budget-item-progress { background: rgba(255, 255, 255, 0.06); }
 
 body.dark-mode .field-label { color: #e8a0a8; }
 
@@ -5404,10 +5552,22 @@ body.dark-mode .guest-host-status { color: #6fcf97; }
     white-space: nowrap;
   }
 
-  /* Ligne 2 : barre actions pleine largeur */
-  .budget-item-actions {
+  /* Tuiles résumé : 2 colonnes sur petit écran */
+  .budget-summary-tiles {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  /* Ligne 2 : barre de progression pleine largeur */
+  .budget-item-progress {
     grid-column: 1 / -1 !important;
     grid-row: 2 !important;
+    margin: 1px 0 !important;
+  }
+
+  /* Ligne 3 : barre actions pleine largeur */
+  .budget-item-actions {
+    grid-column: 1 / -1 !important;
+    grid-row: 3 !important;
     flex-direction: row !important;
     align-items: center !important;
     justify-content: flex-start !important;
