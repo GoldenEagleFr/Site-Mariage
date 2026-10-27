@@ -1769,16 +1769,19 @@ function renderGuests() {
   if (guestCountVinOnly) guestCountVinOnly.textContent = vinOnlyCount ? String(vinOnlyCount) : "";
 
   let currentTargetList = guestListRepas;
+  let staggerRepas = 0;
+  let staggerVinOnly = 0;
 
-  for (const [index, guest] of displayGuests.entries()) {
+  for (const guest of displayGuests) {
     // Cibler la bonne colonne (les secondaires / mineurs suivent le primaire)
     if (!guest._isPartnerOf && !guest.isHost) {
       currentTargetList = normalizeGuestAttendanceType(guest.attendanceType) === "vin_only"
         ? guestListVinOnly : guestListRepas;
     }
 
+    const colIdx = currentTargetList === guestListRepas ? staggerRepas++ : staggerVinOnly++;
     const node = guestTemplate.content.firstElementChild.cloneNode(true);
-    node.style.setProperty("--stagger", String(index));
+    node.style.setProperty("--stagger", String(colIdx));
     if (guest._isPartnerOf)              node.classList.add("guest-item-partner");
     if (guest.guestCategory === "child") node.classList.add("guest-item-child");
     if (guest.guestCategory === "teen")  node.classList.add("guest-item-teen");
