@@ -179,6 +179,7 @@ const budgetPerAdult = document.getElementById("budgetPerAdult");
 const budgetCategoryFilter = document.getElementById("budgetCategoryFilter");
 const budgetSoldeFilter = document.getElementById("budgetSoldeFilter");
 const budgetFilterStats = document.getElementById("budgetFilterStats");
+const budgetSearch = document.getElementById("budgetSearch");
 const budgetList = document.getElementById("budgetList");
 
 const taskForm = document.getElementById("taskForm");
@@ -407,6 +408,10 @@ function bindPlannerEvents() {
       taskForm.reset();
       refresh();
     });
+  }
+
+  if (budgetSearch) {
+    budgetSearch.addEventListener("input", () => renderBudget());
   }
 
   if (budgetCategoryFilter) {
@@ -1166,11 +1171,13 @@ function renderBudget() {
   // Filtrer les items
   const catMode = budgetCategoryFilter?.value ?? "all";
   const soldeMode = budgetSoldeFilter?.value ?? "all";
+  const searchQuery = (budgetSearch?.value ?? "").trim().toLowerCase();
   const filteredItems = state.budgetItems.filter((item) => {
     if (catMode === "__none__" && item.categoryId) return false;
     if (catMode !== "all" && catMode !== "__none__" && item.categoryId !== catMode) return false;
     if (soldeMode === "settled" && !item.solde) return false;
     if (soldeMode === "unsettled" && item.solde) return false;
+    if (searchQuery && !item.label.toLowerCase().includes(searchQuery)) return false;
     return true;
   });
 
