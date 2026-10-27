@@ -1459,7 +1459,9 @@ body::after {
 }
 
 .budget-data-item {
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 10px;
+  padding: 8px 11px;
   align-items: start;
 }
 
@@ -1507,9 +1509,11 @@ body::after {
 
 .budget-item-actions {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-  align-items: flex-end;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  align-items: center;
+  grid-column: 1 / -1;
 }
 
 .solde-label {
@@ -5566,22 +5570,10 @@ body.dark-mode .guest-host-status { color: #6fcf97; }
     grid-template-columns: 1fr 1fr !important;
   }
 
-  /* Ligne 2 : barre actions pleine largeur */
-  .budget-item-actions {
-    grid-column: 1 / -1 !important;
-    grid-row: 2 !important;
-    flex-direction: row !important;
-    align-items: center !important;
-    justify-content: flex-start !important;
-    flex-wrap: wrap !important;
-    gap: 5px !important;
-  }
-
-  /* Barre de progression : pleine largeur après actions */
+  /* Barre de progression : pleine largeur */
   .budget-item-progress {
     grid-column: 1 / -1 !important;
-    grid-row: 3 !important;
-    margin: 1px 0 !important;
+    margin: 0 !important;
   }
 
   /* Formulaire édition : pleine largeur, 1 colonne */
