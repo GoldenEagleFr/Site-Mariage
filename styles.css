@@ -1090,7 +1090,7 @@ body::after {
 #adminContent[data-active-tab]:not([data-active-tab="dashboard"]) .metric-card {
   display: none;
 }
-#adminContent[data-active-tab="budget"]   .metric-card[data-goto-tab="budget"]   { display: block; }
+#adminContent[data-active-tab="budget"]   .metric-card[data-goto-tab="budget"]   { display: none; }
 #adminContent[data-active-tab="tasks"]    .metric-card[data-goto-tab="tasks"]    { display: block; }
 #adminContent[data-active-tab="guests"]   .metric-card[data-goto-tab="guests"]   { display: block; }
 #adminContent[data-active-tab="traiteur"] .metric-card[data-goto-tab="traiteur"] { display: block; }
@@ -1350,8 +1350,17 @@ body::after {
 }
 
 .budget-config-row .row-form button[type="submit"] {
-  padding: 7px 12px;
+  padding: 6px 12px;
   min-width: 36px;
+  background: rgba(240, 63, 89, 0.1);
+  color: var(--rose, #f03f59);
+  border: 1.5px solid rgba(240, 63, 89, 0.3);
+  box-shadow: none;
+  font-size: 0.88rem;
+}
+
+.budget-config-row .row-form button[type="submit"]:hover {
+  background: rgba(240, 63, 89, 0.18);
 }
 
 .budget-unit-prices {
@@ -5557,22 +5566,22 @@ body.dark-mode .guest-host-status { color: #6fcf97; }
     grid-template-columns: 1fr 1fr !important;
   }
 
-  /* Ligne 2 : barre de progression pleine largeur */
-  .budget-item-progress {
-    grid-column: 1 / -1 !important;
-    grid-row: 2 !important;
-    margin: 1px 0 !important;
-  }
-
-  /* Ligne 3 : barre actions pleine largeur */
+  /* Ligne 2 : barre actions pleine largeur */
   .budget-item-actions {
     grid-column: 1 / -1 !important;
-    grid-row: 3 !important;
+    grid-row: 2 !important;
     flex-direction: row !important;
     align-items: center !important;
     justify-content: flex-start !important;
     flex-wrap: wrap !important;
     gap: 5px !important;
+  }
+
+  /* Barre de progression : pleine largeur après actions */
+  .budget-item-progress {
+    grid-column: 1 / -1 !important;
+    grid-row: 3 !important;
+    margin: 1px 0 !important;
   }
 
   /* Formulaire édition : pleine largeur, 1 colonne */
