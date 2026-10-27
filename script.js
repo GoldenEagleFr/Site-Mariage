@@ -231,6 +231,8 @@ const budgetTilePaid = document.getElementById("budgetTilePaid");
 const budgetTileDue = document.getElementById("budgetTileDue");
 const budgetTileDueSub = document.getElementById("budgetTileDueSub");
 const budgetTileMargin = document.getElementById("budgetTileMargin");
+const budgetTileMarginSub = document.getElementById("budgetTileMarginSub");
+const budgetTileMarginCard = document.getElementById("budgetTileMarginCard");
 const budgetTileBarFill = document.getElementById("budgetTileBarFill");
 const metricTasks = document.getElementById("metricTasks");
 const metricRsvp = document.getElementById("metricRsvp");
@@ -2193,10 +2195,25 @@ function renderMetrics() {
       ? `${unsettledItems.length} poste${unsettledItems.length > 1 ? "s" : ""} non soldé${unsettledItems.length > 1 ? "s" : ""}`
       : "Tout est soldé ✓";
   }
-  if (budgetTileMargin) budgetTileMargin.textContent = formatMoney(budgetLeft);
+  if (budgetTileMargin) {
+    const signed = budgetGoal > 0 ? budgetGoal - budgetTotal : null;
+    const isOver = signed !== null && signed < 0;
+    budgetTileMargin.textContent = signed !== null
+      ? (isOver ? "−" : "") + formatMoney(Math.abs(signed))
+      : "—";
+    if (budgetTileMarginCard) budgetTileMarginCard.classList.toggle("is-over", isOver);
+    if (budgetTileMarginSub) {
+      budgetTileMarginSub.textContent = budgetGoal > 0
+        ? isOver ? `Dépassement de ${formatMoney(Math.abs(signed))}` : `sur ${formatMoney(budgetGoal)} visés`
+        : "Budget cible non défini";
+    }
+  }
   if (budgetTileBarFill) {
     const pct = budgetGoal > 0 ? Math.min(100, Math.round((budgetTotal / budgetGoal) * 100)) : 0;
     budgetTileBarFill.style.width = pct + "%";
+    budgetTileBarFill.style.background = pct > 100
+      ? "#dc2626"
+      : "linear-gradient(90deg, var(--rose), #f59e0b)";
   }
 
   if (budgetPerGuestLabel) {
@@ -2342,6 +2359,8 @@ function clearPrivateUi() {
     if (el) el.textContent = "—";
   }
   if (budgetTileDueSub) budgetTileDueSub.textContent = "";
+  if (budgetTileMarginSub) budgetTileMarginSub.textContent = "";
+  if (budgetTileMarginCard) budgetTileMarginCard.classList.remove("is-over");
   if (budgetTileBarFill) budgetTileBarFill.style.width = "0%";
   if (budgetPerGuest) {
     budgetPerGuest.textContent = formatMoney(0, 2);
