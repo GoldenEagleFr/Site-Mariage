@@ -761,7 +761,13 @@ function renderSidebar() {
     return;
   }
 
-  chGuestList.innerHTML = filtered.map(g => {
+  const sorted = [...filtered].sort((a, b) => {
+    const pa = chAssign[a.id] ? 1 : 0;
+    const pb = chAssign[b.id] ? 1 : 0;
+    return pa - pb;
+  });
+
+  chGuestList.innerHTML = sorted.map(g => {
     const placed = chAssign[g.id];
     const isSelected = g.id === selectedGuestId;
     return `<div class="ch-guest-item${placed ? " is-placed" : ""}${isSelected ? " is-selected" : ""}"
