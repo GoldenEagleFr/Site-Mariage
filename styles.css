@@ -1600,6 +1600,7 @@ body::after {
 
 .guest-item-edit {
   grid-column: 1 / -1;
+  flex: 0 0 100%;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -2000,6 +2001,10 @@ button:hover {
   flex-direction: column;
   gap: 10px;
   min-width: 0;
+  overflow: hidden;
+}
+.guest-list-col .data-list {
+  grid-template-columns: minmax(0, 1fr);
 }
 .guest-col-head {
   display: flex;
