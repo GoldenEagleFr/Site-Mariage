@@ -206,6 +206,7 @@ const guestSearch = document.getElementById("guestSearch");
 const guestFilter = document.getElementById("guestFilter");
 const guestAttendanceFilter = document.getElementById("guestAttendanceFilter");
 const guestCategoryFilter = document.getElementById("guestCategoryFilter");
+const guestHebergFilter = document.getElementById("guestHebergFilter");
 const guestStats = document.getElementById("guestStats");
 const guestBadgeYes  = document.getElementById("guestBadgeYes");
 const guestBadgeNo   = document.getElementById("guestBadgeNo");
@@ -658,6 +659,12 @@ function bindPlannerEvents() {
 
   if (guestCategoryFilter) {
     guestCategoryFilter.addEventListener("change", () => {
+      renderGuests();
+    });
+  }
+
+  if (guestHebergFilter) {
+    guestHebergFilter.addEventListener("change", () => {
       renderGuests();
     });
   }
@@ -1668,6 +1675,7 @@ function renderGuests() {
   });
 
   const categoryMode = guestCategoryFilter?.value ?? "all";
+  const hebergMode = guestHebergFilter?.value ?? "all";
   const filteredGuests = orderedGuests.filter((guest) => {
     const attendanceType = normalizeGuestAttendanceType(guest.attendanceType);
     const attendanceLabel = getGuestAttendanceTypeLabel(attendanceType);
@@ -1678,6 +1686,9 @@ function renderGuests() {
     } else if (categoryMode !== "all" && (guest.guestCategory || "adult") !== categoryMode) {
       return false;
     }
+    if (hebergMode === "yes" && !guest.hebergement) return false;
+    if (hebergMode === "info" && !guest.hebergementInfo) return false;
+    if (hebergMode === "no" && guest.hebergement) return false;
     if (search && !toSearchKey(`${guest.name} ${attendanceLabel}`).includes(search)) return false;
     return true;
   });
